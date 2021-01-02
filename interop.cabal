@@ -1,0 +1,38 @@
+cabal-version: 1.18
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 609124bc465e4ed389b4d80c2ca8fd051823485e64830da318bd4caa67c9cbf9
+
+name:           interop
+version:        0.1.0.0
+synopsis:       Foreign function calls to Haskell
+description:    Please see the README at <https://github.com/jwoudenberg/interop>.
+category:       Web
+homepage:       https://github.com/jwoudenberg/interop#readme
+bug-reports:    https://github.com/jwoudenberg/interop/issues
+author:         Jasper Woudenberg
+maintainer:     mail@jasperwoudenberg.com
+copyright:      2020 Jasper Woudenberg
+license-file:   LICENSE
+build-type:     Simple
+extra-doc-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/jwoudenberg/interop
+
+library
+  exposed-modules:
+      Interop
+  other-modules:
+      Paths_interop
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.10.1.0 && <5
+  default-language: Haskell2010

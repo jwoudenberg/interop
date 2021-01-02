@@ -1,0 +1,5 @@
+junit-xml.cabal
+dist-newstyle
+result
+*.tar.gz
+dist
