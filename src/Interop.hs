@@ -4,8 +4,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -46,7 +48,6 @@ data WireType
   | Int
   | Float
   | Bool
-  | Unit
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
@@ -108,7 +109,7 @@ instance
   where
   typeCtorsG _ =
     [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        Unit
+        Tuple []
       )
     ]
   encodeCtorsG (M1 U1) =
@@ -233,7 +234,9 @@ class FieldsG f where
 
 instance
   ( KnownSymbol fieldname,
-    Wire field
+    ParseField (IsMaybe field) field,
+    Wire field,
+    Wire (Unwrapped (IsMaybe field) field)
   ) =>
   FieldsG (S1 ('MetaSel ('Just fieldname) unpackedness strictness lazyness) (Rec0 field))
   where
@@ -243,7 +246,13 @@ instance
       )
     ]
   encodeFieldsG = Encoding.pair (T.pack (symbolVal (Proxy :: Proxy fieldname))) . encode . unK1 . unM1
-  decodeFieldsG obj = fmap (M1 . K1) $ Aeson.explicitParseField decode obj (T.pack (symbolVal (Proxy :: Proxy fieldname)))
+  decodeFieldsG obj =
+    parseField
+      (Proxy :: Proxy (IsMaybe field))
+      decode
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy fieldname)))
+      & fmap (M1 . K1)
 
 instance
   ( FieldsG left,
@@ -254,6 +263,36 @@ instance
   typeFieldsG _ = typeFieldsG (Proxy :: Proxy left) <> typeFieldsG (Proxy :: Proxy right)
   encodeFieldsG (left :*: right) = encodeFieldsG left <> encodeFieldsG right
   decodeFieldsG obj = (:*:) <$> decodeFieldsG obj <*> decodeFieldsG obj
+
+-- Aeson provides two functions for using a custom parser to decode the field
+-- of an object: 'explicitParseField' and 'explicitParseFieldMaybe'. When the
+-- type of the field is a 'Maybe a' we want to use the second function, because
+-- it doesn't failed parsing a JSON object missing that field. When the type of
+-- the field is not 'Maybe a' we have to use 'explicitParseField'.
+--
+-- This type class and its supporting type family 'IsMaybe' exist solely to pick
+-- the right Aeson helper function depending on whether the type of the field is
+-- a 'Maybe a' or not.
+class ParseField (isMaybe :: Bool) a where
+  type Unwrapped isMaybe a
+  parseField ::
+    Proxy isMaybe ->
+    (Aeson.Value -> Aeson.Parser (Unwrapped isMaybe a)) ->
+    Aeson.Object ->
+    Text ->
+    Aeson.Parser a
+
+instance ParseField 'True (Maybe a) where
+  type Unwrapped 'True (Maybe a) = a
+  parseField _ = Aeson.explicitParseFieldMaybe
+
+instance ParseField 'False a where
+  type Unwrapped 'False a = a
+  parseField _ = Aeson.explicitParseField
+
+type family IsMaybe a :: Bool where
+  IsMaybe (Maybe a) = True
+  IsMaybe a = False
 
 respond :: Functor m => Service m -> ByteString -> Either Text (m ByteString)
 respond endpoints request =
