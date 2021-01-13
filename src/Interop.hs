@@ -15,6 +15,7 @@ module Interop
   )
 where
 
+import Control.Applicative ((<|>))
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
@@ -80,17 +81,52 @@ class WireG f where
 
 instance
   ( KnownSymbol typename,
+    CtorsG ctors
+  ) =>
+  WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
+  where
+  typeG _ = Product (typeCtorsG (Proxy :: Proxy ctors))
+  nameG _ = T.pack (symbolVal (Proxy :: Proxy typename))
+  encodeG = Aeson.pairs . encodeCtorsG . unM1
+  decodeG = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
+
+class CtorsG f where
+  typeCtorsG :: Proxy f -> [(Text, WireType)]
+  encodeCtorsG :: f a -> Aeson.Series
+  decodeCtorsG :: Aeson.Object -> Aeson.Parser (f a)
+
+instance
+  ( KnownSymbol ctorname,
     FieldsG fields
   ) =>
-  WireG
-    ( D1 ('MetaData typename modname packname isnewtype)
-        (C1 ('MetaCons ctorname fix 'True) fields)
-    )
+  CtorsG (C1 ('MetaCons ctorname fix 'True) fields)
   where
-  typeG _ = Product (typeFieldsG (Proxy :: Proxy fields))
-  nameG _ = T.pack (symbolVal (Proxy :: Proxy typename))
-  encodeG = Encoding.pairs . encodeFieldsG . unM1 . unM1
-  decodeG = fmap (M1 . M1) . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeFieldsG
+  typeCtorsG _ =
+    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
+        Product (typeFieldsG (Proxy :: Proxy fields))
+      )
+    ]
+  encodeCtorsG (M1 fields) =
+    encodeFieldsG fields
+      & Encoding.pairs
+      & Encoding.pair (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+  decodeCtorsG obj =
+    Aeson.explicitParseField
+      (Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG)
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      & fmap M1
+
+instance
+  ( CtorsG left,
+    CtorsG right
+  ) =>
+  CtorsG (left :+: right)
+  where
+  typeCtorsG _ = typeCtorsG (Proxy :: Proxy left) <> typeCtorsG (Proxy :: Proxy right)
+  encodeCtorsG (L1 left) = encodeCtorsG left
+  encodeCtorsG (R1 right) = encodeCtorsG right
+  decodeCtorsG obj = fmap L1 (decodeCtorsG obj) <|> fmap R1 (decodeCtorsG obj)
 
 class FieldsG f where
   typeFieldsG :: Proxy f -> [(Text, WireType)]
