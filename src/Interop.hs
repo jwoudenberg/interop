@@ -24,15 +24,18 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
+import qualified Data.Foldable as Foldable
 import Data.Foldable (foldl')
 import Data.Function ((&))
-import Data.Int (Int64)
+import qualified Data.Int
 import Data.Proxy (Proxy (Proxy))
-import Data.Scientific (toBoundedInteger)
+import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Word
 import GHC.Generics
-import GHC.TypeLits
+import GHC.TypeLits hiding (Text)
+import qualified GHC.TypeLits
 
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
@@ -44,6 +47,7 @@ data WireType
   | Product [(Text, WireType)]
   | List WireType
   | Tuple [WireType]
+  | Optional WireType
   | Text
   | Int
   | Float
@@ -71,6 +75,206 @@ instance Wire Int where
           case toBoundedInteger scientific of
             Nothing -> Aeson.unexpected "Expected an integer but got a float"
             Just int -> pure int
+      )
+
+instance Wire Data.Int.Int8 where
+  type_ _ = Int
+  encode = Encoding.int8
+  decode =
+    Aeson.withScientific
+      "Int8"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Int.Int16 where
+  type_ _ = Int
+  encode = Encoding.int16
+  decode =
+    Aeson.withScientific
+      "Int16"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Int.Int32 where
+  type_ _ = Int
+  encode = Encoding.int32
+  decode =
+    Aeson.withScientific
+      "Int32"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Int.Int64 where
+  type_ _ = Int
+  encode = Encoding.int64
+  decode =
+    Aeson.withScientific
+      "Int64"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Word where
+  type_ _ = Int
+  encode = Encoding.word
+  decode =
+    Aeson.withScientific
+      "Word"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Word.Word8 where
+  type_ _ = Int
+  encode = Encoding.word8
+  decode =
+    Aeson.withScientific
+      "Word8"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Word.Word16 where
+  type_ _ = Int
+  encode = Encoding.word16
+  decode =
+    Aeson.withScientific
+      "Word16"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Word.Word32 where
+  type_ _ = Int
+  encode = Encoding.word32
+  decode =
+    Aeson.withScientific
+      "Word32"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Data.Word.Word64 where
+  type_ _ = Int
+  encode = Encoding.word64
+  decode =
+    Aeson.withScientific
+      "Word64"
+      ( \scientific ->
+          case toBoundedInteger scientific of
+            Nothing -> Aeson.unexpected "Expected an integer but got a float"
+            Just int -> pure int
+      )
+
+instance Wire Float where
+  type_ _ = Float
+  encode = Encoding.float
+  decode = Aeson.withScientific "Float" (pure . toRealFloat)
+
+instance Wire Double where
+  type_ _ = Float
+  encode = Encoding.double
+  decode = Aeson.withScientific "Double" (pure . toRealFloat)
+
+instance Wire Text where
+  type_ _ = Text
+  encode = Encoding.text
+  decode = Aeson.withText "Text" pure
+
+instance Wire String where
+  type_ _ = Text
+  encode = Encoding.string
+  decode = Aeson.withText "String" (pure . T.unpack)
+
+instance Wire Bool where
+  type_ _ = Bool
+  encode = Encoding.bool
+  decode = Aeson.withBool "Bool" pure
+
+instance Wire a => Wire (Maybe a) where
+  type_ _ = Optional (type_ (Proxy :: Proxy a))
+  encode = maybe Encoding.null_ encode
+  decode val = (Just <$> decode val) <|> pure Nothing
+
+instance Wire a => Wire [a] where
+  type_ _ = List (type_ (Proxy :: Proxy a))
+  encode = Encoding.list encode
+  decode = Aeson.withArray "[]" (traverse decode . Foldable.toList)
+
+instance Wire () where
+  type_ _ = Tuple []
+  encode _ = Encoding.emptyArray_
+  decode _ = pure ()
+
+instance
+  ( Wire a,
+    Wire b
+  ) =>
+  Wire (a, b)
+  where
+  type_ _ =
+    Tuple
+      [ type_ (Proxy :: Proxy a),
+        type_ (Proxy :: Proxy b)
+      ]
+  encode (a, b) =
+    Aeson.pairs $
+      Encoding.pair "1" (encode a)
+        <> Encoding.pair "2" (encode b)
+  decode =
+    Aeson.withObject
+      "(,)"
+      ( \obj ->
+          (,)
+            <$> Aeson.explicitParseField decode obj "1"
+            <*> Aeson.explicitParseField decode obj "2"
+      )
+
+instance
+  ( Wire a,
+    Wire b,
+    Wire c
+  ) =>
+  Wire (a, b, c)
+  where
+  type_ _ =
+    Tuple
+      [ type_ (Proxy :: Proxy a),
+        type_ (Proxy :: Proxy b),
+        type_ (Proxy :: Proxy c)
+      ]
+  encode (a, b, c) =
+    Aeson.pairs $
+      Encoding.pair "1" (encode a)
+        <> Encoding.pair "2" (encode b)
+        <> Encoding.pair "3" (encode c)
+  decode =
+    Aeson.withObject
+      "(,,)"
+      ( \obj ->
+          (,,)
+            <$> Aeson.explicitParseField decode obj "1"
+            <*> Aeson.explicitParseField decode obj "2"
+            <*> Aeson.explicitParseField decode obj "3"
       )
 
 class WireG f where
