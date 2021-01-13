@@ -38,9 +38,10 @@ data Endpoint m where
 type Service m = [Endpoint m]
 
 data WireType
-  = Product [(Text, WireType)]
-  | Sum [(Text, WireType)]
+  = Sum Text [(Text, WireType)]
+  | Product [(Text, WireType)]
   | List WireType
+  | Tuple [WireType]
   | Text
   | Int
   | Float
@@ -50,13 +51,10 @@ data WireType
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
   type_ :: Proxy a -> WireType
-  name :: Proxy a -> Text
   encode :: a -> Aeson.Encoding
   decode :: Aeson.Value -> Aeson.Parser a
   default type_ :: WireG (Rep a) => Proxy a -> WireType
   type_ (_ :: Proxy a) = typeG (Proxy :: Proxy (Rep a))
-  default name :: WireG (Rep a) => Proxy a -> Text
-  name (_ :: Proxy a) = nameG (Proxy :: Proxy (Rep a))
   default encode :: (Generic a, WireG (Rep a)) => a -> Aeson.Encoding
   encode = encodeG . from
   default decode :: (Generic a, WireG (Rep a)) => Aeson.Value -> Aeson.Parser a
@@ -64,7 +62,6 @@ class Wire a where
 
 instance Wire Int where
   type_ _ = Int
-  name _ = "Int"
   encode = Encoding.int
   decode =
     Aeson.withScientific
@@ -77,7 +74,6 @@ instance Wire Int where
 
 class WireG f where
   typeG :: Proxy f -> WireType
-  nameG :: Proxy f -> Text
   encodeG :: f a -> Aeson.Encoding
   decodeG :: Aeson.Value -> Aeson.Parser (f a)
 
@@ -87,8 +83,10 @@ instance
   ) =>
   WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
   where
-  typeG _ = Product (typeCtorsG (Proxy :: Proxy ctors))
-  nameG _ = T.pack (symbolVal (Proxy :: Proxy typename))
+  typeG _ =
+    Sum
+      (T.pack (symbolVal (Proxy :: Proxy typename)))
+      (typeCtorsG (Proxy :: Proxy ctors))
   encodeG = Aeson.pairs . encodeCtorsG . unM1
   decodeG = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
 
