@@ -8,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Interop
   ( Endpoint,
@@ -29,7 +30,7 @@ import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
-import GHC.TypeLits (KnownSymbol, symbolVal)
+import GHC.TypeLits
 
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
@@ -182,6 +183,39 @@ instance
       obj
       (T.pack (symbolVal (Proxy :: Proxy ctorname)))
       & fmap M1
+
+-- Instance producing compiler error for types without any constructors.
+--
+-- > data Never
+--
+instance
+  (TypeError (GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance.")) =>
+  CtorsG V1
+  where
+  typeCtorsG _ = error "unreachable"
+  encodeCtorsG _ = error "unreachable"
+  decodeCtorsG _ = error "unreachable"
+
+-- Instance producing compiler error for contructors with multiple parameters
+-- that aren't record fields.
+--
+-- > data Coords = Coords Int Int
+--
+instance
+  ( TypeError
+      ( GHC.TypeLits.Text "Constructors with multiple parameters need to use record syntax to have a 'Wire' instance."
+          :$$: GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
+          :$$: GHC.TypeLits.Text "Instead of:"
+          :$$: GHC.TypeLits.Text "    data Coords = Coords Int Int"
+          :$$: GHC.TypeLits.Text "Try:"
+          :$$: GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+      )
+  ) =>
+  CtorsG (C1 ('MetaCons ctorname fix 'False) (left :*: right))
+  where
+  typeCtorsG _ = error "unreachable"
+  encodeCtorsG _ = error "unreachable"
+  decodeCtorsG _ = error "unreachable"
 
 instance
   ( CtorsG left,
