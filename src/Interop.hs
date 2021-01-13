@@ -44,6 +44,7 @@ data WireType
   | Int
   | Float
   | Bool
+  | Unit
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
@@ -95,6 +96,71 @@ class CtorsG f where
   encodeCtorsG :: f a -> Aeson.Series
   decodeCtorsG :: Aeson.Object -> Aeson.Parser (f a)
 
+-- Instance for a constructor without any parameters:
+--
+-- > data Color
+-- >    = Red
+-- >    ...
+--
+instance
+  ( KnownSymbol ctorname
+  ) =>
+  CtorsG (C1 ('MetaCons ctorname fix 'False) U1)
+  where
+  typeCtorsG _ =
+    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
+        Unit
+      )
+    ]
+  encodeCtorsG (M1 U1) =
+    Encoding.pair
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      Encoding.null_
+  decodeCtorsG obj =
+    Aeson.explicitParseField
+      (\_ -> pure (M1 U1))
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+
+-- Instance for a constructor with a single parameter:
+--
+-- > data Property
+-- >    = Age Int
+-- >    ...
+--
+instance
+  ( KnownSymbol ctorname,
+    Wire a
+  ) =>
+  CtorsG
+    ( C1 ('MetaCons ctorname fix 'False)
+        (S1 m (Rec0 a))
+    )
+  where
+  typeCtorsG _ =
+    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
+        type_ (Proxy :: Proxy a)
+      )
+    ]
+  encodeCtorsG (M1 (M1 (K1 x))) =
+    Encoding.pair
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      (encode x)
+  decodeCtorsG obj =
+    Aeson.explicitParseField
+      decode
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      & fmap (M1 . M1 . K1)
+
+-- Instance for a constructor containing record fields:
+--
+-- > data Person
+-- >   = Person
+-- >       { name :: Text,
+-- >         age :: Int
+-- >       }
+--
 instance
   ( KnownSymbol ctorname,
     FieldsG fields
