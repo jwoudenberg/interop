@@ -21,6 +21,7 @@ module Interop
 where
 
 import Control.Applicative ((<|>))
+import qualified Control.Exception
 import qualified Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
@@ -536,6 +537,9 @@ requestType (Endpoint (f :: req -> m res)) =
 data Error
   = ReceivedUnknownCmd Text
   | FailedToParseRequest Text
+  deriving (Show)
+
+instance Control.Exception.Exception Error
 
 run :: Monad m => Service m -> ByteString -> (forall a. Error -> m a) -> m ByteString
 run (Service endpointMap) reqBytes handleErr = do
@@ -552,7 +556,10 @@ run (Service endpointMap) reqBytes handleErr = do
 
 wai :: Service IO -> Wai.Application
 wai service =
-  \req respond -> undefined
+  \req respond -> do
+    reqBytes <- Wai.strictRequestBody req
+    res <- run service reqBytes Control.Exception.throwIO
+    respond (Wai.responseLBS (toEnum 200) [] res)
 
 generateRubyClient :: FilePath -> Service m -> IO ()
 generateRubyClient = undefined
