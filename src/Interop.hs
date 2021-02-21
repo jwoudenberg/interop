@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -532,22 +533,22 @@ requestType :: Endpoint m -> WireType
 requestType (Endpoint (f :: req -> m res)) =
   type_ (Proxy :: Proxy req)
 
-data RequestError
+data Error
   = ReceivedUnknownCmd Text
   | FailedToParseRequest Text
 
-run :: Functor m => Service m -> ByteString -> Either RequestError (m ByteString)
-run (Service endpointMap) reqBytes = do
+run :: Monad m => Service m -> ByteString -> (forall a. Error -> m a) -> m ByteString
+run (Service endpointMap) reqBytes handleErr = do
   (cmd, payload) <-
-    Aeson.eitherDecode reqBytes
-      & first (FailedToParseRequest . T.pack)
+    case Aeson.eitherDecode reqBytes of
+      Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
+      Right parsed -> pure parsed
   case HM.lookup cmd endpointMap of
-    Nothing -> Left (ReceivedUnknownCmd cmd)
+    Nothing -> handleErr (ReceivedUnknownCmd cmd)
     Just (Endpoint f) -> do
-      req <-
-        Aeson.parseEither decode payload
-          & first (FailedToParseRequest . T.pack)
-      Right $ Encoding.encodingToLazyByteString . encode <$> f req
+      case Aeson.parseEither decode payload of
+        Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
+        Right req -> Encoding.encodingToLazyByteString . encode <$> f req
 
 wai :: Service IO -> Wai.Application
 wai service =
