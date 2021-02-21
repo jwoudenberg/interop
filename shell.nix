@@ -1,4 +1,6 @@
-let pkgs = import ./nixpkgs.nix;
+let
+  sources = import ./nix/sources.nix;
+  pkgs = import sources.nixpkgs { };
 
 in pkgs.haskellPackages.shellFor {
   packages = p: [ (import ./default.nix) ];
