@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -19,14 +20,16 @@ module Interop
 where
 
 import Control.Applicative ((<|>))
+import qualified Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
-import qualified Data.Foldable as Foldable
 import Data.Foldable (foldl')
+import qualified Data.Foldable as Foldable
 import Data.Function ((&))
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Int
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
@@ -36,11 +39,12 @@ import qualified Data.Word
 import GHC.Generics
 import GHC.TypeLits hiding (Text)
 import qualified GHC.TypeLits
+import qualified Network.Wai as Wai
 
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
 
-type Service m = [Endpoint m]
+newtype Service m = Service (HM.HashMap Text (Endpoint m))
 
 data WireType
   = Sum Text [(Text, WireType)]
@@ -337,7 +341,8 @@ instance
     Wire a
   ) =>
   CtorsG
-    ( C1 ('MetaCons ctorname fix 'False)
+    ( C1
+        ('MetaCons ctorname fix 'False)
         (S1 m (Rec0 a))
     )
   where
@@ -498,22 +503,55 @@ type family IsMaybe a :: Bool where
   IsMaybe (Maybe a) = True
   IsMaybe a = False
 
-respond :: Functor m => Service m -> ByteString -> Either Text (m ByteString)
-respond endpoints request =
-  endpoints
-    & fmap (respondEndpoint request)
-    & foldl' (<>) (Left "API has no endpoints for handling requests")
+data InvalidService
+  = InvalidRequestType WireType
+  | DuplicateRequestType Text
 
-respondEndpoint :: Functor m => ByteString -> Endpoint m -> Either Text (m ByteString)
-respondEndpoint req (Endpoint f) = do
-  value <- first T.pack (Aeson.eitherDecode req)
-  x <- first T.pack (Aeson.parseEither decode value)
-  pure $ Encoding.encodingToLazyByteString . encode <$> f x
+service :: [Endpoint m] -> Either InvalidService (Service m)
+service endpoints =
+  Control.Monad.foldM
+    ( \endpointMap endpoint ->
+        case name (requestType endpoint) of
+          Nothing -> Left (InvalidRequestType (requestType endpoint))
+          Just cmdName ->
+            if HM.member cmdName endpointMap
+              then Left (DuplicateRequestType cmdName)
+              else Right (HM.insert cmdName endpoint endpointMap)
+    )
+    HM.empty
+    endpoints
+    & fmap Service
 
-type Port = Int
+name :: WireType -> Maybe Text
+name wireType =
+  case wireType of
+    Sum name _ -> Just name
+    _ -> Nothing
 
-serveHttp :: Port -> Service IO -> IO ()
-serveHttp = undefined
+requestType :: Endpoint m -> WireType
+requestType (Endpoint (f :: req -> m res)) =
+  type_ (Proxy :: Proxy req)
+
+data RequestError
+  = ReceivedUnknownCmd Text
+  | FailedToParseRequest Text
+
+run :: Functor m => Service m -> ByteString -> Either RequestError (m ByteString)
+run (Service endpointMap) reqBytes = do
+  (cmd, payload) <-
+    Aeson.eitherDecode reqBytes
+      & first (FailedToParseRequest . T.pack)
+  case HM.lookup cmd endpointMap of
+    Nothing -> Left (ReceivedUnknownCmd cmd)
+    Just (Endpoint f) -> do
+      req <-
+        Aeson.parseEither decode payload
+          & first (FailedToParseRequest . T.pack)
+      Right $ Encoding.encodingToLazyByteString . encode <$> f req
+
+wai :: Service IO -> Wai.Application
+wai service =
+  \req respond -> undefined
 
 generateRubyClient :: FilePath -> Service m -> IO ()
 generateRubyClient = undefined
