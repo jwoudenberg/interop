@@ -505,6 +505,12 @@ type family IsMaybe a :: Bool where
   IsMaybe (Maybe a) = True
   IsMaybe a = False
 
+convert :: (forall a. m a -> n a) -> Service m -> Service n
+convert nt (Service endpointMap) =
+  endpointMap
+    & fmap (\(Endpoint f) -> Endpoint (nt . f))
+    & Service
+
 data InvalidService
   = InvalidRequestType WireType
   | DuplicateRequestType Text
