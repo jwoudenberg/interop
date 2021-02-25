@@ -14,11 +14,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Interop
-  ( Endpoint,
-    Service,
-  )
-where
+module Interop where
 
 import Control.Applicative ((<|>))
 import qualified Control.Exception
@@ -566,9 +562,6 @@ wai service =
     reqBytes <- Wai.strictRequestBody req
     res <- run service reqBytes Control.Exception.throwIO
     respond (Wai.responseLBS (toEnum 200) [] res)
-
-generateRubyClient :: FilePath -> Service m -> IO ()
-generateRubyClient = undefined
 
 saveSpec :: FilePath -> Service m -> IO ()
 saveSpec = undefined
