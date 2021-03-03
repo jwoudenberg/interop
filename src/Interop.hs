@@ -54,6 +54,7 @@ data WireType
   | Int
   | Float
   | Bool
+  deriving (Show)
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
@@ -510,6 +511,7 @@ convert nt (Service endpointMap) =
 data InvalidService
   = InvalidRequestType WireType
   | DuplicateRequestType Text
+  deriving (Show)
 
 service :: [Endpoint m] -> Either InvalidService (Service m)
 service endpoints =
