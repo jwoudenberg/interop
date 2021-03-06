@@ -35,7 +35,7 @@ import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Word
-import GHC.Generics
+import GHC.Generics hiding (moduleName, packageName)
 import GHC.TypeLits hiding (Text)
 import qualified GHC.TypeLits
 import qualified Network.Wai as Wai
@@ -46,7 +46,7 @@ data Endpoint m where
 newtype Service m = Service (HM.HashMap Text (Endpoint m))
 
 data WireType
-  = Constructors Text [(Text, WireType)]
+  = Constructors TypeDefinition [(Text, WireType)]
   | Record [(Text, WireType)]
   | List WireType
   | Tuple [WireType]
@@ -56,6 +56,13 @@ data WireType
   | Float
   | Bool
   deriving (Show)
+
+data TypeDefinition = TypeDefinition
+  { packageName :: Text,
+    moduleName :: Text,
+    typeName :: Text
+  }
+  deriving (Eq, Show)
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
@@ -288,13 +295,19 @@ class WireG f where
 
 instance
   ( KnownSymbol typename,
+    KnownSymbol packname,
+    KnownSymbol modname,
     CtorsG ctors
   ) =>
   WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
   where
   typeG _ =
     Constructors
-      (T.pack (symbolVal (Proxy :: Proxy typename)))
+      TypeDefinition
+        { packageName = T.pack (symbolVal (Proxy :: Proxy packname)),
+          moduleName = T.pack (symbolVal (Proxy :: Proxy modname)),
+          typeName = T.pack (symbolVal (Proxy :: Proxy typename))
+        }
       (typeCtorsG (Proxy :: Proxy ctors))
   encodeG = Aeson.pairs . encodeCtorsG . unM1
   decodeG = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
@@ -532,7 +545,7 @@ service endpoints =
 name :: WireType -> Maybe Text
 name wireType =
   case wireType of
-    Constructors name _ -> Just name
+    Constructors typeDefinition _ -> Just (typeName typeDefinition)
     _ -> Nothing
 
 requestType :: Endpoint m -> WireType
@@ -567,8 +580,7 @@ wai service =
     respond (Wai.responseLBS (toEnum 200) [] res)
 
 data TypeDiff
-  = ChangedName Text Text
-  | AddedConstructor Text WireType
+  = AddedConstructor Text WireType
   | RemovedConstructor Text WireType
   | ChangedConstructor Text TypeDiff
   | AddedField Text WireType
@@ -584,11 +596,7 @@ data Path
   | Field Text Path
 
 diffType :: Path -> WireType -> WireType -> [(Path, TypeDiff)]
-diffType path (Constructors name1 ctors1) (Constructors name2 ctors2) =
-  let ctorDifferences = undefined
-   in if name1 == name2
-        then ctorDifferences (Type name1)
-        else (Type name1, ChangedName name1 name2) : ctorDifferences (Type name1)
+diffType path (Constructors name1 ctors1) (Constructors name2 ctors2) = undefined
 
 merge ::
   Ord key =>
