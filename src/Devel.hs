@@ -23,7 +23,7 @@ endpoints =
   [ Interop.Endpoint (\(DoubleNumber x) -> pure (2 * x))
   ]
 
-data DoubleNumber = DoubleNumber Int
+data DoubleNumber = DoubleNumber {n :: Int}
   deriving (Generic)
 
 instance Interop.Wire DoubleNumber

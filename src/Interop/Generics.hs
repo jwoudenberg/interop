@@ -28,13 +28,12 @@ import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Word
-import GHC.Generics hiding (moduleName, packageName)
+import GHC.Generics hiding (Constructor, moduleName, packageName)
 import GHC.TypeLits hiding (Text)
 import qualified GHC.TypeLits
 
 data WireType
-  = Constructors TypeDefinition [(Text, WireType)]
-  | Record [(Text, WireType)]
+  = Type TypeDefinition [Constructor]
   | List WireType
   | Optional WireType
   | Unit
@@ -42,6 +41,18 @@ data WireType
   | Int
   | Float
   | Bool
+  deriving (Show)
+
+data Constructor = Constructor
+  { construtorName :: Text,
+    fields :: [Field]
+  }
+  deriving (Show)
+
+data Field = Field
+  { fieldName :: Text,
+    fieldType :: WireType
+  }
   deriving (Show)
 
 data TypeDefinition = TypeDefinition
@@ -237,7 +248,7 @@ instance
   WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
   where
   typeG _ =
-    Constructors
+    Type
       TypeDefinition
         { packageName = T.pack (symbolVal (Proxy :: Proxy packname)),
           moduleName = T.pack (symbolVal (Proxy :: Proxy modname)),
@@ -248,7 +259,7 @@ instance
   decodeG = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
 
 class CtorsG f where
-  typeCtorsG :: Proxy f -> [(Text, WireType)]
+  typeCtorsG :: Proxy f -> [Constructor]
   encodeCtorsG :: f a -> Aeson.Series
   decodeCtorsG :: Aeson.Object -> Aeson.Parser (f a)
 
@@ -264,9 +275,9 @@ instance
   CtorsG (C1 ('MetaCons ctorname fix 'False) U1)
   where
   typeCtorsG _ =
-    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        Unit
-      )
+    [ Constructor
+        (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+        []
     ]
   encodeCtorsG (M1 U1) =
     Encoding.pair
@@ -277,38 +288,6 @@ instance
       (\_ -> pure (M1 U1))
       obj
       (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-
--- Instance for a constructor with a single parameter:
---
--- > data Property
--- >    = Age Int
--- >    ...
---
-instance
-  ( KnownSymbol ctorname,
-    Wire a
-  ) =>
-  CtorsG
-    ( C1
-        ('MetaCons ctorname fix 'False)
-        (S1 m (Rec0 a))
-    )
-  where
-  typeCtorsG _ =
-    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        type_ (Proxy :: Proxy a)
-      )
-    ]
-  encodeCtorsG (M1 (M1 (K1 x))) =
-    Encoding.pair
-      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-      (encode x)
-  decodeCtorsG obj =
-    Aeson.explicitParseField
-      decode
-      obj
-      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-      & fmap (M1 . M1 . K1)
 
 -- Instance for a constructor containing record fields:
 --
@@ -325,9 +304,9 @@ instance
   CtorsG (C1 ('MetaCons ctorname fix 'True) fields)
   where
   typeCtorsG _ =
-    [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        Record (typeFieldsG (Proxy :: Proxy fields))
-      )
+    [ Constructor
+        (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+        (typeFieldsG (Proxy :: Proxy fields))
     ]
   encodeCtorsG (M1 fields) =
     encodeFieldsG fields
@@ -352,14 +331,14 @@ instance
   encodeCtorsG _ = error "unreachable"
   decodeCtorsG _ = error "unreachable"
 
--- Instance producing compiler error for contructors with multiple parameters
--- that aren't record fields.
+-- Instance producing compiler error for contructors with parameters that
+-- aren't record fields.
 --
 -- > data Coords = Coords Int Int
 --
 instance
   ( TypeError
-      ( 'GHC.TypeLits.Text "Constructors with multiple parameters need to use record syntax to have a 'Wire' instance."
+      ( 'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
           ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
           ':$$: 'GHC.TypeLits.Text "Instead of:"
           ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
@@ -367,7 +346,7 @@ instance
           ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
       )
   ) =>
-  CtorsG (C1 ('MetaCons ctorname fix 'False) (left :*: right))
+  CtorsG (C1 ('MetaCons ctorname fix 'False) params)
   where
   typeCtorsG _ = error "unreachable"
   encodeCtorsG _ = error "unreachable"
@@ -385,7 +364,7 @@ instance
   decodeCtorsG obj = fmap L1 (decodeCtorsG obj) <|> fmap R1 (decodeCtorsG obj)
 
 class FieldsG f where
-  typeFieldsG :: Proxy f -> [(Text, WireType)]
+  typeFieldsG :: Proxy f -> [Field]
   encodeFieldsG :: f a -> Aeson.Series
   decodeFieldsG :: Aeson.Object -> Aeson.Parser (f a)
 
@@ -398,9 +377,9 @@ instance
   FieldsG (S1 ('MetaSel ('Just fieldname) unpackedness strictness lazyness) (Rec0 field))
   where
   typeFieldsG _ =
-    [ ( T.pack (symbolVal (Proxy :: Proxy fieldname)),
-        type_ (Proxy :: Proxy field)
-      )
+    [ Field
+        (T.pack (symbolVal (Proxy :: Proxy fieldname)))
+        (type_ (Proxy :: Proxy field))
     ]
   encodeFieldsG = Encoding.pair (T.pack (symbolVal (Proxy :: Proxy fieldname))) . encode . unK1 . unM1
   decodeFieldsG obj =

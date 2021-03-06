@@ -105,7 +105,7 @@ service endpoints =
 name :: Generics.WireType -> Maybe Text
 name wireType =
   case wireType of
-    Generics.Constructors typeDefinition _ -> Just (Generics.typeName typeDefinition)
+    Generics.Type typeDefinition _ -> Just (Generics.typeName typeDefinition)
     _ -> Nothing
 
 requestType :: Endpoint m -> Generics.WireType
