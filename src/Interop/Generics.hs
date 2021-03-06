@@ -44,7 +44,7 @@ data WireType
   deriving (Show)
 
 data Constructor = Constructor
-  { construtorName :: Text,
+  { constructorName :: Text,
     fields :: [Field]
   }
   deriving (Show)
@@ -60,7 +60,7 @@ data TypeDefinition = TypeDefinition
     moduleName :: Text,
     typeName :: Text
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where

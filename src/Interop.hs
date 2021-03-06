@@ -21,12 +21,7 @@ module Interop
     service,
     convert,
     wai,
-
-    -- * Types
-    Type (..),
-    Record (..),
-    Field (..),
-    FieldType (..),
+    customTypes,
 
     -- * Type diffing
     TypeDiff (..),
@@ -43,33 +38,15 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Function ((&))
-import Data.List (sortOn)
+import Data.List (foldl', sortOn)
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.Exts (groupWith)
 import Interop.Generics (Wire)
 import qualified Interop.Generics as Generics
 import qualified Network.Wai as Wai
-
-newtype Type = Type {constructors :: [(Text, Record)]}
-
-newtype Record = Record {fields :: [(Text, Field)]}
-
-data Field = Field
-  { fieldName :: Text,
-    fieldOptional :: Bool,
-    fieldType :: FieldType
-  }
-
-data FieldType
-  = List FieldType
-  | Text
-  | Int
-  | Float
-  | Bool
-  | Unit
-  | Custom Text
 
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
@@ -168,7 +145,7 @@ merge ::
   result ->
   result
 merge leftOnly both rightOnly left right start =
-  undefined mergeHelp start (sortOn fst left) (sortOn fst right)
+  mergeHelp start (sortOn fst left) (sortOn fst right)
   where
     mergeHelp acc [] [] = acc
     mergeHelp acc [] ((k, r) : rs) = mergeHelp (rightOnly k r acc) [] rs
@@ -178,3 +155,108 @@ merge leftOnly both rightOnly left right start =
       | kl < kr = mergeHelp (leftOnly kl l acc) ls ((kr, r) : rs)
       | kl > kr = mergeHelp (rightOnly kr r acc) ((kl, l) : ls) rs
       | Prelude.otherwise = error "unreachable"
+
+-- | This type is like Interop.Generics.WireType, except it's not recursive.
+-- It defines a single `newtype` or `data` declaration. If one of the parameters
+-- of this type is another custom type then reference it by name using the
+-- `NestedCustomType` constructor instead of embedding it entirely.
+data CustomType = CustomType
+  { typeName :: Text,
+    constructors :: [Constructor]
+  }
+
+data Constructor = Constructor
+  { constructorName :: Text,
+    fields :: [Field]
+  }
+
+data Field = Field
+  { fieldName :: Text,
+    fieldType :: FieldType
+  }
+
+data FieldType
+  = Optional FieldType
+  | List FieldType
+  | Text
+  | Int
+  | Float
+  | Bool
+  | Unit
+  | NestedCustomType Text
+
+customTypes :: Generics.WireType -> Either Text [CustomType]
+customTypes wireType =
+  case withDuplicateNames of
+    [] -> Right (Map.elems typesByDef)
+    _ -> Left "Some types share the same name and I don't support that, <add more error detail>"
+  where
+    typesByDef = customTypesByDef wireType Map.empty
+    withDuplicateNames =
+      typesByDef
+        & Map.toList
+        & groupWith (typeName . snd)
+        & filter ((>= 2) . length)
+
+customTypesByDef ::
+  Generics.WireType ->
+  Map.Map Generics.TypeDefinition CustomType ->
+  Map.Map Generics.TypeDefinition CustomType
+customTypesByDef wireType acc =
+  case wireType of
+    Generics.List subType -> customTypesByDef subType acc
+    Generics.Optional subType -> customTypesByDef subType acc
+    Generics.Unit -> acc
+    Generics.Text -> acc
+    Generics.Int -> acc
+    Generics.Float -> acc
+    Generics.Bool -> acc
+    Generics.Type def wireConstructors ->
+      -- We bail if we've already seen this type, so recursive types don't send
+      -- us into an infinite loop.
+      if Map.member def acc
+        then acc
+        else
+          foldl'
+            ( \acc' constructor ->
+                foldl'
+                  ( \acc'' field ->
+                      customTypesByDef (Generics.fieldType field) acc''
+                  )
+                  acc'
+                  (Generics.fields constructor)
+            )
+            (Map.insert def customType acc)
+            wireConstructors
+      where
+        customType =
+          CustomType
+            { typeName = Generics.typeName def,
+              constructors = fmap fromWireConstructor wireConstructors
+            }
+
+fromWireConstructor :: Generics.Constructor -> Constructor
+fromWireConstructor constructor =
+  Constructor
+    { constructorName = Generics.constructorName constructor,
+      fields = fmap fromWireField (Generics.fields constructor)
+    }
+
+fromWireField :: Generics.Field -> Field
+fromWireField field =
+  Field
+    { fieldName = Generics.fieldName field,
+      fieldType = fromFieldType (Generics.fieldType field)
+    }
+
+fromFieldType :: Generics.WireType -> FieldType
+fromFieldType fieldType =
+  case fieldType of
+    Generics.Type nestedDef _ -> NestedCustomType (Generics.typeName nestedDef)
+    Generics.List subType -> List (fromFieldType subType)
+    Generics.Optional subType -> Optional (fromFieldType subType)
+    Generics.Unit -> Unit
+    Generics.Text -> Text
+    Generics.Int -> Int
+    Generics.Float -> Float
+    Generics.Bool -> Bool
