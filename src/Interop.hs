@@ -46,8 +46,8 @@ data Endpoint m where
 newtype Service m = Service (HM.HashMap Text (Endpoint m))
 
 data WireType
-  = Sum Text [(Text, WireType)]
-  | Product [(Text, WireType)]
+  = Constructors Text [(Text, WireType)]
+  | Record [(Text, WireType)]
   | List WireType
   | Tuple [WireType]
   | Optional WireType
@@ -293,7 +293,7 @@ instance
   WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
   where
   typeG _ =
-    Sum
+    Constructors
       (T.pack (symbolVal (Proxy :: Proxy typename)))
       (typeCtorsG (Proxy :: Proxy ctors))
   encodeG = Aeson.pairs . encodeCtorsG . unM1
@@ -378,7 +378,7 @@ instance
   where
   typeCtorsG _ =
     [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        Product (typeFieldsG (Proxy :: Proxy fields))
+        Record (typeFieldsG (Proxy :: Proxy fields))
       )
     ]
   encodeCtorsG (M1 fields) =
@@ -532,7 +532,7 @@ service endpoints =
 name :: WireType -> Maybe Text
 name wireType =
   case wireType of
-    Sum name _ -> Just name
+    Constructors name _ -> Just name
     _ -> Nothing
 
 requestType :: Endpoint m -> WireType
@@ -584,7 +584,7 @@ data Path
   | Field Text Path
 
 diffType :: Path -> WireType -> WireType -> [(Path, TypeDiff)]
-diffType path (Sum name1 ctors1) (Sum name2 ctors2) =
+diffType path (Constructors name1 ctors1) (Constructors name2 ctors2) =
   let ctorDifferences = undefined
    in if name1 == name2
         then ctorDifferences (Type name1)
