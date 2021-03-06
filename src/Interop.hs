@@ -42,7 +42,8 @@ import Data.List (sortOn)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Interop.Generics
+import Interop.Generics (Wire)
+import qualified Interop.Generics as Generics
 import qualified Network.Wai as Wai
 
 data Endpoint m where
@@ -57,7 +58,7 @@ convert nt (Service endpointMap) =
     & Service
 
 data InvalidService
-  = InvalidRequestType WireType
+  = InvalidRequestType Generics.WireType
   | DuplicateRequestType Text
   deriving (Show)
 
@@ -76,15 +77,15 @@ service endpoints =
     endpoints
     & fmap Service
 
-name :: WireType -> Maybe Text
+name :: Generics.WireType -> Maybe Text
 name wireType =
   case wireType of
-    Constructors typeDefinition _ -> Just (typeName typeDefinition)
+    Generics.Constructors typeDefinition _ -> Just (Generics.typeName typeDefinition)
     _ -> Nothing
 
-requestType :: Endpoint m -> WireType
+requestType :: Endpoint m -> Generics.WireType
 requestType (Endpoint (_ :: req -> m res)) =
-  type_ (Proxy :: Proxy req)
+  Generics.type_ (Proxy :: Proxy req)
 
 data Error
   = ReceivedUnknownCmd Text
@@ -102,9 +103,9 @@ run (Service endpointMap) reqBytes handleErr = do
   case HM.lookup cmd endpointMap of
     Nothing -> handleErr (ReceivedUnknownCmd cmd)
     Just (Endpoint f) -> do
-      case Aeson.parseEither decode payload of
+      case Aeson.parseEither Generics.decode payload of
         Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
-        Right req -> Encoding.encodingToLazyByteString . encode <$> f req
+        Right req -> Encoding.encodingToLazyByteString . Generics.encode <$> f req
 
 wai :: Service IO -> Wai.Application
 wai service' =
@@ -114,13 +115,13 @@ wai service' =
     respond (Wai.responseLBS (toEnum 200) [] res)
 
 data TypeDiff
-  = AddedConstructor Text WireType
-  | RemovedConstructor Text WireType
+  = AddedConstructor Text Generics.WireType
+  | RemovedConstructor Text Generics.WireType
   | ChangedConstructor Text TypeDiff
-  | AddedField Text WireType
-  | RemovedField Text WireType
+  | AddedField Text Generics.WireType
+  | RemovedField Text Generics.WireType
   | ChangedField Text TypeDiff
-  | ChangedType WireType WireType
+  | ChangedType Generics.WireType Generics.WireType
   | MadeOptional
   | MadeNonOptional
 
@@ -129,7 +130,7 @@ data Path
   | Constructor Text Path
   | Field Text Path
 
-diffType :: Path -> WireType -> WireType -> [(Path, TypeDiff)]
+diffType :: Path -> Generics.WireType -> Generics.WireType -> [(Path, TypeDiff)]
 diffType _ _ _ = undefined
 
 merge ::
