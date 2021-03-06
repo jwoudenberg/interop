@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 90a51e1c799353c8125f397b59160c35d47b9beab13d41b568f8bfd450a93d2f
+-- hash: d3536eae8d5c36fecc12479ab09500b43b9b55ef4881aa96ad8ec725e0e0966a
 
 name:           interop
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       Interop.Ruby
   other-modules:
       Devel
+      Interop.Generics
       Paths_interop
   hs-source-dirs:
       src
