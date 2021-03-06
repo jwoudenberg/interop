@@ -36,8 +36,8 @@ data WireType
   = Constructors TypeDefinition [(Text, WireType)]
   | Record [(Text, WireType)]
   | List WireType
-  | Tuple [WireType]
   | Optional WireType
+  | Unit
   | Text
   | Int
   | Float
@@ -219,61 +219,9 @@ instance Wire a => Wire [a] where
   decode = Aeson.withArray "[]" (traverse decode . Foldable.toList)
 
 instance Wire () where
-  type_ _ = Tuple []
+  type_ _ = Unit
   encode _ = Encoding.emptyArray_
   decode _ = pure ()
-
-instance
-  ( Wire a,
-    Wire b
-  ) =>
-  Wire (a, b)
-  where
-  type_ _ =
-    Tuple
-      [ type_ (Proxy :: Proxy a),
-        type_ (Proxy :: Proxy b)
-      ]
-  encode (a, b) =
-    Aeson.pairs $
-      Encoding.pair "1" (encode a)
-        <> Encoding.pair "2" (encode b)
-  decode =
-    Aeson.withObject
-      "(,)"
-      ( \obj ->
-          (,)
-            <$> Aeson.explicitParseField decode obj "1"
-            <*> Aeson.explicitParseField decode obj "2"
-      )
-
-instance
-  ( Wire a,
-    Wire b,
-    Wire c
-  ) =>
-  Wire (a, b, c)
-  where
-  type_ _ =
-    Tuple
-      [ type_ (Proxy :: Proxy a),
-        type_ (Proxy :: Proxy b),
-        type_ (Proxy :: Proxy c)
-      ]
-  encode (a, b, c) =
-    Aeson.pairs $
-      Encoding.pair "1" (encode a)
-        <> Encoding.pair "2" (encode b)
-        <> Encoding.pair "3" (encode c)
-  decode =
-    Aeson.withObject
-      "(,,)"
-      ( \obj ->
-          (,,)
-            <$> Aeson.explicitParseField decode obj "1"
-            <*> Aeson.explicitParseField decode obj "2"
-            <*> Aeson.explicitParseField decode obj "3"
-      )
 
 class WireG f where
   typeG :: Proxy f -> WireType
@@ -317,7 +265,7 @@ instance
   where
   typeCtorsG _ =
     [ ( T.pack (symbolVal (Proxy :: Proxy ctorname)),
-        Tuple []
+        Unit
       )
     ]
   encodeCtorsG (M1 U1) =
