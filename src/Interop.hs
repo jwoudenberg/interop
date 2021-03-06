@@ -29,6 +29,7 @@ import qualified Data.Foldable as Foldable
 import Data.Function ((&))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Int
+import Data.List (sortOn)
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
@@ -564,6 +565,49 @@ wai service =
     reqBytes <- Wai.strictRequestBody req
     res <- run service reqBytes Control.Exception.throwIO
     respond (Wai.responseLBS (toEnum 200) [] res)
+
+data TypeDiff
+  = ChangedName Text Text
+  | AddedConstructor Text WireType
+  | RemovedConstructor Text WireType
+  | ChangedConstructor Text TypeDiff
+  | AddedField Text WireType
+  | RemovedField Text WireType
+  | ChangedField Text TypeDiff
+  | ChangedType WireType WireType
+  | MadeOptional
+  | MadeNonOptional
+
+data Path
+  = Type Text
+  | Constructor Text Path
+  | Field Text Path
+
+diffType :: Path -> WireType -> WireType -> [(Path, TypeDiff)]
+diffType path (Sum name1 ctors1) (Sum name2 ctors2) =
+  let ctorDifferences = undefined
+   in if name1 == name2
+        then ctorDifferences (Type name1)
+        else (Type name1, ChangedName name1 name2) : ctorDifferences (Type name1)
+
+merge ::
+  Ord key =>
+  (key -> a -> result -> result) ->
+  (key -> a -> b -> result -> result) ->
+  (key -> b -> result -> result) ->
+  [(key, a)] ->
+  [(key, b)] ->
+  result ->
+  result
+merge leftOnly both rightOnly left right start =
+  undefined mergeHelp start (sortOn fst left) (sortOn fst right)
+  where
+    mergeHelp acc [] ((k, r) : rs) = mergeHelp (rightOnly k r acc) [] rs
+    mergeHelp acc ((k, l) : ls) [] = mergeHelp (leftOnly k l acc) ls []
+    mergeHelper acc ((kl, l) : ls) ((kr, r) : rs)
+      | kl == kr = mergeHelp (both kl l r acc) ls rs
+      | kl < kr = mergeHelp (leftOnly kl l acc) ls ((kr, r) : rs)
+      | kl > kr = mergeHelp (rightOnly kr r acc) ((kl, l) : ls) rs
 
 saveSpec :: FilePath -> Service m -> IO ()
 saveSpec = undefined
