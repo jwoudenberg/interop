@@ -9,7 +9,6 @@ import qualified Data.ByteString.Builder as Builder
 import Data.Char as Char
 import Data.Function ((&))
 import qualified Data.HashMap.Strict as HM
-import Data.List (intersperse)
 import Data.Semigroup (stimesMonoid)
 import Data.String (IsString (..))
 import Data.Text (Text)
@@ -19,10 +18,10 @@ import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
 
 generate :: FilePath -> Service m -> IO ()
-generate path service =
+generate path service' =
   System.IO.withFile path System.IO.WriteMode $
     \handle ->
-      toCode service
+      toCode service'
         & render
         & Builder.hPutBuilder handle
 
@@ -88,8 +87,10 @@ instance Chunks (Ruby -> Ruby) where
         (Ruby (\indent -> block (1 + indent)))
     )
 
+(>>) :: Ruby -> Ruby -> Ruby
 Ruby x >> Ruby y = Ruby (x <> y)
 
+pure :: Ruby
 pure = ""
 
 render :: Ruby -> Builder.Builder

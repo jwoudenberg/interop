@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d3536eae8d5c36fecc12479ab09500b43b9b55ef4881aa96ad8ec725e0e0966a
+-- hash: 946240c93e5eedaecd110238f9c091fea4a5f764f0d9d314a47715c19f698089
 
 name:           interop
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
       Paths_interop
   hs-source-dirs:
       src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns
   build-depends:
       aeson >=1.2.4.0 && <1.6
     , base >=4.10.1.0 && <5

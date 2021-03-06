@@ -25,3 +25,11 @@ library:
   - Interop
   - Interop.Ruby
   source-dirs: src
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wincomplete-uni-patterns

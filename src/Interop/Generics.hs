@@ -17,19 +17,12 @@
 module Interop.Generics where
 
 import Control.Applicative ((<|>))
-import qualified Control.Exception
-import qualified Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
-import Data.Bifunctor (first)
-import Data.ByteString.Lazy (ByteString)
-import Data.Foldable (foldl')
 import qualified Data.Foldable as Foldable
 import Data.Function ((&))
-import qualified Data.HashMap.Strict as HM
 import qualified Data.Int
-import Data.List (sortOn)
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
@@ -38,7 +31,6 @@ import qualified Data.Word
 import GHC.Generics hiding (moduleName, packageName)
 import GHC.TypeLits hiding (Text)
 import qualified GHC.TypeLits
-import qualified Network.Wai as Wai
 
 data WireType
   = Constructors TypeDefinition [(Text, WireType)]
@@ -405,7 +397,7 @@ instance
 -- > data Never
 --
 instance
-  (TypeError (GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance.")) =>
+  (TypeError ('GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance.")) =>
   CtorsG V1
   where
   typeCtorsG _ = error "unreachable"
@@ -419,12 +411,12 @@ instance
 --
 instance
   ( TypeError
-      ( GHC.TypeLits.Text "Constructors with multiple parameters need to use record syntax to have a 'Wire' instance."
-          :$$: GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
-          :$$: GHC.TypeLits.Text "Instead of:"
-          :$$: GHC.TypeLits.Text "    data Coords = Coords Int Int"
-          :$$: GHC.TypeLits.Text "Try:"
-          :$$: GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+      ( 'GHC.TypeLits.Text "Constructors with multiple parameters need to use record syntax to have a 'Wire' instance."
+          ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
+          ':$$: 'GHC.TypeLits.Text "Instead of:"
+          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
+          ':$$: 'GHC.TypeLits.Text "Try:"
+          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
       )
   ) =>
   CtorsG (C1 ('MetaCons ctorname fix 'False) (left :*: right))
@@ -508,5 +500,5 @@ instance ParseField 'False a where
   parseField _ = Aeson.explicitParseField
 
 type family IsMaybe a :: Bool where
-  IsMaybe (Maybe a) = True
-  IsMaybe a = False
+  IsMaybe (Maybe a) = 'True
+  IsMaybe a = 'False

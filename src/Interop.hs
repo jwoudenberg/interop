@@ -19,29 +19,29 @@ module Interop
     Service (..),
     Endpoint (..),
     service,
+    convert,
+    wai,
+
+    -- * Type diffing
+    TypeDiff (..),
+    Path (..),
+    diffType,
+    merge,
   )
 where
 
-import Control.Applicative ((<|>))
 import qualified Control.Exception
 import qualified Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
-import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
-import Data.Foldable (foldl')
-import qualified Data.Foldable as Foldable
 import Data.Function ((&))
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Int
 import Data.List (sortOn)
 import Data.Proxy (Proxy (Proxy))
-import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Word
-import qualified GHC.TypeLits
 import Interop.Generics
 import qualified Network.Wai as Wai
 
@@ -83,7 +83,7 @@ name wireType =
     _ -> Nothing
 
 requestType :: Endpoint m -> WireType
-requestType (Endpoint (f :: req -> m res)) =
+requestType (Endpoint (_ :: req -> m res)) =
   type_ (Proxy :: Proxy req)
 
 data Error
@@ -107,10 +107,10 @@ run (Service endpointMap) reqBytes handleErr = do
         Right req -> Encoding.encodingToLazyByteString . encode <$> f req
 
 wai :: Service IO -> Wai.Application
-wai service =
+wai service' =
   \req respond -> do
     reqBytes <- Wai.strictRequestBody req
-    res <- run service reqBytes Control.Exception.throwIO
+    res <- run service' reqBytes Control.Exception.throwIO
     respond (Wai.responseLBS (toEnum 200) [] res)
 
 data TypeDiff
@@ -130,7 +130,7 @@ data Path
   | Field Text Path
 
 diffType :: Path -> WireType -> WireType -> [(Path, TypeDiff)]
-diffType path (Constructors name1 ctors1) (Constructors name2 ctors2) = undefined
+diffType _ _ _ = undefined
 
 merge ::
   Ord key =>
@@ -144,19 +144,11 @@ merge ::
 merge leftOnly both rightOnly left right start =
   undefined mergeHelp start (sortOn fst left) (sortOn fst right)
   where
+    mergeHelp acc [] [] = acc
     mergeHelp acc [] ((k, r) : rs) = mergeHelp (rightOnly k r acc) [] rs
     mergeHelp acc ((k, l) : ls) [] = mergeHelp (leftOnly k l acc) ls []
-    mergeHelper acc ((kl, l) : ls) ((kr, r) : rs)
+    mergeHelp acc ((kl, l) : ls) ((kr, r) : rs)
       | kl == kr = mergeHelp (both kl l r acc) ls rs
       | kl < kr = mergeHelp (leftOnly kl l acc) ls ((kr, r) : rs)
       | kl > kr = mergeHelp (rightOnly kr r acc) ((kl, l) : ls) rs
-
-saveSpec :: FilePath -> Service m -> IO ()
-saveSpec = undefined
-
-loadSpec :: FilePath -> IO (Service Proxy)
-loadSpec = undefined
-
--- | Lists breaking and non-breaking changes in the API.
-changelog :: Service m -> Service n -> Text
-changelog = undefined
+      | Prelude.otherwise = error "unreachable"
