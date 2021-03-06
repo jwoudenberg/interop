@@ -8,7 +8,7 @@ module Interop.Ruby (generate) where
 import qualified Data.ByteString.Builder as Builder
 import Data.Char as Char
 import Data.Function ((&))
-import qualified Data.HashMap.Strict as HM
+import qualified Data.Map.Strict as Map
 import Data.Semigroup (stimesMonoid)
 import Data.String (IsString (..))
 import Data.Text (Text)
@@ -42,7 +42,7 @@ toCode (Service endpointMap) = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    foldr (>>) pure (fmap endpoint (HM.keys endpointMap))
+    foldr (>>) pure (fmap endpoint (Map.keys endpointMap))
   "end"
 
 endpoint :: Text -> Ruby

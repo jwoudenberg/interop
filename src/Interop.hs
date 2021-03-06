@@ -43,8 +43,8 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Function ((&))
-import qualified Data.HashMap.Strict as HM
 import Data.List (sortOn)
+import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -74,7 +74,7 @@ data FieldType
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
 
-newtype Service m = Service (HM.HashMap Text (Endpoint m))
+newtype Service m = Service (Map.Map Text (Endpoint m))
 
 convert :: (forall a. m a -> n a) -> Service m -> Service n
 convert nt (Service endpointMap) =
@@ -94,11 +94,11 @@ service endpoints =
         case name (requestType endpoint) of
           Nothing -> Left (InvalidRequestType (requestType endpoint))
           Just cmdName ->
-            if HM.member cmdName endpointMap
+            if Map.member cmdName endpointMap
               then Left (DuplicateRequestType cmdName)
-              else Right (HM.insert cmdName endpoint endpointMap)
+              else Right (Map.insert cmdName endpoint endpointMap)
     )
-    HM.empty
+    Map.empty
     endpoints
     & fmap Service
 
@@ -125,7 +125,7 @@ run (Service endpointMap) reqBytes handleErr = do
     case Aeson.eitherDecode reqBytes of
       Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
       Right parsed -> pure parsed
-  case HM.lookup cmd endpointMap of
+  case Map.lookup cmd endpointMap of
     Nothing -> handleErr (ReceivedUnknownCmd cmd)
     Just (Endpoint f) -> do
       case Aeson.parseEither Generics.decode payload of
