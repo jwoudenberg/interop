@@ -22,6 +22,12 @@ module Interop
     convert,
     wai,
 
+    -- * Types
+    Type (..),
+    Record (..),
+    Field (..),
+    FieldType (..),
+
     -- * Type diffing
     TypeDiff (..),
     Path (..),
@@ -45,6 +51,25 @@ import qualified Data.Text as T
 import Interop.Generics (Wire)
 import qualified Interop.Generics as Generics
 import qualified Network.Wai as Wai
+
+newtype Type = Type {constructors :: [(Text, Record)]}
+
+newtype Record = Record {fields :: [(Text, Field)]}
+
+data Field = Field
+  { fieldName :: Text,
+    fieldOptional :: Bool,
+    fieldType :: FieldType
+  }
+
+data FieldType
+  = List FieldType
+  | Text
+  | Int
+  | Float
+  | Bool
+  | Unit
+  | Custom Text
 
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => (req -> m res) -> Endpoint m
@@ -126,9 +151,9 @@ data TypeDiff
   | MadeNonOptional
 
 data Path
-  = Type Text
-  | Constructor Text Path
-  | Field Text Path
+  = InType Text
+  | InConstructor Text Path
+  | InField Text Path
 
 diffType :: Path -> Generics.WireType -> Generics.WireType -> [(Path, TypeDiff)]
 diffType _ _ _ = undefined
