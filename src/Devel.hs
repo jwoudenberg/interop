@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 -- | This module isn't part of the source code, but only used as a tool during
 -- development in combination with ghcid.
 --

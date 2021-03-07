@@ -33,3 +33,9 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 - -Wincomplete-uni-patterns
+default-extensions:
+- GeneralizedNewtypeDeriving
+- NamedFieldPuns
+- OverloadedStrings
+- ScopedTypeVariables
+- DeriveGeneric

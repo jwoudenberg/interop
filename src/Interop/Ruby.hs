@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
 
 -- | Generation of ruby client code for talking to Haskell backends defined
