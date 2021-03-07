@@ -14,7 +14,16 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Interop.Generics where
+-- | Module dedicated to types that can be serialized and deserialized to allow
+-- them to be sent over the wire.
+module Interop.Wire
+  ( WireType (..),
+    Constructor (..),
+    TypeDefinition (..),
+    Field (..),
+    Wire (..),
+  )
+where
 
 import Control.Applicative ((<|>))
 import qualified Data.Aeson as Aeson

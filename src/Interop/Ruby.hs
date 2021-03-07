@@ -3,6 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
 
+-- | Generation of ruby client code for talking to Haskell backends defined
+-- using this library.
 module Interop.Ruby (generate) where
 
 import qualified Data.ByteString.Builder as Builder

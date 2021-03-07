@@ -44,9 +44,9 @@ import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Interop.Generics (Wire)
-import qualified Interop.Generics as Generics
-import Interop.Types
+import Interop.Wire (Wire)
+import qualified Interop.Wire as Wire
+import Interop.Wire.Flat
 import qualified Network.Wai as Wai
 
 data Endpoint m where
@@ -61,7 +61,7 @@ convert nt (Service endpointMap) =
     & Service
 
 data InvalidService
-  = InvalidRequestType Generics.WireType
+  = InvalidRequestType Wire.WireType
   | DuplicateRequestType Text
   deriving (Show)
 
@@ -80,15 +80,15 @@ service endpoints =
     endpoints
     & fmap Service
 
-name :: Generics.WireType -> Maybe Text
+name :: Wire.WireType -> Maybe Text
 name wireType =
   case wireType of
-    Generics.Type typeDefinition _ -> Just (Generics.typeName typeDefinition)
+    Wire.Type typeDefinition _ -> Just (Wire.typeName typeDefinition)
     _ -> Nothing
 
-requestType :: Endpoint m -> Generics.WireType
+requestType :: Endpoint m -> Wire.WireType
 requestType (Endpoint (_ :: req -> m res)) =
-  Generics.type_ (Proxy :: Proxy req)
+  Wire.type_ (Proxy :: Proxy req)
 
 data Error
   = ReceivedUnknownCmd Text
@@ -106,9 +106,9 @@ run (Service endpointMap) reqBytes handleErr = do
   case Map.lookup cmd endpointMap of
     Nothing -> handleErr (ReceivedUnknownCmd cmd)
     Just (Endpoint f) -> do
-      case Aeson.parseEither Generics.decode payload of
+      case Aeson.parseEither Wire.decode payload of
         Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
-        Right req -> Encoding.encodingToLazyByteString . Generics.encode <$> f req
+        Right req -> Encoding.encodingToLazyByteString . Wire.encode <$> f req
 
 wai :: Service IO -> Wai.Application
 wai service' =

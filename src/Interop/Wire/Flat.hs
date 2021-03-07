@@ -15,7 +15,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Interop.Types
+module Interop.Wire.Flat
   ( customTypes,
     CustomType (..),
     Constructor (..),
@@ -24,14 +24,17 @@ module Interop.Types
   )
 where
 
+-- | A flat, non-recursive version of the type defined in the Wire module.
+-- This is easier to work with for code generation.
+
 import Data.Function ((&))
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import GHC.Exts (groupWith)
-import qualified Interop.Generics as Generics
+import qualified Interop.Wire as Wire
 
--- | This type is like Interop.Generics.WireType, except it's not recursive.
+-- | This type is like Interop.Wire.WireType, except it's not recursive.
 -- It defines a single `newtype` or `data` declaration. If one of the parameters
 -- of this type is another custom type then reference it by name using the
 -- `NestedCustomType` constructor instead of embedding it entirely.
@@ -60,7 +63,7 @@ data Type
   | Unit
   | NestedCustomType Text
 
-customTypes :: Generics.WireType -> Either Text [CustomType]
+customTypes :: Wire.WireType -> Either Text [CustomType]
 customTypes wireType =
   case withDuplicateNames of
     [] -> Right (Map.elems typesByDef)
@@ -74,19 +77,19 @@ customTypes wireType =
         & filter ((>= 2) . length)
 
 customTypesByDef ::
-  Generics.WireType ->
-  Map.Map Generics.TypeDefinition CustomType ->
-  Map.Map Generics.TypeDefinition CustomType
+  Wire.WireType ->
+  Map.Map Wire.TypeDefinition CustomType ->
+  Map.Map Wire.TypeDefinition CustomType
 customTypesByDef wireType acc =
   case wireType of
-    Generics.List subType -> customTypesByDef subType acc
-    Generics.Optional subType -> customTypesByDef subType acc
-    Generics.Unit -> acc
-    Generics.Text -> acc
-    Generics.Int -> acc
-    Generics.Float -> acc
-    Generics.Bool -> acc
-    Generics.Type def wireConstructors ->
+    Wire.List subType -> customTypesByDef subType acc
+    Wire.Optional subType -> customTypesByDef subType acc
+    Wire.Unit -> acc
+    Wire.Text -> acc
+    Wire.Int -> acc
+    Wire.Float -> acc
+    Wire.Bool -> acc
+    Wire.Type def wireConstructors ->
       -- We bail if we've already seen this type, so recursive types don't send
       -- us into an infinite loop.
       if Map.member def acc
@@ -96,43 +99,43 @@ customTypesByDef wireType acc =
             ( \acc' constructor ->
                 foldl'
                   ( \acc'' field ->
-                      customTypesByDef (Generics.fieldType field) acc''
+                      customTypesByDef (Wire.fieldType field) acc''
                   )
                   acc'
-                  (Generics.fields constructor)
+                  (Wire.fields constructor)
             )
             (Map.insert def (fromWireType def wireConstructors) acc)
             wireConstructors
 
-fromWireType :: Generics.TypeDefinition -> [Generics.Constructor] -> CustomType
+fromWireType :: Wire.TypeDefinition -> [Wire.Constructor] -> CustomType
 fromWireType def wireConstructors =
   CustomType
-    { typeName = Generics.typeName def,
+    { typeName = Wire.typeName def,
       constructors = fmap fromWireConstructor wireConstructors
     }
 
-fromWireConstructor :: Generics.Constructor -> Constructor
+fromWireConstructor :: Wire.Constructor -> Constructor
 fromWireConstructor constructor =
   Constructor
-    { constructorName = Generics.constructorName constructor,
-      fields = fmap fromWireField (Generics.fields constructor)
+    { constructorName = Wire.constructorName constructor,
+      fields = fmap fromWireField (Wire.fields constructor)
     }
 
-fromWireField :: Generics.Field -> Field
+fromWireField :: Wire.Field -> Field
 fromWireField field =
   Field
-    { fieldName = Generics.fieldName field,
-      fieldType = fromFieldType (Generics.fieldType field)
+    { fieldName = Wire.fieldName field,
+      fieldType = fromFieldType (Wire.fieldType field)
     }
 
-fromFieldType :: Generics.WireType -> Type
+fromFieldType :: Wire.WireType -> Type
 fromFieldType fieldType =
   case fieldType of
-    Generics.Type nestedDef _ -> NestedCustomType (Generics.typeName nestedDef)
-    Generics.List subType -> List (fromFieldType subType)
-    Generics.Optional subType -> Optional (fromFieldType subType)
-    Generics.Unit -> Unit
-    Generics.Text -> Text
-    Generics.Int -> Int
-    Generics.Float -> Float
-    Generics.Bool -> Bool
+    Wire.Type nestedDef _ -> NestedCustomType (Wire.typeName nestedDef)
+    Wire.List subType -> List (fromFieldType subType)
+    Wire.Optional subType -> Optional (fromFieldType subType)
+    Wire.Unit -> Unit
+    Wire.Text -> Text
+    Wire.Int -> Int
+    Wire.Float -> Float
+    Wire.Bool -> Bool
