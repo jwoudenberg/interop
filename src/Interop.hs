@@ -119,9 +119,9 @@ wai service' =
 
 data TypeDiff
   = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)
-  | TypeMadeOptional FieldType
-  | TypeMadeNonOptional FieldType
-  | TypeChanged FieldType FieldType
+  | TypeMadeOptional Type
+  | TypeMadeNonOptional Type
+  | TypeChanged Type Type
 
 data ConstructorDiff
   = ConstructorAdded Constructor
@@ -134,8 +134,8 @@ data FieldDiff
   | FieldChanged Field (NonEmpty TypeDiff)
 
 diffType ::
-  (Map.Map Text CustomType, FieldType) ->
-  (Map.Map Text CustomType, FieldType) ->
+  (Map.Map Text CustomType, Type) ->
+  (Map.Map Text CustomType, Type) ->
   [TypeDiff]
 diffType (beforeTypes, before) (afterTypes, after) =
   case (before, after) of
@@ -255,12 +255,12 @@ data Constructor = Constructor
 
 data Field = Field
   { fieldName :: Text,
-    fieldType :: FieldType
+    fieldType :: Type
   }
 
-data FieldType
-  = Optional FieldType
-  | List FieldType
+data Type
+  = Optional Type
+  | List Type
   | Text
   | Int
   | Float
@@ -333,7 +333,7 @@ fromWireField field =
       fieldType = fromFieldType (Generics.fieldType field)
     }
 
-fromFieldType :: Generics.WireType -> FieldType
+fromFieldType :: Generics.WireType -> Type
 fromFieldType fieldType =
   case fieldType of
     Generics.Type nestedDef _ -> NestedCustomType (Generics.typeName nestedDef)
