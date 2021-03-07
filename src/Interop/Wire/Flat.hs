@@ -1,14 +1,14 @@
+-- | A flat, non-recursive version of the type defined in the Wire module.
+-- This is easier to work with for code generation.
 module Interop.Wire.Flat
   ( customTypes,
     CustomType (..),
     Constructor (..),
     Field (..),
     Type (..),
+    typeAsText,
   )
 where
-
--- | A flat, non-recursive version of the type defined in the Wire module.
--- This is easier to work with for code generation.
 
 import Data.Function ((&))
 import Data.List (foldl')
@@ -45,6 +45,18 @@ data Type
   | Bool
   | Unit
   | NestedCustomType Text
+
+typeAsText :: Type -> Text
+typeAsText type_ =
+  case type_ of
+    Text -> "Text"
+    Int -> "Int"
+    Float -> "Float"
+    Bool -> "Bool"
+    Unit -> "Unit"
+    Optional subType -> "Optional " <> typeAsText subType
+    List subType -> "List " <> typeAsText subType
+    NestedCustomType name -> name
 
 customTypes :: Wire.WireType -> Either Text [CustomType]
 customTypes wireType =
