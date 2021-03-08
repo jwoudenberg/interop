@@ -18,10 +18,10 @@ main =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.Endpoint (\(DoubleNumber x) -> pure (2 * x))
+  [ Interop.Endpoint "double" (\(Number x) -> pure (2 * x))
   ]
 
-data DoubleNumber = DoubleNumber {n :: Int}
+data Number = Number {n :: Int}
   deriving (Generic)
 
-instance Interop.Wire DoubleNumber
+instance Interop.Wire Number
