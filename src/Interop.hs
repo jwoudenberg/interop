@@ -13,7 +13,6 @@ module Interop
 where
 
 import qualified Control.Exception
-import qualified Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
@@ -38,21 +37,12 @@ convert nt (Service endpointMap) =
     & fmap (\(Endpoint name f) -> Endpoint name (nt . f))
     & Service
 
-data InvalidService
-  = DuplicateRequestType Text
-  deriving (Show)
-
-service :: [Endpoint m] -> Either InvalidService (Service m)
+service :: [Endpoint m] -> Service m
 service endpoints =
-  Control.Monad.foldM
-    ( \endpointMap endpoint ->
-        if Map.member (name endpoint) endpointMap
-          then Left (DuplicateRequestType (name endpoint))
-          else Right (Map.insert (name endpoint) endpoint endpointMap)
-    )
-    Map.empty
-    endpoints
-    & fmap Service
+  endpoints
+    & fmap (\endpoint -> (name endpoint, endpoint))
+    & Map.fromList
+    & Service
 
 data Error
   = ReceivedUnknownCmd Text

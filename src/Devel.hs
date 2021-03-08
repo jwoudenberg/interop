@@ -11,15 +11,13 @@ import qualified Interop.Ruby
 
 main :: IO ()
 main =
-  case Interop.service endpoints of
-    Left err -> print err
-    Right service ->
-      Interop.Ruby.generate "/dev/stdout" service
+  Interop.Ruby.generate "/dev/stdout" service
 
-endpoints :: [Interop.Endpoint IO]
-endpoints =
-  [ Interop.Endpoint "double" (\(Number x) -> pure (2 * x))
-  ]
+service :: Interop.Service IO
+service =
+  Interop.service
+    [ Interop.Endpoint "double" (\(Number x) -> pure (2 * x))
+    ]
 
 data Number = Number {n :: Int}
   deriving (Generic)
