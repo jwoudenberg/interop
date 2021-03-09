@@ -348,7 +348,23 @@ instance
           ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
       )
   ) =>
-  CtorsG (C1 ('MetaCons ctorname fix 'False) params)
+  CtorsG (C1 ('MetaCons ctorname fix 'False) (left :*: right))
+  where
+  typeCtorsG _ = error "unreachable"
+  encodeCtorsG _ = error "unreachable"
+  decodeCtorsG _ = error "unreachable"
+
+instance
+  ( TypeError
+      ( 'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
+          ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
+          ':$$: 'GHC.TypeLits.Text "Instead of:"
+          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
+          ':$$: 'GHC.TypeLits.Text "Try:"
+          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+      )
+  ) =>
+  CtorsG (C1 ('MetaCons ctorname fix 'False) (S1 sub p))
   where
   typeCtorsG _ = error "unreachable"
   encodeCtorsG _ = error "unreachable"
