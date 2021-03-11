@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f93734317511bac3bfa4c19df0ca2631ee8c3c30cf526ceafb8f4e8cb800c9dd
+-- hash: 538d2dc4ccf674c734fa4caf268bbc9ee585d74f8e9fd300f0c629f2a08516b2
 
 name:           interop
 version:        0.1.0.0
@@ -61,6 +61,14 @@ test-suite tests
       Interop.Ruby
       Interop.Wire
       Interop.Wire.Flat
+      TestTypes.Base
+      TestTypes.V2.AddConstructor
+      TestTypes.V2.AddNonOptionalField
+      TestTypes.V2.AddOptionalField
+      TestTypes.V2.DropNonOptionalField
+      TestTypes.V2.DropOptionalField
+      TestTypes.V2.ModifyFieldType
+      TestTypes.V2.RemoveConstructor
       Paths_interop
   hs-source-dirs:
       src
