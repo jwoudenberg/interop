@@ -36,6 +36,7 @@ import qualified GHC.TypeLits
 
 data WireType
   = Type TypeDefinition [Constructor]
+  | Record [Field]
   | List WireType
   | Optional WireType
   | Unit
@@ -355,20 +356,19 @@ instance
   decodeCtorsG _ = error "unreachable"
 
 instance
-  ( TypeError
-      ( 'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
-          ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
-          ':$$: 'GHC.TypeLits.Text "Instead of:"
-          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
-          ':$$: 'GHC.TypeLits.Text "Try:"
-          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
-      )
+  ( Generic sub,
+    FieldsG (Rep sub),
+    KnownSymbol ctorname
   ) =>
-  CtorsG (C1 ('MetaCons ctorname fix 'False) (S1 sub p))
+  CtorsG (C1 ('MetaCons ctorname fix 'False) (S1 metasel (Rec0 sub)))
   where
-  typeCtorsG _ = error "unreachable"
-  encodeCtorsG _ = error "unreachable"
-  decodeCtorsG _ = error "unreachable"
+  typeCtorsG _ =
+    [ Constructor
+        (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+        (typeFieldsG (Proxy :: Proxy (Rep sub)))
+    ]
+  encodeCtorsG = encodeFieldsG . from . unK1 . unM1 . unM1
+  decodeCtorsG = fmap (M1 . M1 . K1 . to) . decodeFieldsG
 
 instance
   ( CtorsG left,
@@ -385,6 +385,14 @@ class FieldsG f where
   typeFieldsG :: Proxy f -> [Field]
   encodeFieldsG :: f a -> Aeson.Series
   decodeFieldsG :: Aeson.Object -> Aeson.Parser (f a)
+
+instance
+  (FieldsG fields) =>
+  FieldsG (D1 metadata (C1 metacons fields))
+  where
+  typeFieldsG _ = typeFieldsG (Proxy :: Proxy fields)
+  encodeFieldsG = encodeFieldsG . unM1 . unM1
+  decodeFieldsG = fmap (M1 . M1) . decodeFieldsG
 
 instance
   ( KnownSymbol fieldname,
