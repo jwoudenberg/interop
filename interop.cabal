@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0992bfa17e779323a7d540299b3e1134cb84934ff1911567e2b307c8a1414986
+-- hash: f93734317511bac3bfa4c19df0ca2631ee8c3c30cf526ceafb8f4e8cb800c9dd
 
 name:           interop
 version:        0.1.0.0
@@ -69,9 +69,11 @@ test-suite tests
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns -threaded -rtsopts "-with-rtsopts=-N -T"
   build-depends:
       aeson >=1.2.4.0 && <1.6
+    , aeson-pretty >=0.8.0 && <0.9
     , base >=4.10.1.0 && <5
     , bytestring >=0.10.8.2 && <0.12
     , containers >=0.6.0.1 && <0.7
+    , directory >=1.3.3.0 && <1.4
     , hedgehog >=1.0 && <1.1
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3

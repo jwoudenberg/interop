@@ -1,10 +1,14 @@
 module Main where
 
 import Control.Monad ((<=<))
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Encode.Pretty
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as ByteString
+import Data.Function ((&))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Hedgehog hiding (test)
@@ -12,11 +16,13 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Main
 import qualified Hedgehog.Range as Range
 import qualified Interop.Wire as Wire
+import qualified System.Directory as Directory
 
 main :: IO ()
 main =
   Hedgehog.Main.defaultMain
-    [ checkParallel encodeDecodeRoundtripTests
+    [ checkParallel encodeDecodeRoundtripTests,
+      checkParallel encodingTests
     ]
 
 encodeDecodeRoundtripTests :: Group
@@ -42,6 +48,33 @@ encodeDecodeRoundtripTests =
       test "EnumType" $ do
         record <- forAll genEnumType
         tripping record encode decode
+    ]
+
+encodingTests :: Group
+encodingTests =
+  Group
+    "encoding tests"
+    [ test "Int" $
+        encodePretty (4 :: Int)
+          & equalToFile "test/golden-results/encoded-int.json",
+      test "Float" $
+        encodePretty (4.1 :: Float)
+          & equalToFile "test/golden-results/encoded-float.json",
+      test "Text" $
+        encodePretty ("Hi!" :: Text)
+          & equalToFile "test/golden-results/encoded-text.json",
+      test "Unit" $
+        encodePretty ()
+          & equalToFile "test/golden-results/encoded-unit.json",
+      test "List" $
+        encodePretty [1, 2, 3 :: Int]
+          & equalToFile "test/golden-results/encoded-list.json",
+      test "Record" $
+        encodePretty (Record 2 "Hi!")
+          & equalToFile "test/golden-results/encoded-record.json",
+      test "EnumType" $
+        encodePretty OneConstructor
+          & equalToFile "test/golden-results/encoded-enum-type.json"
     ]
 
 data Record = Record
@@ -76,3 +109,19 @@ decode = Aeson.parseEither Wire.decode <=< Aeson.eitherDecode
 
 test :: PropertyName -> PropertyT IO () -> (PropertyName, Property)
 test description prop = (description, property prop)
+
+encodePretty :: Wire.Wire a => a -> ByteString
+encodePretty val =
+  let compactEncoded = encode val
+   in case Aeson.decode compactEncoded of
+        Nothing -> compactEncoded
+        Just (decoded :: Aeson.Value) -> Data.Aeson.Encode.Pretty.encodePretty decoded
+
+equalToFile :: FilePath -> ByteString -> PropertyT IO ()
+equalToFile path actual = do
+  fileExists <- liftIO (Directory.doesFileExist path)
+  if fileExists
+    then do
+      expected <- liftIO (ByteString.readFile path)
+      expected === actual
+    else liftIO (ByteString.writeFile path actual)
