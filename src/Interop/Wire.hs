@@ -284,7 +284,7 @@ instance
   encodeCtorsG (M1 U1) =
     Encoding.pair
       (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-      Encoding.null_
+      Encoding.emptyObject_
   decodeCtorsG obj =
     Aeson.explicitParseField
       (\_ -> pure (M1 U1))
