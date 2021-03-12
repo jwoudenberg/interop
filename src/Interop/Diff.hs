@@ -4,6 +4,7 @@
 -- compatible or not.
 module Interop.Diff
   ( diffType,
+    warningToText,
     checkBackwardsCompatibility,
   )
 where
@@ -35,7 +36,8 @@ data FieldDiff
 data TypeChangeWarning = TypeChangeWarning
   { path :: Path,
     severity :: Severity,
-    warning :: Warning
+    context :: Context,
+    warning :: Text
   }
 
 data Path
@@ -46,9 +48,25 @@ data Path
 
 data Severity = Warning | Error
 
-data Warning
-  = TypeInRequest Text
-  | TypeInResponse Text
+data Context = InRequest | InResponse
+
+warningToText :: TypeChangeWarning -> Text
+warningToText typeChangeWarning =
+  pathToText (path typeChangeWarning)
+    <> "\n"
+    <> severityToText (severity typeChangeWarning)
+    <> ": "
+    <> warning typeChangeWarning
+
+severityToText :: Severity -> Text
+severityToText Warning = "Warning"
+severityToText Error = "Error"
+
+pathToText :: Path -> Text
+pathToText (InType typeName rest) = "In type: " <> typeName <> ", " <> pathToText rest
+pathToText (InConstructor constructorName rest) = "In constructor: " <> constructorName <> ", " <> pathToText rest
+pathToText (InField fieldName rest) = "In field: " <> fieldName <> ", " <> pathToText rest
+pathToText Root = ""
 
 checkBackwardsCompatibility :: [TypeDiff] -> [TypeChangeWarning]
 checkBackwardsCompatibility = typeWarnings Root
@@ -60,26 +78,30 @@ typeWarnings path =
       [ TypeChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Warning,
-            warning = TypeInResponse "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
+            context = InResponse,
+            warning = "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
           }
       ]
     TypeMadeNonOptional type_ ->
       [ TypeChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Warning,
-            warning = TypeInRequest "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
+            context = InRequest,
+            warning = "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
           }
       ]
     TypeChanged type_ _ ->
       [ TypeChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Error,
-            warning = TypeInRequest "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+            context = InRequest,
+            warning = "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           },
         TypeChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Error,
-            warning = TypeInResponse "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+            context = InResponse,
+            warning = "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           }
       ]
     CustomTypeChanged type_ constructorDiffs ->
@@ -92,14 +114,16 @@ constructorWarnings path =
       [ TypeChangeWarning
           { path = InConstructor (constructorName constructor) path,
             severity = Warning,
-            warning = TypeInResponse "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
+            context = InResponse,
+            warning = "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
           }
       ]
     ConstructorRemoved constructor ->
       [ TypeChangeWarning
           { path = InConstructor (constructorName constructor) path,
             severity = Warning,
-            warning = TypeInRequest "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
+            context = InRequest,
+            warning = "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
           }
       ]
     ConstructorChanged constructor fieldDiffs ->
@@ -118,7 +142,8 @@ fieldWarnings path =
           [ TypeChangeWarning
               { path = InField (fieldName field) path,
                 severity = Error,
-                warning = TypeInRequest "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
+                context = InRequest,
+                warning = "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
               }
           ]
     FieldRemoved field ->
@@ -129,7 +154,8 @@ fieldWarnings path =
           [ TypeChangeWarning
               { path = InField (fieldName field) path,
                 severity = Error,
-                warning = TypeInResponse "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
+                context = InResponse,
+                warning = "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
               }
           ]
     FieldChanged field typeDiffs ->
