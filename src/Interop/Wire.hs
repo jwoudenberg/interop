@@ -373,8 +373,17 @@ instance
         (T.pack (symbolVal (Proxy :: Proxy ctorname)))
         (typeFieldsG (Proxy :: Proxy (Rep sub)))
     ]
-  encodeCtorsG = encodeFieldsG . from . unK1 . unM1 . unM1
-  decodeCtorsG = fmap (M1 . M1 . K1 . to) . decodeFieldsG
+  encodeCtorsG (M1 (M1 (K1 x))) =
+    from x
+      & encodeFieldsG
+      & Aeson.pairs
+      & Encoding.pair (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+  decodeCtorsG obj =
+    Aeson.explicitParseField
+      (Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG)
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      & fmap (M1 . M1 . K1 . to)
 
 instance
   ( CtorsG left,

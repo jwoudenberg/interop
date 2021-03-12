@@ -1,4 +1,6 @@
 {
-    "oneField": 2,
-    "otherField": "Hi!"
+    "NestedType": {
+        "oneField": 2,
+        "otherField": "Hi!"
+    }
 }
