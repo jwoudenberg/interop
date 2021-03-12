@@ -47,6 +47,12 @@ encodeDecodeRoundtripTests =
         tripping record encode decode,
       test "EnumType" $ do
         record <- forAll genEnumType
+        tripping record encode decode,
+      test "NestedType" $ do
+        record <- forAll genNestedType
+        tripping record encode decode,
+      test "RecursiveType" $ do
+        record <- forAll genRecursiveType
         tripping record encode decode
     ]
 
@@ -74,7 +80,13 @@ encodingTests =
           & equalToFile "test/golden-results/encoded-record.json",
       test "EnumType" $
         encodePretty OneConstructor
-          & equalToFile "test/golden-results/encoded-enum-type.json"
+          & equalToFile "test/golden-results/encoded-enum-type.json",
+      test "NestedType" $
+        encodePretty (NestedType (Record 2 "Hi!"))
+          & equalToFile "test/golden-results/encoded-nested-type.json",
+      test "RecursiveType" $
+        encodePretty (RecursiveType (Just (RecursiveType Nothing)))
+          & equalToFile "test/golden-results/encoded-recursive-type.json"
     ]
 
 data Record = Record
@@ -100,6 +112,29 @@ instance Wire.Wire EnumType
 
 genEnumType :: Gen EnumType
 genEnumType = Gen.element [OneConstructor, OtherConstructor]
+
+data NestedType = NestedType Record
+  deriving (Eq, Generic, Show)
+
+instance Wire.Wire NestedType
+
+genNestedType :: Gen NestedType
+genNestedType = NestedType <$> genRecord
+
+data RecursiveType = RecursiveType
+  { recursiveField :: Maybe RecursiveType
+  }
+  deriving (Eq, Generic, Show)
+
+instance Wire.Wire RecursiveType
+
+genRecursiveType :: Gen RecursiveType
+genRecursiveType =
+  Gen.recursive
+    Gen.choice
+    [pure Nothing]
+    [Just <$> genRecursiveType]
+    & fmap RecursiveType
 
 encode :: Wire.Wire a => a -> ByteString
 encode = Encoding.encodingToLazyByteString . Wire.encode
