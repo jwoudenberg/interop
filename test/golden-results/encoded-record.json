@@ -1,6 +1,4 @@
 {
-    "Record": {
-        "oneField": 2,
-        "otherField": "Hi!"
-    }
+    "oneField": 2,
+    "otherField": "Hi!"
 }

@@ -1,9 +1,5 @@
 {
-    "RecursiveType": {
-        "recursiveField": {
-            "RecursiveType": {
-                "recursiveField": null
-            }
-        }
+    "recursiveField": {
+        "recursiveField": null
     }
 }

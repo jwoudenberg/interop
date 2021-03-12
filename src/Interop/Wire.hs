@@ -70,12 +70,12 @@ class Wire a where
   type_ :: Proxy a -> WireType
   encode :: a -> Aeson.Encoding
   decode :: Aeson.Value -> Aeson.Parser a
-  default type_ :: WireG (Rep a) => Proxy a -> WireType
-  type_ (_ :: Proxy a) = typeG (Proxy :: Proxy (Rep a))
-  default encode :: (Generic a, WireG (Rep a)) => a -> Aeson.Encoding
-  encode = encodeG . from
-  default decode :: (Generic a, WireG (Rep a)) => Aeson.Value -> Aeson.Parser a
-  decode = fmap to . decodeG
+  default type_ :: WireG (KindOfType (Rep a)) (Rep a) => Proxy a -> WireType
+  type_ (_ :: Proxy a) = typeG (Proxy :: Proxy (KindOfType (Rep a))) (Proxy :: Proxy (Rep a))
+  default encode :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => a -> Aeson.Encoding
+  encode = encodeG (Proxy :: Proxy (KindOfType (Rep a))) . from
+  default decode :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => Aeson.Value -> Aeson.Parser a
+  decode = fmap to . decodeG (Proxy :: Proxy (KindOfType (Rep a)))
 
 instance Wire Int where
   type_ _ = Int
@@ -237,10 +237,28 @@ instance Wire () where
   encode _ = Encoding.emptyArray_
   decode _ = pure ()
 
-class WireG f where
-  typeG :: Proxy f -> WireType
-  encodeG :: f a -> Aeson.Encoding
-  decodeG :: Aeson.Value -> Aeson.Parser (f a)
+class WireG kindOfType f where
+  typeG :: Proxy kindOfType -> Proxy f -> WireType
+  encodeG :: Proxy kindOfType -> f a -> Aeson.Encoding
+  decodeG :: Proxy kindOfType -> Aeson.Value -> Aeson.Parser (f a)
+
+-- | Depending on the kind of type we're dealing with (record, multiple
+-- constructors, ...) we want a different set of Generics instances deriving the
+-- Wire instances. This would result in OverlappingInstance compilation errors.
+--
+-- To avoid these we disambiguate our instances by adding an additional type
+-- class parameter 'kindOfType' that will be different for each kind of type we
+-- define a Wire instance for.
+--
+-- This type family returns the kindOfType belonging to a particular generics
+-- representation.
+type family KindOfType t where
+  KindOfType (D1 m (C1 ('MetaCons n f 'True) a)) = RecordType
+  KindOfType t = CustomType
+
+data RecordType
+
+data CustomType
 
 instance
   ( KnownSymbol typename,
@@ -248,9 +266,9 @@ instance
     KnownSymbol modname,
     CtorsG ctors
   ) =>
-  WireG (D1 ('MetaData typename modname packname isnewtype) ctors)
+  WireG CustomType (D1 ('MetaData typename modname packname isnewtype) ctors)
   where
-  typeG _ =
+  typeG _ _ =
     Type
       TypeDefinition
         { packageName = T.pack (symbolVal (Proxy :: Proxy packname)),
@@ -258,8 +276,8 @@ instance
           typeName = T.pack (symbolVal (Proxy :: Proxy typename))
         }
       (typeCtorsG (Proxy :: Proxy ctors))
-  encodeG = Aeson.pairs . encodeCtorsG . unM1
-  decodeG = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
+  encodeG _ = Aeson.pairs . encodeCtorsG . unM1
+  decodeG _ = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
 
 class CtorsG f where
   typeCtorsG :: Proxy f -> [Constructor]
@@ -304,23 +322,11 @@ instance
   ( KnownSymbol ctorname,
     FieldsG fields
   ) =>
-  CtorsG (C1 ('MetaCons ctorname fix 'True) fields)
+  WireG RecordType (D1 metadata (C1 ('MetaCons ctorname fix 'True) fields))
   where
-  typeCtorsG _ =
-    [ Constructor
-        (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-        (typeFieldsG (Proxy :: Proxy fields))
-    ]
-  encodeCtorsG (M1 fields) =
-    encodeFieldsG fields
-      & Encoding.pairs
-      & Encoding.pair (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-  decodeCtorsG obj =
-    Aeson.explicitParseField
-      (Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG)
-      obj
-      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-      & fmap M1
+  typeG _ _ = Record (typeFieldsG (Proxy :: Proxy fields))
+  encodeG _ = Encoding.pairs . encodeFieldsG . unM1 . unM1
+  decodeG _ = fmap (M1 . M1) . Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG
 
 -- Instance producing compiler error for types without any constructors.
 --
