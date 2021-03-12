@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Main where
 
 import Control.Monad ((<=<))
@@ -9,20 +11,35 @@ import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as ByteString
 import Data.Function ((&))
+import qualified Data.Map.Strict as Map
+import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding
 import GHC.Generics (Generic)
 import Hedgehog hiding (test)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Main
 import qualified Hedgehog.Range as Range
+import qualified Interop.Diff
 import qualified Interop.Wire as Wire
+import qualified Interop.Wire.Flat as Flat
 import qualified System.Directory as Directory
+import qualified TestTypes.Base
+import qualified TestTypes.V2.AddConstructor
+import qualified TestTypes.V2.AddNonOptionalField
+import qualified TestTypes.V2.AddOptionalField
+import qualified TestTypes.V2.DropNonOptionalField
+import qualified TestTypes.V2.DropOptionalField
+import qualified TestTypes.V2.ModifyFieldType
+import qualified TestTypes.V2.RemoveConstructor
 
 main :: IO ()
 main =
   Hedgehog.Main.defaultMain
     [ checkParallel encodeDecodeRoundtripTests,
-      checkParallel encodingTests
+      checkParallel encodingTests,
+      checkParallel diffTests
     ]
 
 encodeDecodeRoundtripTests :: Group
@@ -88,6 +105,82 @@ encodingTests =
         encodePretty (RecursiveType (Just (RecursiveType Nothing)))
           & equalToFile "test/golden-results/encoded-recursive-type.json"
     ]
+
+diffTests :: Group
+diffTests =
+  Group
+    "diff tests"
+    [ test "add constructor" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)
+        equalToFile "test/golden-results/warnings-add-constructor.txt" warnings,
+      test "add non optional field" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)
+        equalToFile "test/golden-results/warnings-add-non-optional-field.txt" warnings,
+      test "add optional field" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)
+        equalToFile "test/golden-results/warnings-add-optional-field.txt" warnings,
+      test "drop non optional field" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)
+        equalToFile "test/golden-results/warnings-drop-non-optional-field.txt" warnings,
+      test "drop optional field" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)
+        equalToFile "test/golden-results/warnings-drop-optional-field.txt" warnings,
+      test "modify field type" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)
+        equalToFile "test/golden-results/warnings-modify-field-type.txt" warnings,
+      test "remove constructor" $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy TestTypes.Base.TestType)
+            (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType)
+        equalToFile "test/golden-results/warnings-remove-constructor.txt" warnings
+    ]
+
+typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO ByteString
+typeChangeWarnings before after = do
+  flatBefore <- diffableType (Wire.type_ before)
+  flatAfter <- diffableType (Wire.type_ after)
+  Interop.Diff.diffType
+    flatBefore
+    flatAfter
+    & Interop.Diff.checkBackwardsCompatibility
+    & fmap Interop.Diff.warningToText
+    & ( \case
+          [] -> "No warnings."
+          warnings -> Text.intercalate "\n\n" warnings
+      )
+    & Data.Text.Encoding.encodeUtf8
+    & ByteString.fromStrict
+    & pure
+
+diffableType :: Wire.WireType -> PropertyT IO (Map.Map Text Flat.CustomType, Flat.Type)
+diffableType wireType = do
+  customTypes <- evalEither $ Flat.customTypes wireType
+  pure
+    ( fmap
+        (\customType -> (Flat.typeName customType, customType))
+        customTypes
+        & Map.fromList,
+      Flat.fromFieldType wireType
+    )
 
 data Record = Record
   { oneField :: Int,

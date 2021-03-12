@@ -2,6 +2,7 @@
 -- This is easier to work with for code generation.
 module Interop.Wire.Flat
   ( customTypes,
+    fromFieldType,
     CustomType (..),
     Constructor (..),
     Field (..),
