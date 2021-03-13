@@ -10,4 +10,6 @@ example = 4.1
 gen :: Hedgehog.Gen Float
 gen = Gen.float (Range.exponentialFloat 0 1000)
 
+-- JSON encoding of example value:
+--
 -- 4.1

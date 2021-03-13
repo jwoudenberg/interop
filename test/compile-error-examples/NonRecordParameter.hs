@@ -10,6 +10,8 @@ data Type = Constructor Int
 
 instance Wire.Wire Type
 
+-- Compilation error:
+--
 -- ../test/compile-error-examples/NonRecordParameter.hs:11:10: error:
 --     • No instance for (Generic Int)
 --         arising from a use of ‘Interop.Wire.$dmtype_’

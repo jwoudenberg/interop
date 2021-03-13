@@ -10,6 +10,8 @@ example = [1, 2, 3]
 gen :: Hedgehog.Gen [Int]
 gen = Gen.list (Range.linear 0 100) (Gen.int Range.exponentialBounded)
 
+-- JSON encoding of example value:
+--
 -- [
 --     1,
 --     2,

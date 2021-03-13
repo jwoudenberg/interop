@@ -31,6 +31,8 @@ gen = do
   text <- Gen.text (Range.linear 0 100) Gen.unicode
   pure $ NestedType (Record int text)
 
+-- JSON encoding of example value:
+--
 -- {
 --     "NestedType": {
 --         "oneField": 2,

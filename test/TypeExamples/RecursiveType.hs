@@ -25,6 +25,8 @@ gen =
       [pure Nothing]
       [Just <$> gen]
 
+-- JSON encoding of example value:
+--
 -- {
 --     "recursiveField": {
 --         "recursiveField": null

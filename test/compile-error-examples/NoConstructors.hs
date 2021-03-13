@@ -10,6 +10,8 @@ data Type
 
 instance Wire.Wire Type
 
+-- Compilation error:
+--
 -- ../test/compile-error-examples/NoConstructors.hs:11:10: error:
 --     • Type must have at least one constructor to have a 'Wire' instance.
 --     • In the expression: Interop.Wire.$dmtype_ @(Type)

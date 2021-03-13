@@ -19,4 +19,6 @@ data Record = Record
 
 instance Wire.Wire Record
 
+-- Warnings for this change from Base type:
+--
 -- No warnings.

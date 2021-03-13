@@ -10,4 +10,6 @@ example = 4
 gen :: Hedgehog.Gen Int
 gen = Gen.int Range.exponentialBounded
 
+-- JSON encoding of example value:
+--
 -- 4

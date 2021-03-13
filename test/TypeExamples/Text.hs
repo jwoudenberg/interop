@@ -13,4 +13,6 @@ example = "Hi!"
 gen :: Hedgehog.Gen Text
 gen = Gen.text (Range.linear 0 100) Gen.unicode
 
+-- JSON encoding of example value:
+--
 -- "Hi!"

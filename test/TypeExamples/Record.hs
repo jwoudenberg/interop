@@ -26,6 +26,8 @@ gen =
     <$> Gen.int Range.exponentialBounded
     <*> Gen.text (Range.linear 0 100) Gen.unicode
 
+-- JSON encoding of example value:
+--
 -- {
 --     "oneField": 2,
 --     "otherField": "Hi!"

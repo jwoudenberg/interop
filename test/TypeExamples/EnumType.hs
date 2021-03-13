@@ -20,6 +20,8 @@ example = OneConstructor
 gen :: Hedgehog.Gen EnumType
 gen = Gen.element [OneConstructor, OtherConstructor]
 
+-- JSON encoding of example value:
+--
 -- {
 --     "OneConstructor": {}
 -- }

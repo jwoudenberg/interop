@@ -66,7 +66,7 @@ encodingTest (ExampleType path example _) =
     encodePretty example
       & ByteString.toStrict
       & Data.Text.Encoding.decodeUtf8
-      & equalToCommentsInFile path
+      & equalToCommentsInFile "JSON encoding of example value:" path
 
 diffTest :: ChangeExampleType -> (PropertyName, Property)
 diffTest (ChangeExampleType path changedType) =
@@ -75,7 +75,7 @@ diffTest (ChangeExampleType path changedType) =
       typeChangeWarnings
         (Proxy :: Proxy TypeChangeExamples.Base.TestType)
         changedType
-    equalToCommentsInFile path warnings
+    equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
 compileErrorTest :: FilePath -> (PropertyName, Property)
 compileErrorTest examplePath =
@@ -91,7 +91,7 @@ compileErrorTest examplePath =
     case exitCode of
       System.Exit.ExitSuccess -> fail "Expected process to fail withc compiler error, but it didn't"
       System.Exit.ExitFailure _ -> pure ()
-    equalToCommentsInFile examplePath (Text.pack actualError)
+    equalToCommentsInFile "Compilation error:" examplePath (Text.pack actualError)
 
 data ExampleType where
   ExampleType ::
@@ -197,13 +197,14 @@ encodePretty val =
         Nothing -> compactEncoded
         Just (decoded :: Aeson.Value) -> Data.Aeson.Encode.Pretty.encodePretty decoded
 
-equalToCommentsInFile :: FilePath -> Text -> PropertyT IO ()
-equalToCommentsInFile path actualUncommented = do
+equalToCommentsInFile :: Text -> FilePath -> Text -> PropertyT IO ()
+equalToCommentsInFile header path actualUncommented = do
   contents <- evalIO $ Data.Text.IO.readFile path
   let actual =
         actualUncommented
           & Text.strip
           & Text.lines
+          & (\lines' -> header : "" : lines')
           & fmap (\line -> Text.strip ("-- " <> line))
           & Text.unlines
   let (_code, expected) = Text.breakOn "-- " contents
