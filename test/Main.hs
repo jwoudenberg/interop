@@ -77,31 +77,31 @@ encodingTests :: Group
 encodingTests =
   Group
     "encoding tests"
-    [ test "Int" $
+    [ test1 "Int" $
         encodePretty (4 :: Int)
           & equalToFile "test/golden-results/encoded-int.json",
-      test "Float" $
+      test1 "Float" $
         encodePretty (4.1 :: Float)
           & equalToFile "test/golden-results/encoded-float.json",
-      test "Text" $
+      test1 "Text" $
         encodePretty ("Hi!" :: Text)
           & equalToFile "test/golden-results/encoded-text.json",
-      test "Unit" $
+      test1 "Unit" $
         encodePretty ()
           & equalToFile "test/golden-results/encoded-unit.json",
-      test "List" $
+      test1 "List" $
         encodePretty [1, 2, 3 :: Int]
           & equalToFile "test/golden-results/encoded-list.json",
-      test "Record" $
+      test1 "Record" $
         encodePretty (Record 2 "Hi!")
           & equalToFile "test/golden-results/encoded-record.json",
-      test "EnumType" $
+      test1 "EnumType" $
         encodePretty OneConstructor
           & equalToFile "test/golden-results/encoded-enum-type.json",
-      test "NestedType" $
+      test1 "NestedType" $
         encodePretty (NestedType (Record 2 "Hi!"))
           & equalToFile "test/golden-results/encoded-nested-type.json",
-      test "RecursiveType" $
+      test1 "RecursiveType" $
         encodePretty (RecursiveType (Just (RecursiveType Nothing)))
           & equalToFile "test/golden-results/encoded-recursive-type.json"
     ]
@@ -110,43 +110,43 @@ diffTests :: Group
 diffTests =
   Group
     "diff tests"
-    [ test "add constructor" $ do
+    [ test1 "add constructor" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)
         equalToFile "test/golden-results/warnings-add-constructor.txt" warnings,
-      test "add non optional field" $ do
+      test1 "add non optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)
         equalToFile "test/golden-results/warnings-add-non-optional-field.txt" warnings,
-      test "add optional field" $ do
+      test1 "add optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)
         equalToFile "test/golden-results/warnings-add-optional-field.txt" warnings,
-      test "drop non optional field" $ do
+      test1 "drop non optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)
         equalToFile "test/golden-results/warnings-drop-non-optional-field.txt" warnings,
-      test "drop optional field" $ do
+      test1 "drop optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)
         equalToFile "test/golden-results/warnings-drop-optional-field.txt" warnings,
-      test "modify field type" $ do
+      test1 "modify field type" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)
         equalToFile "test/golden-results/warnings-modify-field-type.txt" warnings,
-      test "remove constructor" $ do
+      test1 "remove constructor" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
@@ -237,6 +237,9 @@ decode = Aeson.parseEither Wire.decode <=< Aeson.eitherDecode
 
 test :: PropertyName -> PropertyT IO () -> (PropertyName, Property)
 test description prop = (description, property prop)
+
+test1 :: PropertyName -> PropertyT IO () -> (PropertyName, Property)
+test1 description prop = (description, withTests 1 (property prop))
 
 encodePretty :: Wire.Wire a => a -> ByteString
 encodePretty val =
