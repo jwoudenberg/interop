@@ -16,3 +16,5 @@ data Record = Record
   deriving (Generic)
 
 instance Wire.Wire Record
+
+-- No warnings.

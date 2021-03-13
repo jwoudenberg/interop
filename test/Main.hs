@@ -15,7 +15,6 @@ import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding
 import qualified Data.Text.IO
 import GHC.Generics (Generic)
 import Hedgehog hiding (test)
@@ -120,43 +119,43 @@ diffTests =
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)
-        equalToFile "test/golden-results/warnings-add-constructor.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/AddConstructor.hs" warnings,
       test1 "add non optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)
-        equalToFile "test/golden-results/warnings-add-non-optional-field.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/AddNonOptionalField.hs" warnings,
       test1 "add optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)
-        equalToFile "test/golden-results/warnings-add-optional-field.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/AddOptionalField.hs" warnings,
       test1 "drop non optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)
-        equalToFile "test/golden-results/warnings-drop-non-optional-field.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/DropNonOptionalField.hs" warnings,
       test1 "drop optional field" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)
-        equalToFile "test/golden-results/warnings-drop-optional-field.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/DropOptionalField.hs" warnings,
       test1 "modify field type" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)
-        equalToFile "test/golden-results/warnings-modify-field-type.txt" warnings,
+        equalToCommentsInFile "test/TestTypes/V2/ModifyFieldType.hs" warnings,
       test1 "remove constructor" $ do
         warnings <-
           typeChangeWarnings
             (Proxy :: Proxy TestTypes.Base.TestType)
             (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType)
-        equalToFile "test/golden-results/warnings-remove-constructor.txt" warnings
+        equalToCommentsInFile "test/TestTypes/V2/RemoveConstructor.hs" warnings
     ]
 
 compileErrorTest :: FilePath -> (PropertyName, Property)
@@ -180,7 +179,7 @@ getCompileErrorExamples =
   let dir = "test/compile-error-examples/"
    in fmap (dir <>) <$> Directory.listDirectory dir
 
-typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO ByteString
+typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO Text
 typeChangeWarnings before after = do
   flatBefore <- diffableType (Wire.type_ before)
   flatAfter <- diffableType (Wire.type_ after)
@@ -193,8 +192,6 @@ typeChangeWarnings before after = do
           [] -> "No warnings."
           warnings -> Text.intercalate "\n\n" warnings
       )
-    & Data.Text.Encoding.encodeUtf8
-    & ByteString.fromStrict
     & pure
 
 diffableType :: Wire.WireType -> PropertyT IO (Map.Map Text Flat.CustomType, Flat.Type)

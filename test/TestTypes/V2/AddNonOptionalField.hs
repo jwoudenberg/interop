@@ -18,3 +18,6 @@ data Record = Record
   deriving (Generic)
 
 instance Wire.Wire Record
+
+-- In field: newField, In constructor: OneConstructor, In type: TestType,
+-- Error: A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.
