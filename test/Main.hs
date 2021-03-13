@@ -3,7 +3,6 @@
 module Main where
 
 import Control.Monad ((<=<))
-import Control.Monad.IO.Class (liftIO)
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty
 import qualified Data.Aeson.Encoding as Encoding
@@ -13,9 +12,11 @@ import qualified Data.ByteString.Lazy as ByteString
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
+import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding
+import qualified Data.Text.IO
 import GHC.Generics (Generic)
 import Hedgehog hiding (test)
 import qualified Hedgehog.Gen as Gen
@@ -25,6 +26,8 @@ import qualified Interop.Diff
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified System.Directory as Directory
+import qualified System.Exit
+import qualified System.Process as Process
 import qualified TestTypes.Base
 import qualified TestTypes.V2.AddConstructor
 import qualified TestTypes.V2.AddNonOptionalField
@@ -35,11 +38,13 @@ import qualified TestTypes.V2.ModifyFieldType
 import qualified TestTypes.V2.RemoveConstructor
 
 main :: IO ()
-main =
+main = do
+  compileErrorExamples <- getCompileErrorExamples
   Hedgehog.Main.defaultMain
     [ checkParallel encodeDecodeRoundtripTests,
       checkParallel encodingTests,
-      checkParallel diffTests
+      checkParallel diffTests,
+      checkParallel (Group "comile error" (compileErrorTest <$> compileErrorExamples))
     ]
 
 encodeDecodeRoundtripTests :: Group
@@ -76,7 +81,7 @@ encodeDecodeRoundtripTests =
 encodingTests :: Group
 encodingTests =
   Group
-    "encoding tests"
+    "encoding"
     [ test1 "Int" $
         encodePretty (4 :: Int)
           & equalToFile "test/golden-results/encoded-int.json",
@@ -109,7 +114,7 @@ encodingTests =
 diffTests :: Group
 diffTests =
   Group
-    "diff tests"
+    "diff"
     [ test1 "add constructor" $ do
         warnings <-
           typeChangeWarnings
@@ -153,6 +158,43 @@ diffTests =
             (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType)
         equalToFile "test/golden-results/warnings-remove-constructor.txt" warnings
     ]
+
+compileErrorTest :: FilePath -> (PropertyName, Property)
+compileErrorTest examplePath =
+  test1 (fromString examplePath) $ do
+    let proc =
+          ( Process.proc
+              "runghc"
+              ["../" <> examplePath]
+          )
+            { Process.cwd = Just "src"
+            }
+    (exitCode, _, actualError) <- evalIO $ Process.readCreateProcessWithExitCode proc ""
+    case exitCode of
+      System.Exit.ExitSuccess -> fail "Expected process to fail withc compiler error, but it didn't"
+      System.Exit.ExitFailure _ -> pure ()
+    exampleContents <- evalIO $ Data.Text.IO.readFile examplePath
+    let actualCommentedError =
+          Text.pack actualError
+            & Text.strip
+            & Text.lines
+            & fmap (\line -> Text.strip ("-- " <> line))
+            & Text.unlines
+    let (_code, expectedCommentedError) = Text.breakOn "-- " exampleContents
+    if Text.null expectedCommentedError
+      then evalIO $ Data.Text.IO.appendFile examplePath actualCommentedError
+      else ShowUnquoted (Text.strip actualCommentedError) === ShowUnquoted (Text.strip expectedCommentedError)
+
+newtype ShowUnquoted = ShowUnquoted Text
+  deriving (Eq)
+
+instance Show ShowUnquoted where
+  show (ShowUnquoted text) = Text.unpack text
+
+getCompileErrorExamples :: IO [FilePath]
+getCompileErrorExamples =
+  let dir = "test/compile-error-examples/"
+   in fmap (dir <>) <$> Directory.listDirectory dir
 
 typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO ByteString
 typeChangeWarnings before after = do
@@ -250,9 +292,9 @@ encodePretty val =
 
 equalToFile :: FilePath -> ByteString -> PropertyT IO ()
 equalToFile path actual = do
-  fileExists <- liftIO (Directory.doesFileExist path)
+  fileExists <- evalIO (Directory.doesFileExist path)
   if fileExists
     then do
-      expected <- liftIO (ByteString.readFile path)
+      expected <- evalIO (ByteString.readFile path)
       expected === actual
-    else liftIO (ByteString.writeFile path actual)
+    else evalIO (ByteString.writeFile path actual)

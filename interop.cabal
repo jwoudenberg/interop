@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 538d2dc4ccf674c734fa4caf268bbc9ee585d74f8e9fd300f0c629f2a08516b2
+-- hash: 988216b8db87beb0142ae4e6007ff5269543183da14ed369a64669bec6ec829e
 
 name:           interop
 version:        0.1.0.0
@@ -83,6 +83,7 @@ test-suite tests
     , containers >=0.6.0.1 && <0.7
     , directory >=1.3.3.0 && <1.4
     , hedgehog >=1.0 && <1.1
+    , process >=1.6.0.0 && <1.7
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
     , wai >=3.2.0 && <3.3
