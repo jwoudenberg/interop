@@ -1,4 +1,4 @@
-module TestTypes.V2.AddConstructor where
+module TypeChangeExamples.V2.AddConstructor where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire

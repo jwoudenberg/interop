@@ -61,14 +61,14 @@ test-suite tests
       Interop.Ruby
       Interop.Wire
       Interop.Wire.Flat
-      TestTypes.Base
-      TestTypes.V2.AddConstructor
-      TestTypes.V2.AddNonOptionalField
-      TestTypes.V2.AddOptionalField
-      TestTypes.V2.DropNonOptionalField
-      TestTypes.V2.DropOptionalField
-      TestTypes.V2.ModifyFieldType
-      TestTypes.V2.RemoveConstructor
+      TypeChangeExamples.Base
+      TypeChangeExamples.V2.AddConstructor
+      TypeChangeExamples.V2.AddNonOptionalField
+      TypeChangeExamples.V2.AddOptionalField
+      TypeChangeExamples.V2.DropNonOptionalField
+      TypeChangeExamples.V2.DropOptionalField
+      TypeChangeExamples.V2.ModifyFieldType
+      TypeChangeExamples.V2.RemoveConstructor
       Paths_interop
   hs-source-dirs:
       src

@@ -1,4 +1,4 @@
-module TestTypes.V2.AddOptionalField where
+module TypeChangeExamples.V2.DropOptionalField where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
@@ -11,9 +11,7 @@ data TestType
 instance Wire.Wire TestType
 
 data Record = Record
-  { field :: Int,
-    optionalField :: Maybe Int,
-    newOptionalField :: Maybe Int
+  { field :: Int
   }
   deriving (Generic)
 

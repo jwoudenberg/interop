@@ -28,14 +28,14 @@ import qualified Interop.Wire.Flat as Flat
 import qualified System.Directory as Directory
 import qualified System.Exit
 import qualified System.Process as Process
-import qualified TestTypes.Base
-import qualified TestTypes.V2.AddConstructor
-import qualified TestTypes.V2.AddNonOptionalField
-import qualified TestTypes.V2.AddOptionalField
-import qualified TestTypes.V2.DropNonOptionalField
-import qualified TestTypes.V2.DropOptionalField
-import qualified TestTypes.V2.ModifyFieldType
-import qualified TestTypes.V2.RemoveConstructor
+import qualified TypeChangeExamples.Base
+import qualified TypeChangeExamples.V2.AddConstructor
+import qualified TypeChangeExamples.V2.AddNonOptionalField
+import qualified TypeChangeExamples.V2.AddOptionalField
+import qualified TypeChangeExamples.V2.DropNonOptionalField
+import qualified TypeChangeExamples.V2.DropOptionalField
+import qualified TypeChangeExamples.V2.ModifyFieldType
+import qualified TypeChangeExamples.V2.RemoveConstructor
 
 main :: IO ()
 main = do
@@ -119,17 +119,17 @@ diffTests =
           test1 (fromString path) $ do
             warnings <-
               typeChangeWarnings
-                (WireType (Proxy :: Proxy TestTypes.Base.TestType))
+                (WireType (Proxy :: Proxy TypeChangeExamples.Base.TestType))
                 changedType
             equalToCommentsInFile path warnings
       )
-      [ ("test/TestTypes/V2/AddConstructor.hs", WireType (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)),
-        ("test/TestTypes/V2/AddNonOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)),
-        ("test/TestTypes/V2/AddOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)),
-        ("test/TestTypes/V2/DropNonOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)),
-        ("test/TestTypes/V2/DropOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)),
-        ("test/TestTypes/V2/ModifyFieldType.hs", WireType (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)),
-        ("test/TestTypes/V2/RemoveConstructor.hs", WireType (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType))
+      [ ("test/TypeChangeExamples/V2/AddConstructor.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.AddConstructor.TestType)),
+        ("test/TypeChangeExamples/V2/AddNonOptionalField.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.AddNonOptionalField.TestType)),
+        ("test/TypeChangeExamples/V2/AddOptionalField.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.AddOptionalField.TestType)),
+        ("test/TypeChangeExamples/V2/DropNonOptionalField.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.DropNonOptionalField.TestType)),
+        ("test/TypeChangeExamples/V2/DropOptionalField.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.DropOptionalField.TestType)),
+        ("test/TypeChangeExamples/V2/ModifyFieldType.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.ModifyFieldType.TestType)),
+        ("test/TypeChangeExamples/V2/RemoveConstructor.hs", WireType (Proxy :: Proxy TypeChangeExamples.V2.RemoveConstructor.TestType))
       ]
 
 compileErrorTest :: FilePath -> (PropertyName, Property)

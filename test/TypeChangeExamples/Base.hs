@@ -1,4 +1,4 @@
-module TestTypes.Base where
+module TypeChangeExamples.Base where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
