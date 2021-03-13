@@ -173,23 +173,7 @@ compileErrorTest examplePath =
     case exitCode of
       System.Exit.ExitSuccess -> fail "Expected process to fail withc compiler error, but it didn't"
       System.Exit.ExitFailure _ -> pure ()
-    exampleContents <- evalIO $ Data.Text.IO.readFile examplePath
-    let actualCommentedError =
-          Text.pack actualError
-            & Text.strip
-            & Text.lines
-            & fmap (\line -> Text.strip ("-- " <> line))
-            & Text.unlines
-    let (_code, expectedCommentedError) = Text.breakOn "-- " exampleContents
-    if Text.null expectedCommentedError
-      then evalIO $ Data.Text.IO.appendFile examplePath actualCommentedError
-      else ShowUnquoted (Text.strip actualCommentedError) === ShowUnquoted (Text.strip expectedCommentedError)
-
-newtype ShowUnquoted = ShowUnquoted Text
-  deriving (Eq)
-
-instance Show ShowUnquoted where
-  show (ShowUnquoted text) = Text.unpack text
+    equalToCommentsInFile examplePath (Text.pack actualError)
 
 getCompileErrorExamples :: IO [FilePath]
 getCompileErrorExamples =
@@ -298,3 +282,23 @@ equalToFile path actual = do
       expected <- evalIO (ByteString.readFile path)
       expected === actual
     else evalIO (ByteString.writeFile path actual)
+
+equalToCommentsInFile :: FilePath -> Text -> PropertyT IO ()
+equalToCommentsInFile path actualUncommented = do
+  contents <- evalIO $ Data.Text.IO.readFile path
+  let actual =
+        actualUncommented
+          & Text.strip
+          & Text.lines
+          & fmap (\line -> Text.strip ("-- " <> line))
+          & Text.unlines
+  let (_code, expected) = Text.breakOn "-- " contents
+  if Text.null expected
+    then evalIO $ Data.Text.IO.appendFile path ("\n" <> actual)
+    else ShowUnquoted (Text.strip actual) === ShowUnquoted (Text.strip expected)
+
+newtype ShowUnquoted = ShowUnquoted Text
+  deriving (Eq)
+
+instance Show ShowUnquoted where
+  show (ShowUnquoted text) = Text.unpack text
