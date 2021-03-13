@@ -54,7 +54,8 @@ main = do
     [ checkParallel (Group "encode-decode roundtrip" (encodeDecodeRoundtripTest <$> exampleTypes)),
       checkParallel (Group "encoding" (encodingTest <$> exampleTypes)),
       checkParallel (Group "diff" (diffTest <$> changeExampleTypes)),
-      checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples))
+      checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
+      checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests)
     ]
 
 encodeDecodeRoundtripTest :: ExampleType -> (PropertyName, Property)
@@ -79,6 +80,30 @@ diffTest (ChangeExampleType path changedType) =
         (Proxy :: Proxy TypeChangeExamples.Base.TestType)
         changedType
     equalToCommentsInFile "Warnings for this change from Base type:" path warnings
+
+backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
+backwardsCompatibleDecodingTests =
+  [ test "Server with new constructor can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.AddConstructor.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server with new optional field can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.AddOptionalField.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server which dropped a non-optional field can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.DropNonOptionalField.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server which dropped an optional field can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.DropOptionalField.TestType) <- evalEither (decode encoded)
+      pure ()
+  ]
 
 -- | We'd like to test our custom compilation errors for Wire instances, and
 -- this puts us in a tricky spot. We can't well put examples of Wire instances
