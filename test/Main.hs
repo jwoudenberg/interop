@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Main where
@@ -112,51 +113,24 @@ encodingTests =
 
 diffTests :: Group
 diffTests =
-  Group
-    "diff"
-    [ test1 "add constructor" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/AddConstructor.hs" warnings,
-      test1 "add non optional field" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/AddNonOptionalField.hs" warnings,
-      test1 "add optional field" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/AddOptionalField.hs" warnings,
-      test1 "drop non optional field" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/DropNonOptionalField.hs" warnings,
-      test1 "drop optional field" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/DropOptionalField.hs" warnings,
-      test1 "modify field type" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/ModifyFieldType.hs" warnings,
-      test1 "remove constructor" $ do
-        warnings <-
-          typeChangeWarnings
-            (Proxy :: Proxy TestTypes.Base.TestType)
-            (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType)
-        equalToCommentsInFile "test/TestTypes/V2/RemoveConstructor.hs" warnings
-    ]
+  Group "diff" $
+    fmap
+      ( \(path, changedType) ->
+          test1 (fromString path) $ do
+            warnings <-
+              typeChangeWarnings
+                (WireType (Proxy :: Proxy TestTypes.Base.TestType))
+                changedType
+            equalToCommentsInFile path warnings
+      )
+      [ ("test/TestTypes/V2/AddConstructor.hs", WireType (Proxy :: Proxy TestTypes.V2.AddConstructor.TestType)),
+        ("test/TestTypes/V2/AddNonOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.AddNonOptionalField.TestType)),
+        ("test/TestTypes/V2/AddOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.AddOptionalField.TestType)),
+        ("test/TestTypes/V2/DropNonOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.DropNonOptionalField.TestType)),
+        ("test/TestTypes/V2/DropOptionalField.hs", WireType (Proxy :: Proxy TestTypes.V2.DropOptionalField.TestType)),
+        ("test/TestTypes/V2/ModifyFieldType.hs", WireType (Proxy :: Proxy TestTypes.V2.ModifyFieldType.TestType)),
+        ("test/TestTypes/V2/RemoveConstructor.hs", WireType (Proxy :: Proxy TestTypes.V2.RemoveConstructor.TestType))
+      ]
 
 compileErrorTest :: FilePath -> (PropertyName, Property)
 compileErrorTest examplePath =
@@ -179,8 +153,11 @@ getCompileErrorExamples =
   let dir = "test/compile-error-examples/"
    in fmap (dir <>) <$> Directory.listDirectory dir
 
-typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO Text
-typeChangeWarnings before after = do
+data WireType where
+  WireType :: Wire.Wire a => Proxy a -> WireType
+
+typeChangeWarnings :: WireType -> WireType -> PropertyT IO Text
+typeChangeWarnings (WireType before) (WireType after) = do
   flatBefore <- diffableType (Wire.type_ before)
   flatAfter <- diffableType (Wire.type_ after)
   Interop.Diff.diffType
