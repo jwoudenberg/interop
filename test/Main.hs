@@ -4,6 +4,7 @@
 module Main where
 
 import Control.Monad ((<=<))
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty
 import qualified Data.Aeson.Encoding as Encoding
@@ -11,6 +12,7 @@ import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as ByteString
 import Data.Function ((&))
+import qualified Data.IORef as IORef
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
@@ -18,14 +20,15 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
+import qualified GHC
+import qualified GHC.Paths
 import Hedgehog hiding (test)
 import qualified Hedgehog.Main
 import qualified Interop.Diff
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
+import qualified Outputable
 import qualified System.Directory as Directory
-import qualified System.Exit
-import qualified System.Process as Process
 import qualified TypeChangeExamples.Base
 import qualified TypeChangeExamples.V2.AddConstructor
 import qualified TypeChangeExamples.V2.AddNonOptionalField
@@ -77,21 +80,42 @@ diffTest (ChangeExampleType path changedType) =
         changedType
     equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
+-- | We'd like to test our custom compilation errors for Wire instances, and
+-- this puts us in a tricky spot. We can't well put examples of Wire instances
+-- for unsupported types in our regular source tree, or our test suite won't
+-- compile!
+--
+-- Instead we put bad examples in the compile-error-examples directory, which
+-- we don't list as a source directory so Cabal won't attempt to compile it.
+-- Then we call GHC as a library to compile those module's and intercept the
+-- compilation errors this results in.
 compileErrorTest :: FilePath -> (PropertyName, Property)
 compileErrorTest examplePath =
   test1 (fromString examplePath) $ do
-    let proc =
-          ( Process.proc
-              "runghc"
-              ["../" <> examplePath]
-          )
-            { Process.cwd = Just "src"
-            }
-    (exitCode, _, actualError) <- evalIO $ Process.readCreateProcessWithExitCode proc ""
-    case exitCode of
-      System.Exit.ExitSuccess -> fail "Expected process to fail withc compiler error, but it didn't"
-      System.Exit.ExitFailure _ -> pure ()
-    equalToCommentsInFile "Compilation error:" examplePath (Text.pack actualError)
+    errs <-
+      evalIO $
+        GHC.runGhc (Just GHC.Paths.libdir) $ do
+          logRef <- liftIO $ IORef.newIORef []
+          dflags <- GHC.getSessionDynFlags
+          let modifiedDflags =
+                dflags
+                  { -- Make GHC aware of the library source code.
+                    GHC.importPaths = "src/" : GHC.importPaths dflags,
+                    -- Prevent GHC from logging to stdout. Use our own logic.
+                    GHC.log_action = \dflags' _ severity _ _ msg ->
+                      case severity of
+                        GHC.SevFatal -> fail $ Outputable.showSDoc dflags' msg
+                        GHC.SevError -> IORef.modifyIORef' logRef (Outputable.showSDoc dflags' msg :)
+                        _ -> return ()
+                  }
+          _ <- GHC.setSessionDynFlags modifiedDflags
+          target <- GHC.guessTarget examplePath Nothing
+          GHC.setTargets [target]
+          _ <- GHC.load GHC.LoadAllTargets
+          liftIO $ IORef.readIORef logRef
+    fmap Text.pack errs
+      & Text.intercalate "\n\n"
+      & equalToCommentsInFile "Compilation error:" examplePath
 
 data ExampleType where
   ExampleType ::
@@ -197,6 +221,12 @@ encodePretty val =
         Nothing -> compactEncoded
         Just (decoded :: Aeson.Value) -> Data.Aeson.Encode.Pretty.encodePretty decoded
 
+-- | Checks the passed in Text value is equal to the contents of a Haskell-type
+-- comment section in the provided file. If the file does not contain a comment
+-- section it is added.
+--
+-- This allows tests where input and output live next to each other in example
+-- files, and have those files serve as verified documentation.
 equalToCommentsInFile :: Text -> FilePath -> Text -> PropertyT IO ()
 equalToCommentsInFile header path actualUncommented = do
   contents <- evalIO $ Data.Text.IO.readFile path
@@ -212,6 +242,8 @@ equalToCommentsInFile header path actualUncommented = do
     then evalIO $ Data.Text.IO.appendFile path ("\n" <> actual)
     else ShowUnquoted (Text.strip actual) === ShowUnquoted (Text.strip expected)
 
+-- | Has a `Show` instance that prints contained text without any escape
+-- characters.
 newtype ShowUnquoted = ShowUnquoted Text
   deriving (Eq)
 

@@ -12,35 +12,17 @@ instance Wire.Wire Type
 
 -- Compilation error:
 --
--- ../test/compile-error-examples/NonRecordParameter.hs:11:10: error:
---     • No instance for (Generic Int)
---         arising from a use of ‘Interop.Wire.$dmtype_’
---     • In the expression: Interop.Wire.$dmtype_ @(Type)
---       In an equation for ‘Wire.type_’:
---           Wire.type_ = Interop.Wire.$dmtype_ @(Type)
---       In the instance declaration for ‘Wire.Wire Type’
---    |
--- 11 | instance Wire.Wire Type
---    |          ^^^^^^^^^^^^^^
+-- • No instance for (Generic Int) arising from a use of ‘$dmdecode’
+-- • In the expression: $dmdecode @(Type)
+--   In an equation for ‘decode’: decode = $dmdecode @(Type)
+--   In the instance declaration for ‘Wire Type’
 --
--- ../test/compile-error-examples/NonRecordParameter.hs:11:10: error:
---     • No instance for (Generic Int)
---         arising from a use of ‘Interop.Wire.$dmencode’
---     • In the expression: Interop.Wire.$dmencode @(Type)
---       In an equation for ‘Wire.encode’:
---           Wire.encode = Interop.Wire.$dmencode @(Type)
---       In the instance declaration for ‘Wire.Wire Type’
---    |
--- 11 | instance Wire.Wire Type
---    |          ^^^^^^^^^^^^^^
+-- • No instance for (Generic Int) arising from a use of ‘$dmencode’
+-- • In the expression: $dmencode @(Type)
+--   In an equation for ‘encode’: encode = $dmencode @(Type)
+--   In the instance declaration for ‘Wire Type’
 --
--- ../test/compile-error-examples/NonRecordParameter.hs:11:10: error:
---     • No instance for (Generic Int)
---         arising from a use of ‘Interop.Wire.$dmdecode’
---     • In the expression: Interop.Wire.$dmdecode @(Type)
---       In an equation for ‘Wire.decode’:
---           Wire.decode = Interop.Wire.$dmdecode @(Type)
---       In the instance declaration for ‘Wire.Wire Type’
---    |
--- 11 | instance Wire.Wire Type
---    |          ^^^^^^^^^^^^^^
+-- • No instance for (Generic Int) arising from a use of ‘$dmtype_’
+-- • In the expression: $dmtype_ @(Type)
+--   In an equation for ‘type_’: type_ = $dmtype_ @(Type)
+--   In the instance declaration for ‘Wire Type’

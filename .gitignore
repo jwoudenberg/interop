@@ -3,3 +3,5 @@ dist-newstyle
 result
 *.tar.gz
 dist
+*.hi
+*.o
