@@ -576,12 +576,12 @@ type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
 
 type MustUseRecordNotationError typename constructorname =
-  'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
-    ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
-    ':$$: 'GHC.TypeLits.Text "Instead of:"
-    ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
-    ':$$: 'GHC.TypeLits.Text "Try:"
-    ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+  "Constructors with parameters need to use record syntax to have a 'Wire' instance."
+    % "This will allow you to add and change fields in backwards-compatible ways in the future."
+    % "Instead of:"
+    % "    data " <> typename <> " = " <> constructorname <> " Int Int"
+    % "Try:"
+    % "    data " <> typename <> " = " <> constructorname <> " { x :: Int, y :: Int }"
 
 type ParameterMustBeRecordError =
   'GHC.TypeLits.Text "Constructor parameter must be a record."
@@ -598,3 +598,23 @@ type NoGenericInstanceError =
 data RecordType
 
 data CustomType
+
+-- | Some helpers for constructing nice type errors. API inspired by the
+-- pretty-type-errors package, which seemed so easy to replicate that I prefered
+-- doing that over taking a dependency.
+--
+-- https://hackage.haskell.org/package/type-errors-pretty
+type family (a :: k) <> (b :: l) :: GHC.TypeLits.ErrorMessage where
+  a <> b = ToErrorMessage a ':<>: ToErrorMessage b
+
+type family (a :: k) % (b :: l) :: GHC.TypeLits.ErrorMessage where
+  a % b = ToErrorMessage a ':$$: ToErrorMessage b
+
+infixl 5 %
+
+infixl 6 <>
+
+type family ToErrorMessage (a :: k) :: GHC.TypeLits.ErrorMessage where
+  ToErrorMessage (s :: Symbol) = 'GHC.TypeLits.Text s
+  ToErrorMessage (e :: GHC.TypeLits.ErrorMessage) = e
+  ToErrorMessage t = 'GHC.TypeLits.ShowType t
