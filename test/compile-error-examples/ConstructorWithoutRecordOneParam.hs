@@ -12,7 +12,20 @@ instance Wire.Wire ConstructorWithoutRecordOneParam
 
 -- Compilation error:
 --
--- • Constructor parameter must be a record.
+-- • I can't create a Wire instance for this type:
+--
+--     data ConstructorWithoutRecordOneParam = Constructor Int
+--
+--   I'd like field names for all types used in constructors,
+--   so you can make backwards-compatible changes to your types.
+--   Try using record syntax:
+--
+--     data ConstructorWithoutRecordOneParam = Constructor
+--       { x :: Int
+--       }
+--
+--   But come up with some better field names than x or y!
+--
 -- • In the expression: $dmrec @(ConstructorWithoutRecordOneParam)
 --   In an equation for ‘rec’:
 --       rec = $dmrec @(ConstructorWithoutRecordOneParam)

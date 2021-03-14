@@ -530,15 +530,16 @@ type family KindOfConstructor (typename :: Symbol) t where
           constructorname
           (ParamTypes (a :*: b) '[])
       )
-  KindOfConstructor typename (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) =
+  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (S1 m (Rec0 a))) =
     Seq
-      (EnsureRecord (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
+      (EnsureRecord typename constructorname a (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
       CustomType
   KindOfConstructor typename (a :+: b) = Seq (KindOfConstructor typename a) (Seq (KindOfConstructor typename b) CustomType)
 
-type family EnsureRecord t where
-  EnsureRecord RecordType = ()
-  EnsureRecord t = TypeError ParameterMustBeRecordError
+type family EnsureRecord typename constructorname param t where
+  EnsureRecord typename constructorname param RecordType = ()
+  EnsureRecord typename constructorname param t =
+    TypeError (MustUseRecordNotationError typename constructorname '[param])
 
 type family FieldsHaveWireTypes (t :: Type -> Type) :: Type where
   FieldsHaveWireTypes (a :*: b) = Seq (FieldsHaveWireTypes a) (FieldsHaveWireTypes b)
@@ -599,7 +600,7 @@ type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol)
             % Indent (PrintParamsAsFields params)
         )
     % ""
-    % "But come up with some better field names than x and y!"
+    % "But come up with some better field names than x or y!"
     % ""
 
 type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
@@ -611,9 +612,6 @@ type family PrintParamsAsFields (params :: [Type]) :: GHC.TypeLits.ErrorMessage 
   PrintParamsAsFields '[a] = "{ x :: " <> ToErrorMessage a % "}"
   PrintParamsAsFields '[a, b] = "{ x :: " <> a % ", y :: " <> b % "}"
   PrintParamsAsFields (a ': b ': rest) = "{ x :: " <> a % ", y :: " <> b % ", ..." % "}"
-
-type ParameterMustBeRecordError =
-  'GHC.TypeLits.Text "Constructor parameter must be a record."
 
 type FieldMustBeWireTypeError =
   'GHC.TypeLits.Text "All the field types of a record with a Wire instance must themselves have a Wire instance."

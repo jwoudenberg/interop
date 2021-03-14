@@ -25,7 +25,7 @@ instance Wire.Wire ConstructorWithoutRecordTwoParams
 --       , y :: ()
 --       }
 --
---   But come up with some better field names than x and y!
+--   But come up with some better field names than x or y!
 --
 -- • In the expression: $dmrec @(ConstructorWithoutRecordTwoParams)
 --   In an equation for ‘rec’:
