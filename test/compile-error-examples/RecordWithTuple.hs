@@ -14,7 +14,7 @@ instance Wire.Wire RecordWithTuple
 
 -- Compilation error:
 --
--- • No instance for (Wire (Int, ())) arising from a use of ‘$dmrec’
+-- • All the field types of a record with a Wire instance must themselves have a Wire instance.
 -- • In the expression: $dmrec @(RecordWithTuple)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithTuple)
 --   In the instance declaration for ‘Wire RecordWithTuple’

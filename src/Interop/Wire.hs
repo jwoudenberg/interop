@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -30,6 +31,7 @@ import qualified Data.Aeson.Types as Aeson
 import qualified Data.Foldable as Foldable
 import Data.Function ((&))
 import qualified Data.Int
+import Data.Kind (Constraint, Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
@@ -73,14 +75,19 @@ data TypeDefinition = TypeDefinition
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
   type HasKindOfType a
-  type HasKindOfType a = KindOfType (Rep a)
+  type HasKindOfType a = KindOfType (WhenStuckF (TypeError NoGenericInstanceError) (Rep a))
   rec :: Proxy a -> WireRec a
-  default rec :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => Proxy a -> WireRec a
+  default rec ::
+    ( Generic a,
+      WireG (HasKindOfType a) (Rep a)
+    ) =>
+    Proxy a ->
+    WireRec a
   rec _ =
     WireRec
-      { typeRec = typeG (Proxy :: Proxy (KindOfType (Rep a))) (Proxy :: Proxy (Rep a)),
-        encodeRec = encodeG (Proxy :: Proxy (KindOfType (Rep a))) . from,
-        decodeRec = fmap to . decodeG (Proxy :: Proxy (KindOfType (Rep a)))
+      { typeRec = typeG (Proxy :: Proxy (HasKindOfType a)) (Proxy :: Proxy (Rep a)),
+        encodeRec = encodeG (Proxy :: Proxy (HasKindOfType a)) . from,
+        decodeRec = fmap to . decodeG (Proxy :: Proxy (HasKindOfType a))
       }
 
 data WireRec a = WireRec
@@ -272,6 +279,7 @@ instance Wire Double where
       }
 
 instance Wire Text where
+  type HasKindOfType Text = CustomType
   rec _ =
     WireRec
       { typeRec = Text,
@@ -510,24 +518,57 @@ type family IsMaybe a :: Bool where
 -- representation.
 type family KindOfType t where
   KindOfType (D1 m a) = KindOfType a
-  KindOfType (C1 ('MetaCons n f 'True) a) = RecordType
   KindOfType (C1 ('MetaCons n f b) U1) = RecordType
+  KindOfType (C1 ('MetaCons n f 'True) a) = Seq (FieldsHaveWireTypes a) RecordType
   KindOfType V1 = TypeError AtLeastOneConstructorError
   KindOfType (C1 ('MetaCons n f 'False) (a :*: b)) = TypeError MustUseRecordNotationError
-  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) = Seq (EnsureRecord (HasKindOfType a)) CustomType
+  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) =
+    Seq
+      (EnsureRecord (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
+      CustomType
   KindOfType (a :+: b) = Seq (KindOfType a) (Seq (KindOfType b) CustomType)
 
 type family EnsureRecord t where
   EnsureRecord RecordType = ()
   EnsureRecord t = TypeError ParameterMustBeRecordError
 
--- | Force evaluation of the first parameter, then return the second.
--- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
-type family Seq a b where
-  Seq DoNotUse b = DoNotUse
-  Seq a b = b
+type family FieldsHaveWireTypes (t :: Type -> Type) :: Type where
+  FieldsHaveWireTypes (a :*: b) = Seq (FieldsHaveWireTypes a) (FieldsHaveWireTypes b)
+  FieldsHaveWireTypes (S1 m (Rec0 a)) = Seq (WhenStuck (TypeError FieldMustBeWireTypeError) (HasKindOfType a)) ()
 
+-- | Force evaluation of the first parameter, then return the second.
+--
+-- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
+type family Seq (a :: Type) (b :: k) :: k where
+  Seq DoNotUse _ = Any
+  Seq _ k = k
+
+-- | Apply a constraint (custom type error) when the result of a type family is
+-- stuck, that means has no result.
+--
+-- Example of a stuck type family computation:
+--
+-- > type StuckExample = HasKindOfType DoNotUse
+--
+-- This example is stuck because the `DoNotUse` type has no `Wire` instance, and
+-- so doesn't have an associated type `HasKindOfType` either.
+--
+-- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
+type family WhenStuck (err :: Constraint) (a :: Type) :: Type where
+  WhenStuck _ DoNotUse = Any
+  WhenStuck _ k = k
+
+type family WhenStuckF (err :: Constraint) (a :: Type -> Type) :: (Type -> Type) where
+  WhenStuckF _ DoNotUseF = Any
+  WhenStuckF _ k = k
+
+-- Some unique types we require for the `Seq` and `WhenStuck` type families.
+-- Do not use anywhere else or `Seq` and `WhenStuck` might not function.
 data DoNotUse
+
+data DoNotUseF a
+
+type family Any :: k
 
 type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
@@ -542,6 +583,15 @@ type MustUseRecordNotationError =
 
 type ParameterMustBeRecordError =
   'GHC.TypeLits.Text "Constructor parameter must be a record."
+
+type FieldMustBeWireTypeError =
+  'GHC.TypeLits.Text "All the field types of a record with a Wire instance must themselves have a Wire instance."
+
+type ParameterMustBeWireTypeError =
+  'GHC.TypeLits.Text "Constructor parameters of a type with a Wire instance must themselves have a Wire instance"
+
+type NoGenericInstanceError =
+  'GHC.TypeLits.Text "Missing Generic instance."
 
 data RecordType
 

@@ -16,8 +16,7 @@ instance Wire.Wire RecordWithNonWireField
 
 -- Compilation error:
 --
--- • No instance for (Wire NonGenericType)
---     arising from a use of ‘$dmrec’
+-- • All the field types of a record with a Wire instance must themselves have a Wire instance.
 -- • In the expression: $dmrec @(RecordWithNonWireField)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithNonWireField)
 --   In the instance declaration for ‘Wire RecordWithNonWireField’

@@ -14,8 +14,7 @@ instance Wire.Wire RecordWithFunction
 
 -- Compilation error:
 --
--- • No instance for (Wire (Int -> ())) arising from a use of ‘$dmrec’
---     (maybe you haven't applied a function to enough arguments?)
+-- • All the field types of a record with a Wire instance must themselves have a Wire instance.
 -- • In the expression: $dmrec @(RecordWithFunction)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithFunction)
 --   In the instance declaration for ‘Wire RecordWithFunction’
