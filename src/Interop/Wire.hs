@@ -586,12 +586,21 @@ type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
 
 type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol) (params :: [Type]) =
-  "Constructors with parameters need to use record syntax to have a 'Wire' instance."
-    % "This will allow you to add and change fields in backwards-compatible ways in the future."
-    % "Instead of:"
+  "I can't create a Wire instance for this type:"
+    % ""
     % Indent ("data " <> typename <> " = " <> constructorname <> " " <> PrintParams params)
-    % "Try:"
-    % Indent ("data " <> typename <> " = " <> constructorname <> " " <> PrintParamsAsFields params)
+    % ""
+    % "I'd like field names for all types used in constructors,"
+    % "so you can make backwards-compatible changes to your types."
+    % "Try using record syntax:"
+    % ""
+    % Indent
+        ( "data " <> typename <> " = " <> constructorname
+            % Indent (PrintParamsAsFields params)
+        )
+    % ""
+    % "But come up with some better field names than x and y!"
+    % ""
 
 type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
   PrintParams '[a] = ToErrorMessage a
@@ -599,9 +608,9 @@ type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
   PrintParams (a ': b ': rest) = a <> " " <> b <> " ..."
 
 type family PrintParamsAsFields (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
-  PrintParamsAsFields '[a] = "{ x :: " <> ToErrorMessage a <> " }"
-  PrintParamsAsFields '[a, b] = "{ x :: " <> a <> ", y :: " <> b <> " }"
-  PrintParamsAsFields (a ': b ': rest) = "{ x :: " <> a <> ", y :: " <> b <> ", ... }"
+  PrintParamsAsFields '[a] = "{ x :: " <> ToErrorMessage a % "}"
+  PrintParamsAsFields '[a, b] = "{ x :: " <> a % ", y :: " <> b % "}"
+  PrintParamsAsFields (a ': b ': rest) = "{ x :: " <> a % ", y :: " <> b % ", ..." % "}"
 
 type ParameterMustBeRecordError =
   'GHC.TypeLits.Text "Constructor parameter must be a record."
@@ -642,5 +651,5 @@ type family ToErrorMessage (a :: k) :: GHC.TypeLits.ErrorMessage where
 type family Indent (a :: GHC.TypeLits.ErrorMessage) :: GHC.TypeLits.ErrorMessage where
   Indent (a ':$$: b) = Indent a ':$$: Indent b
   Indent (a ':<>: b) = Indent a ':<>: b
-  Indent ('GHC.TypeLits.ShowType a) = 'GHC.TypeLits.Text "    " ':<>: 'GHC.TypeLits.ShowType a
-  Indent ('GHC.TypeLits.Text a) = 'GHC.TypeLits.Text "    " ':<>: 'GHC.TypeLits.Text a
+  Indent ('GHC.TypeLits.ShowType a) = 'GHC.TypeLits.Text "  " ':<>: 'GHC.TypeLits.ShowType a
+  Indent ('GHC.TypeLits.Text a) = 'GHC.TypeLits.Text "  " ':<>: 'GHC.TypeLits.Text a
