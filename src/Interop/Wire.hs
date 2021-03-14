@@ -13,6 +13,9 @@
 -- them to be sent over the wire.
 module Interop.Wire
   ( WireType (..),
+    type_,
+    encode,
+    decode,
     Constructor (..),
     TypeDefinition (..),
     Field (..),
@@ -69,175 +72,243 @@ data TypeDefinition = TypeDefinition
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
-  type_ :: Proxy a -> WireType
-  encode :: a -> Aeson.Encoding
-  decode :: Aeson.Value -> Aeson.Parser a
-  default type_ :: WireG (KindOfType (Rep a)) (Rep a) => Proxy a -> WireType
-  type_ (_ :: Proxy a) = typeG (Proxy :: Proxy (KindOfType (Rep a))) (Proxy :: Proxy (Rep a))
-  default encode :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => a -> Aeson.Encoding
-  encode = encodeG (Proxy :: Proxy (KindOfType (Rep a))) . from
-  default decode :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => Aeson.Value -> Aeson.Parser a
-  decode = fmap to . decodeG (Proxy :: Proxy (KindOfType (Rep a)))
+  rec :: Proxy a -> WireRec a
+  default rec :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => Proxy a -> WireRec a
+  rec _ =
+    WireRec
+      { typeRec = typeG (Proxy :: Proxy (KindOfType (Rep a))) (Proxy :: Proxy (Rep a)),
+        encodeRec = encodeG (Proxy :: Proxy (KindOfType (Rep a))) . from,
+        decodeRec = fmap to . decodeG (Proxy :: Proxy (KindOfType (Rep a)))
+      }
+
+data WireRec a = WireRec
+  { typeRec :: WireType,
+    encodeRec :: a -> Aeson.Encoding,
+    decodeRec :: Aeson.Value -> Aeson.Parser a
+  }
+
+type_ :: Wire a => Proxy a -> WireType
+type_ = typeRec . rec
+
+encode :: Wire a => a -> Aeson.Encoding
+encode = encodeRec (rec (Proxy :: Proxy a))
+
+decode :: Wire a => Aeson.Value -> Aeson.Parser a
+decode = decodeRec (rec (Proxy :: Proxy a))
 
 instance Wire Int where
-  type_ _ = Int
-  encode = Encoding.int
-  decode =
-    Aeson.withScientific
-      "Int"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.int,
+        decodeRec =
+          Aeson.withScientific
+            "Int"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Int.Int8 where
-  type_ _ = Int
-  encode = Encoding.int8
-  decode =
-    Aeson.withScientific
-      "Int8"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.int8,
+        decodeRec =
+          Aeson.withScientific
+            "Int8"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Int.Int16 where
-  type_ _ = Int
-  encode = Encoding.int16
-  decode =
-    Aeson.withScientific
-      "Int16"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.int16,
+        decodeRec =
+          Aeson.withScientific
+            "Int16"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Int.Int32 where
-  type_ _ = Int
-  encode = Encoding.int32
-  decode =
-    Aeson.withScientific
-      "Int32"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.int32,
+        decodeRec =
+          Aeson.withScientific
+            "Int32"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Int.Int64 where
-  type_ _ = Int
-  encode = Encoding.int64
-  decode =
-    Aeson.withScientific
-      "Int64"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.int64,
+        decodeRec =
+          Aeson.withScientific
+            "Int64"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Word where
-  type_ _ = Int
-  encode = Encoding.word
-  decode =
-    Aeson.withScientific
-      "Word"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.word,
+        decodeRec =
+          Aeson.withScientific
+            "Word"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Word.Word8 where
-  type_ _ = Int
-  encode = Encoding.word8
-  decode =
-    Aeson.withScientific
-      "Word8"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.word8,
+        decodeRec =
+          Aeson.withScientific
+            "Word8"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Word.Word16 where
-  type_ _ = Int
-  encode = Encoding.word16
-  decode =
-    Aeson.withScientific
-      "Word16"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.word16,
+        decodeRec =
+          Aeson.withScientific
+            "Word16"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Word.Word32 where
-  type_ _ = Int
-  encode = Encoding.word32
-  decode =
-    Aeson.withScientific
-      "Word32"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.word32,
+        decodeRec =
+          Aeson.withScientific
+            "Word32"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Data.Word.Word64 where
-  type_ _ = Int
-  encode = Encoding.word64
-  decode =
-    Aeson.withScientific
-      "Word64"
-      ( \scientific ->
-          case toBoundedInteger scientific of
-            Nothing -> Aeson.unexpected "Expected an integer but got a float"
-            Just int -> pure int
-      )
+  rec _ =
+    WireRec
+      { typeRec = Int,
+        encodeRec = Encoding.word64,
+        decodeRec =
+          Aeson.withScientific
+            "Word64"
+            ( \scientific ->
+                case toBoundedInteger scientific of
+                  Nothing -> Aeson.unexpected "Expected an integer but got a float"
+                  Just int -> pure int
+            )
+      }
 
 instance Wire Float where
-  type_ _ = Float
-  encode = Encoding.float
-  decode = Aeson.withScientific "Float" (pure . toRealFloat)
+  rec _ =
+    WireRec
+      { typeRec = Float,
+        encodeRec = Encoding.float,
+        decodeRec = Aeson.withScientific "Float" (pure . toRealFloat)
+      }
 
 instance Wire Double where
-  type_ _ = Float
-  encode = Encoding.double
-  decode = Aeson.withScientific "Double" (pure . toRealFloat)
+  rec _ =
+    WireRec
+      { typeRec = Float,
+        encodeRec = Encoding.double,
+        decodeRec = Aeson.withScientific "Double" (pure . toRealFloat)
+      }
 
 instance Wire Text where
-  type_ _ = Text
-  encode = Encoding.text
-  decode = Aeson.withText "Text" pure
+  rec _ =
+    WireRec
+      { typeRec = Text,
+        encodeRec = Encoding.text,
+        decodeRec = Aeson.withText "Text" pure
+      }
 
 instance Wire String where
-  type_ _ = Text
-  encode = Encoding.string
-  decode = Aeson.withText "String" (pure . T.unpack)
+  rec _ =
+    WireRec
+      { typeRec = Text,
+        encodeRec = Encoding.string,
+        decodeRec = Aeson.withText "String" (pure . T.unpack)
+      }
 
 instance Wire Bool where
-  type_ _ = Bool
-  encode = Encoding.bool
-  decode = Aeson.withBool "Bool" pure
+  rec _ =
+    WireRec
+      { typeRec = Bool,
+        encodeRec = Encoding.bool,
+        decodeRec = Aeson.withBool "Bool" pure
+      }
 
 instance Wire a => Wire (Maybe a) where
-  type_ _ = Optional (type_ (Proxy :: Proxy a))
-  encode = maybe Encoding.null_ encode
-  decode val = (Just <$> decode val) <|> pure Nothing
+  rec _ =
+    WireRec
+      { typeRec = Optional (type_ (Proxy :: Proxy a)),
+        encodeRec = maybe Encoding.null_ encode,
+        decodeRec = \val -> (Just <$> decode val) <|> pure Nothing
+      }
 
 instance Wire a => Wire [a] where
-  type_ _ = List (type_ (Proxy :: Proxy a))
-  encode = Encoding.list encode
-  decode = Aeson.withArray "[]" (traverse decode . Foldable.toList)
+  rec _ =
+    WireRec
+      { typeRec = List (type_ (Proxy :: Proxy a)),
+        encodeRec = Encoding.list encode,
+        decodeRec = Aeson.withArray "[]" (traverse decode . Foldable.toList)
+      }
 
 instance Wire () where
-  type_ _ = Unit
-  encode _ = Encoding.emptyArray_
-  decode _ = pure ()
+  rec _ =
+    WireRec
+      { typeRec = Unit,
+        encodeRec = \_ -> Encoding.emptyArray_,
+        decodeRec = \_ -> pure ()
+      }
 
 class WireG kindOfType f where
   typeG :: Proxy kindOfType -> Proxy f -> WireType

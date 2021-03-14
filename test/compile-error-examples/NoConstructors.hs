@@ -13,16 +13,6 @@ instance Wire.Wire Type
 -- Compilation error:
 --
 -- • Type must have at least one constructor to have a 'Wire' instance.
--- • In the expression: $dmdecode @(Type)
---   In an equation for ‘decode’: decode = $dmdecode @(Type)
---   In the instance declaration for ‘Wire Type’
---
--- • Type must have at least one constructor to have a 'Wire' instance.
--- • In the expression: $dmencode @(Type)
---   In an equation for ‘encode’: encode = $dmencode @(Type)
---   In the instance declaration for ‘Wire Type’
---
--- • Type must have at least one constructor to have a 'Wire' instance.
--- • In the expression: $dmtype_ @(Type)
---   In an equation for ‘type_’: type_ = $dmtype_ @(Type)
+-- • In the expression: $dmrec @(Type)
+--   In an equation for ‘rec’: rec = $dmrec @(Type)
 --   In the instance declaration for ‘Wire Type’
