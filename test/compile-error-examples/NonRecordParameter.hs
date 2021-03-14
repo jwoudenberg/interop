@@ -12,7 +12,7 @@ instance Wire.Wire Type
 
 -- Compilation error:
 --
--- • No instance for (Generic Int) arising from a use of ‘$dmrec’
+-- • Constructor parameter must be a record.
 -- • In the expression: $dmrec @(Type)
 --   In an equation for ‘rec’: rec = $dmrec @(Type)
 --   In the instance declaration for ‘Wire Type’

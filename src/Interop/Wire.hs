@@ -72,6 +72,8 @@ data TypeDefinition = TypeDefinition
 
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
+  type HasKindOfType a
+  type HasKindOfType a = KindOfType (Rep a)
   rec :: Proxy a -> WireRec a
   default rec :: (Generic a, WireG (KindOfType (Rep a)) (Rep a)) => Proxy a -> WireRec a
   rec _ =
@@ -97,6 +99,7 @@ decode :: Wire a => Aeson.Value -> Aeson.Parser a
 decode = decodeRec (rec (Proxy :: Proxy a))
 
 instance Wire Int where
+  type HasKindOfType Int = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -112,6 +115,7 @@ instance Wire Int where
       }
 
 instance Wire Data.Int.Int8 where
+  type HasKindOfType Data.Int.Int8 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -142,6 +146,7 @@ instance Wire Data.Int.Int16 where
       }
 
 instance Wire Data.Int.Int32 where
+  type HasKindOfType Data.Int.Int32 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -172,6 +177,7 @@ instance Wire Data.Int.Int64 where
       }
 
 instance Wire Word where
+  type HasKindOfType Word = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -202,6 +208,7 @@ instance Wire Data.Word.Word8 where
       }
 
 instance Wire Data.Word.Word16 where
+  type HasKindOfType Data.Word.Word16 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -232,6 +239,7 @@ instance Wire Data.Word.Word32 where
       }
 
 instance Wire Data.Word.Word64 where
+  type HasKindOfType Data.Word.Word64 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -255,6 +263,7 @@ instance Wire Float where
       }
 
 instance Wire Double where
+  type HasKindOfType Double = CustomType
   rec _ =
     WireRec
       { typeRec = Float,
@@ -270,15 +279,8 @@ instance Wire Text where
         decodeRec = Aeson.withText "Text" pure
       }
 
-instance Wire String where
-  rec _ =
-    WireRec
-      { typeRec = Text,
-        encodeRec = Encoding.string,
-        decodeRec = Aeson.withText "String" (pure . T.unpack)
-      }
-
 instance Wire Bool where
+  type HasKindOfType Bool = CustomType
   rec _ =
     WireRec
       { typeRec = Bool,
@@ -287,6 +289,7 @@ instance Wire Bool where
       }
 
 instance Wire a => Wire (Maybe a) where
+  type HasKindOfType (Maybe a) = CustomType
   rec _ =
     WireRec
       { typeRec = Optional (type_ (Proxy :: Proxy a)),
@@ -295,6 +298,7 @@ instance Wire a => Wire (Maybe a) where
       }
 
 instance Wire a => Wire [a] where
+  type HasKindOfType [a] = CustomType
   rec _ =
     WireRec
       { typeRec = List (type_ (Proxy :: Proxy a)),
@@ -303,6 +307,7 @@ instance Wire a => Wire [a] where
       }
 
 instance Wire () where
+  type HasKindOfType () = CustomType
   rec _ =
     WireRec
       { typeRec = Unit,
@@ -506,17 +511,23 @@ type family IsMaybe a :: Bool where
 type family KindOfType t where
   KindOfType (D1 m a) = KindOfType a
   KindOfType (C1 ('MetaCons n f 'True) a) = RecordType
+  KindOfType (C1 ('MetaCons n f b) U1) = RecordType
   KindOfType V1 = TypeError AtLeastOneConstructorError
   KindOfType (C1 ('MetaCons n f 'False) (a :*: b)) = TypeError MustUseRecordNotationError
-  KindOfType (C1 ('MetaCons n f 'False) U1) = CustomType
-  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) = CustomType
+  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) = Seq (EnsureRecord (HasKindOfType a)) CustomType
   KindOfType (a :+: b) = Seq (KindOfType a) (Seq (KindOfType b) CustomType)
+
+type family EnsureRecord t where
+  EnsureRecord RecordType = ()
+  EnsureRecord t = TypeError ParameterMustBeRecordError
 
 -- | Force evaluation of the first parameter, then return the second.
 -- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
 type family Seq a b where
-  Seq () b = ((), ())
+  Seq DoNotUse b = DoNotUse
   Seq a b = b
+
+data DoNotUse
 
 type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
@@ -528,6 +539,9 @@ type MustUseRecordNotationError =
     ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
     ':$$: 'GHC.TypeLits.Text "Try:"
     ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+
+type ParameterMustBeRecordError =
+  'GHC.TypeLits.Text "Constructor parameter must be a record."
 
 data RecordType
 
