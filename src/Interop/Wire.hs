@@ -523,7 +523,13 @@ type family KindOfConstructor (typename :: Symbol) t where
   KindOfConstructor typename (C1 ('MetaCons n f b) U1) = RecordType
   KindOfConstructor typename (C1 ('MetaCons n f 'True) a) = Seq (FieldsHaveWireTypes a) RecordType
   KindOfConstructor typename V1 = TypeError AtLeastOneConstructorError
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) = TypeError (MustUseRecordNotationError typename constructorname)
+  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
+    TypeError
+      ( MustUseRecordNotationError
+          typename
+          constructorname
+          (ParamTypes (a :*: b) '[])
+      )
   KindOfConstructor typename (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) =
     Seq
       (EnsureRecord (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
@@ -537,6 +543,10 @@ type family EnsureRecord t where
 type family FieldsHaveWireTypes (t :: Type -> Type) :: Type where
   FieldsHaveWireTypes (a :*: b) = Seq (FieldsHaveWireTypes a) (FieldsHaveWireTypes b)
   FieldsHaveWireTypes (S1 m (Rec0 a)) = Seq (WhenStuck (TypeError FieldMustBeWireTypeError) (HasKindOfType a)) ()
+
+type family ParamTypes (t :: Type -> Type) (acc :: [Type]) :: [Type] where
+  ParamTypes (a :*: b) acc = ParamTypes a (ParamTypes b acc)
+  ParamTypes (S1 m (Rec0 t)) acc = t ': acc
 
 -- | Force evaluation of the first parameter, then return the second.
 --
@@ -575,13 +585,23 @@ type family Any :: k
 type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
 
-type MustUseRecordNotationError typename constructorname =
+type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol) (params :: [Type]) =
   "Constructors with parameters need to use record syntax to have a 'Wire' instance."
     % "This will allow you to add and change fields in backwards-compatible ways in the future."
     % "Instead of:"
-    % "    data " <> typename <> " = " <> constructorname <> " Int Int"
+    % Indent ("data " <> typename <> " = " <> constructorname <> " " <> PrintParams params)
     % "Try:"
-    % "    data " <> typename <> " = " <> constructorname <> " { x :: Int, y :: Int }"
+    % Indent ("data " <> typename <> " = " <> constructorname <> " " <> PrintParamsAsFields params)
+
+type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
+  PrintParams '[a] = ToErrorMessage a
+  PrintParams '[a, b] = a <> " " <> b
+  PrintParams (a ': b ': rest) = a <> " " <> b <> " ..."
+
+type family PrintParamsAsFields (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
+  PrintParamsAsFields '[a] = "{ x :: " <> ToErrorMessage a <> " }"
+  PrintParamsAsFields '[a, b] = "{ x :: " <> a <> ", y :: " <> b <> " }"
+  PrintParamsAsFields (a ': b ': rest) = "{ x :: " <> a <> ", y :: " <> b <> ", ... }"
 
 type ParameterMustBeRecordError =
   'GHC.TypeLits.Text "Constructor parameter must be a record."
@@ -618,3 +638,9 @@ type family ToErrorMessage (a :: k) :: GHC.TypeLits.ErrorMessage where
   ToErrorMessage (s :: Symbol) = 'GHC.TypeLits.Text s
   ToErrorMessage (e :: GHC.TypeLits.ErrorMessage) = e
   ToErrorMessage t = 'GHC.TypeLits.ShowType t
+
+type family Indent (a :: GHC.TypeLits.ErrorMessage) :: GHC.TypeLits.ErrorMessage where
+  Indent (a ':$$: b) = Indent a ':$$: Indent b
+  Indent (a ':<>: b) = Indent a ':<>: b
+  Indent ('GHC.TypeLits.ShowType a) = 'GHC.TypeLits.Text "    " ':<>: 'GHC.TypeLits.ShowType a
+  Indent ('GHC.TypeLits.Text a) = 'GHC.TypeLits.Text "    " ':<>: 'GHC.TypeLits.Text a
