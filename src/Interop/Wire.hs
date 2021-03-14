@@ -517,16 +517,18 @@ type family IsMaybe a :: Bool where
 -- This type family returns the kindOfType belonging to a particular generics
 -- representation.
 type family KindOfType t where
-  KindOfType (D1 m a) = KindOfType a
-  KindOfType (C1 ('MetaCons n f b) U1) = RecordType
-  KindOfType (C1 ('MetaCons n f 'True) a) = Seq (FieldsHaveWireTypes a) RecordType
-  KindOfType V1 = TypeError AtLeastOneConstructorError
-  KindOfType (C1 ('MetaCons n f 'False) (a :*: b)) = TypeError MustUseRecordNotationError
-  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) =
+  KindOfType (D1 ('MetaData name m p f) a) = KindOfConstructor name a
+
+type family KindOfConstructor (typename :: Symbol) t where
+  KindOfConstructor typename (C1 ('MetaCons n f b) U1) = RecordType
+  KindOfConstructor typename (C1 ('MetaCons n f 'True) a) = Seq (FieldsHaveWireTypes a) RecordType
+  KindOfConstructor typename V1 = TypeError AtLeastOneConstructorError
+  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) = TypeError (MustUseRecordNotationError typename constructorname)
+  KindOfConstructor typename (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) =
     Seq
       (EnsureRecord (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
       CustomType
-  KindOfType (a :+: b) = Seq (KindOfType a) (Seq (KindOfType b) CustomType)
+  KindOfConstructor typename (a :+: b) = Seq (KindOfConstructor typename a) (Seq (KindOfConstructor typename b) CustomType)
 
 type family EnsureRecord t where
   EnsureRecord RecordType = ()
@@ -573,7 +575,7 @@ type family Any :: k
 type AtLeastOneConstructorError =
   'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
 
-type MustUseRecordNotationError =
+type MustUseRecordNotationError typename constructorname =
   'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
     ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
     ':$$: 'GHC.TypeLits.Text "Instead of:"
