@@ -54,7 +54,7 @@ main = do
     [ checkParallel (Group "encode-decode roundtrip" (encodeDecodeRoundtripTest <$> exampleTypes)),
       checkParallel (Group "encoding" (encodingTest <$> exampleTypes)),
       checkParallel (Group "diff" (diffTest <$> changeExampleTypes)),
-      checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
+      checkSequential (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
       checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests)
     ]
 

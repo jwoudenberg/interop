@@ -315,24 +315,6 @@ class WireG kindOfType f where
   encodeG :: Proxy kindOfType -> f a -> Aeson.Encoding
   decodeG :: Proxy kindOfType -> Aeson.Value -> Aeson.Parser (f a)
 
--- | Depending on the kind of type we're dealing with (record, multiple
--- constructors, ...) we want a different set of Generics instances deriving the
--- Wire instances. This would result in OverlappingInstance compilation errors.
---
--- To avoid these we disambiguate our instances by adding an additional type
--- class parameter 'kindOfType' that will be different for each kind of type we
--- define a Wire instance for.
---
--- This type family returns the kindOfType belonging to a particular generics
--- representation.
-type family KindOfType t where
-  KindOfType (D1 m (C1 ('MetaCons n f 'True) a)) = RecordType
-  KindOfType t = CustomType
-
-data RecordType
-
-data CustomType
-
 instance
   ( KnownSymbol typename,
     KnownSymbol packname,
@@ -400,39 +382,6 @@ instance
   typeG _ _ = Record (typeFieldsG (Proxy :: Proxy fields))
   encodeG _ = Encoding.pairs . encodeFieldsG . unM1 . unM1
   decodeG _ = fmap (M1 . M1) . Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG
-
--- Instance producing compiler error for types without any constructors.
---
--- > data Never
---
-instance
-  (TypeError ('GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance.")) =>
-  CtorsG V1
-  where
-  typeCtorsG _ = error "unreachable"
-  encodeCtorsG _ = error "unreachable"
-  decodeCtorsG _ = error "unreachable"
-
--- Instance producing compiler error for contructors with parameters that
--- aren't record fields.
---
--- > data Coords = Coords Int Int
---
-instance
-  ( TypeError
-      ( 'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
-          ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
-          ':$$: 'GHC.TypeLits.Text "Instead of:"
-          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
-          ':$$: 'GHC.TypeLits.Text "Try:"
-          ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
-      )
-  ) =>
-  CtorsG (C1 ('MetaCons ctorname fix 'False) (left :*: right))
-  where
-  typeCtorsG _ = error "unreachable"
-  encodeCtorsG _ = error "unreachable"
-  decodeCtorsG _ = error "unreachable"
 
 instance
   ( Generic sub,
@@ -543,3 +492,43 @@ instance ParseField 'False a where
 type family IsMaybe a :: Bool where
   IsMaybe (Maybe a) = 'True
   IsMaybe a = 'False
+
+-- | Depending on the kind of type we're dealing with (record, multiple
+-- constructors, ...) we want a different set of Generics instances deriving the
+-- Wire instances. This would result in OverlappingInstance compilation errors.
+--
+-- To avoid these we disambiguate our instances by adding an additional type
+-- class parameter 'kindOfType' that will be different for each kind of type we
+-- define a Wire instance for.
+--
+-- This type family returns the kindOfType belonging to a particular generics
+-- representation.
+type family KindOfType t where
+  KindOfType (D1 m a) = KindOfType a
+  KindOfType (C1 ('MetaCons n f 'True) a) = RecordType
+  KindOfType V1 = TypeError AtLeastOneConstructorError
+  KindOfType (C1 ('MetaCons n f 'False) (a :*: b)) = TypeError MustUseRecordNotationError
+  KindOfType (C1 ('MetaCons n f 'False) U1) = CustomType
+  KindOfType (C1 ('MetaCons n f 'False) (S1 m (Rec0 a))) = CustomType
+  KindOfType (a :+: b) = Seq (KindOfType a) (Seq (KindOfType b) CustomType)
+
+-- | Force evaluation of the first parameter, then return the second.
+-- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
+type family Seq a b where
+  Seq () b = ((), ())
+  Seq a b = b
+
+type AtLeastOneConstructorError =
+  'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
+
+type MustUseRecordNotationError =
+  'GHC.TypeLits.Text "Constructors with parameters need to use record syntax to have a 'Wire' instance."
+    ':$$: 'GHC.TypeLits.Text "This will allow you to add and change fields in backwards-compatible ways in the future."
+    ':$$: 'GHC.TypeLits.Text "Instead of:"
+    ':$$: 'GHC.TypeLits.Text "    data Coords = Coords Int Int"
+    ':$$: 'GHC.TypeLits.Text "Try:"
+    ':$$: 'GHC.TypeLits.Text "    data Coords = Coords { x :: Int, y :: Int }"
+
+data RecordType
+
+data CustomType
