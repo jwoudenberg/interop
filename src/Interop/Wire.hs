@@ -517,24 +517,60 @@ type family IsMaybe a :: Bool where
 -- This type family returns the kindOfType belonging to a particular generics
 -- representation.
 type family KindOfType t where
-  KindOfType (D1 ('MetaData name m p f) a) = KindOfConstructor name a
+  KindOfType (D1 md V1) = TypeError AtLeastOneConstructorError
+  KindOfType (D1 ('MetaData typename m p f) a) = KindOfConstructors typename (Constructors a)
 
-type family KindOfConstructor (typename :: Symbol) t where
-  KindOfConstructor typename (C1 ('MetaCons n f b) U1) = RecordType
-  KindOfConstructor typename (C1 ('MetaCons n f 'True) a) = Seq (FieldsHaveWireTypes a) RecordType
-  KindOfConstructor typename V1 = TypeError AtLeastOneConstructorError
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
+type family KindOfConstructors (typename :: Symbol) (constructors :: [Type -> Type]) :: Type where
+  KindOfConstructors typename '[C1 ('MetaCons n f b) U1] = RecordType
+  KindOfConstructors typename '[C1 ('MetaCons n f 'True) a] = Seq (FieldsHaveWireTypes a) RecordType
+  KindOfConstructors typename '[C1 ('MetaCons constructorname f 'False) (a :*: b)] =
     TypeError
       ( MustUseRecordNotationError
           typename
           constructorname
           (ParamTypes (a :*: b) '[])
       )
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (S1 m (Rec0 a))) =
+  KindOfConstructors typename constructors =
     Seq
-      (EnsureRecord typename constructorname a (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a)))
+      (ValidateConstructors typename '[] constructors)
       CustomType
-  KindOfConstructor typename (a :+: b) = Seq (KindOfConstructor typename a) (Seq (KindOfConstructor typename b) CustomType)
+
+type family
+  ValidateConstructors
+    (typename :: Symbol)
+    (before :: [Type -> Type])
+    (xs :: [Type -> Type]) ::
+    Type
+  where
+  ValidateConstructors typename before '[] = ()
+  ValidateConstructors typename before (x ': after) =
+    Seq
+      (ValidateSingleConstructor typename before x after)
+      (ValidateConstructors typename (x ': before) after)
+
+type family
+  ValidateSingleConstructor
+    (typename :: Symbol)
+    (before :: [Type -> Type])
+    (x :: Type -> Type)
+    (after :: [Type -> Type]) ::
+    Type
+  where
+  ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (S1 m (Rec0 a))) after =
+    EnsureRecord
+      typename
+      constructorname
+      a
+      (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a))
+  ValidateSingleConstructor typename before c after = ()
+
+type family Constructors (t :: Type -> Type) :: [Type -> Type] where
+  Constructors (a :+: b) = Append (Constructors a) (Constructors b)
+  Constructors a = '[a]
+
+type family Append (xs :: [k]) (ys :: [k]) :: [k] where
+  Append '[] ys = ys
+  Append (x ': xs) ys = x ': (Append xs ys)
 
 type family EnsureRecord typename constructorname param t where
   EnsureRecord typename constructorname param RecordType = ()
