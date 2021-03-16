@@ -14,7 +14,15 @@ data NonWireType
 
 -- Compilation error:
 --
--- • Constructor parameters of a type with a Wire instance must themselves have a Wire instance
+-- • Before I can make a Wire instance for this type:
+--
+--     TypeWithNonWireParameter
+--
+--   I need Wire instances for all types used in its constructors,
+--   but I'm missing a Wire instance for:
+--
+--     NonWireType
+--
 -- • In the expression: $dmrec @(TypeWithNonWireParameter)
 --   In an equation for ‘rec’: rec = $dmrec @(TypeWithNonWireParameter)
 --   In the instance declaration for ‘Wire TypeWithNonWireParameter’

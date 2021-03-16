@@ -561,7 +561,7 @@ type family
       typename
       constructorname
       a
-      (WhenStuck (TypeError ParameterMustBeWireTypeError) (HasKindOfType a))
+      (WhenStuck (TypeError (ParameterMustBeWireTypeError typename a)) (HasKindOfType a))
   ValidateSingleConstructor typename before c after = ()
 
 type family Constructors (t :: Type -> Type) :: [Type -> Type] where
@@ -652,8 +652,16 @@ type family PrintParamsAsFields (params :: [Type]) :: GHC.TypeLits.ErrorMessage 
 type FieldMustBeWireTypeError =
   'GHC.TypeLits.Text "All the field types of a record with a Wire instance must themselves have a Wire instance."
 
-type ParameterMustBeWireTypeError =
-  'GHC.TypeLits.Text "Constructor parameters of a type with a Wire instance must themselves have a Wire instance"
+type ParameterMustBeWireTypeError (typename :: Symbol) (param :: Type) =
+  "Before I can make a Wire instance for this type:"
+    % ""
+    % Indent (ToErrorMessage typename)
+    % ""
+    % "I need Wire instances for all types used in its constructors,"
+    % "but I'm missing a Wire instance for:"
+    % ""
+    % Indent (ToErrorMessage param)
+    % ""
 
 type NoGenericInstanceError =
   'GHC.TypeLits.Text "Missing Generic instance."
