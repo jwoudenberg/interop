@@ -582,7 +582,7 @@ type family
           (ParamTypes (a :*: b) '[])
       )
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'True) params) after =
-    TypeError (UseSeparateRecordType typename before after constructorname params)
+    TypeError (UseSeparateRecordType typename before after constructorname (FieldTypes params '[]))
   ValidateSingleConstructor typename before (C1 mc (S1 ms (Rec0 a))) after =
     WhenStuck (TypeError (ParameterMustBeWireTypeError typename a)) (HasKindOfType a)
 
@@ -606,6 +606,12 @@ type family FieldsHaveWireTypes (t :: Type -> Type) :: Type where
 type family ParamTypes (t :: Type -> Type) (acc :: [Type]) :: [Type] where
   ParamTypes (a :*: b) acc = ParamTypes a (ParamTypes b acc)
   ParamTypes (S1 m (Rec0 t)) acc = t ': acc
+
+type family FieldTypes (t :: Type -> Type) (acc :: [k]) :: [k] where
+  FieldTypes (a :*: b) acc = FieldTypes a (FieldTypes b acc)
+  FieldTypes (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 t)) acc = (FieldType fieldname t) ': acc
+
+data FieldType (key :: Symbol) (t :: Type)
 
 -- | Force evaluation of the first parameter, then return the second.
 --
@@ -682,7 +688,7 @@ type MustUseRecordTypeInsteadOfParams
     % "I only support constructors with no parameters, or with a"
     % "a single parameter that must also be a record."
     % "This is to make it easier for you to make changes to your"
-    % "types in the future, in a  backwards-compatible way."
+    % "types in the future, in a backwards-compatible way."
     % "Try creating a custom record type:"
     % ""
     % Indent
@@ -698,8 +704,6 @@ type MustUseRecordTypeInsteadOfParams
             % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
             % Indent (PrintParamsAsFields params)
         )
-    % ""
-    % "But come up with some better field names than x or y!"
     % ""
 
 type family
@@ -727,10 +731,39 @@ type UseSeparateRecordType
   (before :: [Type -> Type])
   (after :: [Type -> Type])
   (constructorname :: Symbol)
-  (params :: Type -> Type) =
+  (fields :: [Type]) =
   "I can't create a Wire instance for this type:"
     % ""
-    % Indent (ToErrorMessage typename)
+    % Indent
+        ( "data " <> typename
+            % Indent
+                ( FrameRelevantConstructor
+                    before
+                    after
+                    (constructorname % Indent (PrintFields fields))
+                )
+        )
+    % ""
+    % "I only support constructors with no parameters, or with a"
+    % "a single parameter that must a separate record type."
+    % "This is to make it easier for you to make changes to your"
+    % "types in the future, in a backwards-compatible way."
+    % "Try creating a custom record type:"
+    % ""
+    % Indent
+        ( "data " <> typename
+            % Indent
+                ( FrameRelevantConstructor
+                    before
+                    after
+                    ( constructorname <> " " <> constructorname <> "Record"
+                    )
+                )
+            % ""
+            % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
+            % Indent (PrintFields fields)
+        )
+    % ""
 
 type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
   PrintParams '[a] = ToErrorMessage a
@@ -741,6 +774,20 @@ type family PrintParamsAsFields (params :: [Type]) :: GHC.TypeLits.ErrorMessage 
   PrintParamsAsFields '[a] = "{ x :: " <> ToErrorMessage a % "}"
   PrintParamsAsFields '[a, b] = "{ x :: " <> a % ", y :: " <> b % "}"
   PrintParamsAsFields (a ': b ': rest) = "{ x :: " <> a % ", y :: " <> b % ", ..." % "}"
+
+type family PrintFields (fields :: [Type]) :: GHC.TypeLits.ErrorMessage where
+  PrintFields '[FieldType keyA a] =
+    "{ " <> keyA <> " :: " <> a
+      % "}"
+  PrintFields '[FieldType keyA a, FieldType keyB b] =
+    "{ " <> keyA <> " :: " <> a
+      % ", " <> keyB <> " :: " <> b
+      % "}"
+  PrintFields (FieldType keyA a ': FieldType keyB b ': rest) =
+    "{ " <> keyA <> " :: " <> a
+      % ", " <> keyB <> " :: " <> b
+      % ", ..."
+      % "}"
 
 type FieldMustBeWireTypeError =
   'GHC.TypeLits.Text "All the field types of a record with a Wire instance must themselves have a Wire instance."

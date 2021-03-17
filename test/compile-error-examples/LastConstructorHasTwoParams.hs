@@ -1,32 +1,32 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module TwoConstructorsWithoutRecordTwoParams () where
+module LastConstructorHasTwoParams () where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
 
-data ConstructorWithoutRecordTwoParams
+data LastConstructorHasTwoParams
   = OneConstructor
   | Constructor Int ()
   deriving (Generic)
 
-instance Wire.Wire ConstructorWithoutRecordTwoParams
+instance Wire.Wire LastConstructorHasTwoParams
 
 -- Compilation error:
 --
 -- • I can't create a Wire instance for this type:
 --
---     data ConstructorWithoutRecordTwoParams
+--     data LastConstructorHasTwoParams
 --       = ...
 --       | Constructor Int ()
 --
 --   I only support constructors with no parameters, or with a
 --   a single parameter that must also be a record.
 --   This is to make it easier for you to make changes to your
---   types in the future, in a  backwards-compatible way.
+--   types in the future, in a backwards-compatible way.
 --   Try creating a custom record type:
 --
---     data ConstructorWithoutRecordTwoParams
+--     data LastConstructorHasTwoParams
 --       = ...
 --       | Constructor ConstructorRecord
 --
@@ -35,10 +35,7 @@ instance Wire.Wire ConstructorWithoutRecordTwoParams
 --       , y :: ()
 --       }
 --
---   But come up with some better field names than x or y!
---
--- • In the expression: $dmrec @(ConstructorWithoutRecordTwoParams)
+-- • In the expression: $dmrec @(LastConstructorHasTwoParams)
 --   In an equation for ‘rec’:
---       rec = $dmrec @(ConstructorWithoutRecordTwoParams)
---   In the instance declaration for
---     ‘Wire ConstructorWithoutRecordTwoParams’
+--       rec = $dmrec @(LastConstructorHasTwoParams)
+--   In the instance declaration for ‘Wire LastConstructorHasTwoParams’
