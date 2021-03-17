@@ -573,9 +573,16 @@ type family
   ValidateSingleConstructor typename before (C1 mc U1) after =
     ()
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (a :*: b)) after =
-    TypeError (MustUseCustomRecordType typename before after constructorname (a :*: b))
+    TypeError
+      ( MustUseRecordTypeInsteadOfParams
+          typename
+          before
+          after
+          constructorname
+          (ParamTypes (a :*: b) '[])
+      )
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'True) params) after =
-    TypeError (MustUseCustomRecordType typename before after constructorname params)
+    TypeError (UseSeparateRecordType typename before after constructorname params)
   ValidateSingleConstructor typename before (C1 mc (S1 ms (Rec0 a))) after =
     WhenStuck (TypeError (ParameterMustBeWireTypeError typename a)) (HasKindOfType a)
 
@@ -640,21 +647,51 @@ type AtLeastOneConstructorError =
 type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol) (params :: [Type]) =
   "I can't create a Wire instance for this type:"
     % ""
-    % Indent ("data " <> typename <> " = " <> constructorname <> " " <> PrintParams params)
+    % Indent
+        ( "data " <> typename
+            % Indent ("= " <> constructorname <> " " <> PrintParams params)
+        )
     % ""
     % "I'd like field names for all types used in constructors,"
     % "so you can make backwards-compatible changes to your types."
     % "Try using record syntax:"
     % ""
+    % Indent ("data " <> typename <> " = " <> constructorname % Indent (PrintParamsAsFields params))
+    % ""
+    % "But come up with some better field names than x or y!"
+    % ""
+
+type MustUseRecordTypeInsteadOfParams
+  (typename :: Symbol)
+  (before :: [Type -> Type])
+  (after :: [Type -> Type])
+  (constructorname :: Symbol)
+  (params :: [Type]) =
+  "I can't create a Wire instance for this type:"
+    % ""
     % Indent
-        ( "data " <> typename <> " = " <> constructorname
+        ( "data " <> typename
+            % Indent ("= " <> constructorname <> " " <> PrintParams params)
+        )
+    % ""
+    % "I only support constructors with no parameters, or with a"
+    % "a single parameter that must also be a record."
+    % "This is to make it easier for you to make changes to your"
+    % "types in the future, in a  backwards-compatible way."
+    % "Try creating a custom record type:"
+    % ""
+    % Indent
+        ( "data " <> typename
+            % Indent ("= " <> constructorname <> " " <> constructorname <> "Record")
+            % ""
+            % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
             % Indent (PrintParamsAsFields params)
         )
     % ""
     % "But come up with some better field names than x or y!"
     % ""
 
-type MustUseCustomRecordType
+type UseSeparateRecordType
   (typename :: Symbol)
   (before :: [Type -> Type])
   (after :: [Type -> Type])

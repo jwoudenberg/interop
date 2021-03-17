@@ -14,7 +14,8 @@ instance Wire.Wire ConstructorWithoutRecordThreeParams
 --
 -- • I can't create a Wire instance for this type:
 --
---     data ConstructorWithoutRecordThreeParams = Constructor Int () ...
+--     data ConstructorWithoutRecordThreeParams
+--       = Constructor Int () ...
 --
 --   I'd like field names for all types used in constructors,
 --   so you can make backwards-compatible changes to your types.

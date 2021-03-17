@@ -1,11 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ConstructorWithoutRecordTwoParams () where
+module TwoConstructorsWithoutRecordTwoParams () where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
 
-data ConstructorWithoutRecordTwoParams = Constructor Int ()
+data ConstructorWithoutRecordTwoParams
+  = OneConstructor
+  | Constructor Int ()
   deriving (Generic)
 
 instance Wire.Wire ConstructorWithoutRecordTwoParams
@@ -17,11 +19,16 @@ instance Wire.Wire ConstructorWithoutRecordTwoParams
 --     data ConstructorWithoutRecordTwoParams
 --       = Constructor Int ()
 --
---   I'd like field names for all types used in constructors,
---   so you can make backwards-compatible changes to your types.
---   Try using record syntax:
+--   I only support constructors with no parameters, or with a
+--   a single parameter that must also be a record.
+--   This is to make it easier for you to make changes to your
+--   types in the future, in a  backwards-compatible way.
+--   Try creating a custom record type:
 --
---     data ConstructorWithoutRecordTwoParams = Constructor
+--     data ConstructorWithoutRecordTwoParams
+--       = Constructor ConstructorRecord
+--
+--     data ConstructorRecord = ConstructorRecord
 --       { x :: Int
 --       , y :: ()
 --       }
