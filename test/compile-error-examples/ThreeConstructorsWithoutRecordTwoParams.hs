@@ -7,7 +7,8 @@ import qualified Interop.Wire as Wire
 
 data ConstructorWithoutRecordTwoParams
   = OneConstructor
-  | Constructor Int ()
+  | TwoConstructor Int ()
+  | ThreeConstructor
   deriving (Generic)
 
 instance Wire.Wire ConstructorWithoutRecordTwoParams
@@ -18,7 +19,8 @@ instance Wire.Wire ConstructorWithoutRecordTwoParams
 --
 --     data ConstructorWithoutRecordTwoParams
 --       = ...
---       | Constructor Int ()
+--       | TwoConstructor Int ()
+--       | ...
 --
 --   I only support constructors with no parameters, or with a
 --   a single parameter that must also be a record.
@@ -28,9 +30,10 @@ instance Wire.Wire ConstructorWithoutRecordTwoParams
 --
 --     data ConstructorWithoutRecordTwoParams
 --       = ...
---       | Constructor ConstructorRecord
+--       | TwoConstructor TwoConstructorRecord
+--       | ...
 --
---     data ConstructorRecord = ConstructorRecord
+--     data TwoConstructorRecord = TwoConstructorRecord
 --       { x :: Int
 --       , y :: ()
 --       }

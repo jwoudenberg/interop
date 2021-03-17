@@ -1,35 +1,35 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ConstructorWithoutRecordTwoParams () where
+module OneConstructorWithoutRecordTwoParams () where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
 
-data ConstructorWithoutRecordTwoParams = Constructor Int ()
+data OneConstructorWithoutRecordTwoParams = Constructor Int ()
   deriving (Generic)
 
-instance Wire.Wire ConstructorWithoutRecordTwoParams
+instance Wire.Wire OneConstructorWithoutRecordTwoParams
 
 -- Compilation error:
 --
 -- • I can't create a Wire instance for this type:
 --
---     data ConstructorWithoutRecordTwoParams
+--     data OneConstructorWithoutRecordTwoParams
 --       = Constructor Int ()
 --
 --   I'd like field names for all types used in constructors,
 --   so you can make backwards-compatible changes to your types.
 --   Try using record syntax:
 --
---     data ConstructorWithoutRecordTwoParams = Constructor
+--     data OneConstructorWithoutRecordTwoParams = Constructor
 --       { x :: Int
 --       , y :: ()
 --       }
 --
 --   But come up with some better field names than x or y!
 --
--- • In the expression: $dmrec @(ConstructorWithoutRecordTwoParams)
+-- • In the expression: $dmrec @(OneConstructorWithoutRecordTwoParams)
 --   In an equation for ‘rec’:
---       rec = $dmrec @(ConstructorWithoutRecordTwoParams)
+--       rec = $dmrec @(OneConstructorWithoutRecordTwoParams)
 --   In the instance declaration for
---     ‘Wire ConstructorWithoutRecordTwoParams’
+--     ‘Wire OneConstructorWithoutRecordTwoParams’

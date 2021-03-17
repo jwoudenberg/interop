@@ -671,7 +671,12 @@ type MustUseRecordTypeInsteadOfParams
     % ""
     % Indent
         ( "data " <> typename
-            % Indent ("= " <> constructorname <> " " <> PrintParams params)
+            % Indent
+                ( FrameRelevantConstructor
+                    before
+                    after
+                    (constructorname <> " " <> PrintParams params)
+                )
         )
     % ""
     % "I only support constructors with no parameters, or with a"
@@ -682,7 +687,13 @@ type MustUseRecordTypeInsteadOfParams
     % ""
     % Indent
         ( "data " <> typename
-            % Indent ("= " <> constructorname <> " " <> constructorname <> "Record")
+            % Indent
+                ( FrameRelevantConstructor
+                    before
+                    after
+                    ( constructorname <> " " <> constructorname <> "Record"
+                    )
+                )
             % ""
             % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
             % Indent (PrintParamsAsFields params)
@@ -690,6 +701,26 @@ type MustUseRecordTypeInsteadOfParams
     % ""
     % "But come up with some better field names than x or y!"
     % ""
+
+type family
+  FrameRelevantConstructor
+    (before :: [Type -> Type])
+    (after :: [Type -> Type])
+    (constructor :: ErrorMessage) ::
+    ErrorMessage
+  where
+  FrameRelevantConstructor '[] '[] current =
+    "= " <> current
+  FrameRelevantConstructor (x ': xs) '[] current =
+    "= ..."
+      % "| " <> current
+  FrameRelevantConstructor '[] (y ': ys) current =
+    "= " <> current
+      % "| ..."
+  FrameRelevantConstructor (x ': xs) (y ': ys) current =
+    "= ..."
+      % "| " <> current
+      % "| ..."
 
 type UseSeparateRecordType
   (typename :: Symbol)
