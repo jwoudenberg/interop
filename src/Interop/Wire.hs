@@ -521,7 +521,7 @@ type family KindOfType t where
     TypeError AtLeastOneConstructorError
   KindOfType (D1 ('MetaData typename m p f) (a :+: b)) =
     Seq
-      (ValidateConstructors typename '[] (Constructors (a :+: b)))
+      (ValidateConstructors typename 'False (Constructors (a :+: b)))
       CustomType
   KindOfType (D1 ('MetaData typename m p f) a) =
     KindOfConstructor typename a
@@ -551,23 +551,25 @@ type family KindOfConstructor (typename :: Symbol) (constructor :: Type -> Type)
 type family
   ValidateConstructors
     (typename :: Symbol)
-    (before :: [Type -> Type])
+    (before :: Bool)
     (xs :: [Type -> Type]) ::
     Type
   where
   ValidateConstructors typename before '[] =
     ()
-  ValidateConstructors typename before (x ': after) =
+  ValidateConstructors typename before '[x] =
+    ValidateSingleConstructor typename before x 'False
+  ValidateConstructors typename before (x ': rest) =
     Seq
-      (ValidateSingleConstructor typename before x after)
-      (ValidateConstructors typename (x ': before) after)
+      (ValidateSingleConstructor typename before x 'True)
+      (ValidateConstructors typename 'True rest)
 
 type family
   ValidateSingleConstructor
     (typename :: Symbol)
-    (before :: [Type -> Type])
+    (before :: Bool)
     (x :: Type -> Type)
-    (after :: [Type -> Type]) ::
+    (after :: Bool) ::
     Type
   where
   ValidateSingleConstructor typename before (C1 mc U1) after =
@@ -686,8 +688,8 @@ type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol)
 
 type MustUseRecordTypeInsteadOfParams
   (typename :: Symbol)
-  (before :: [Type -> Type])
-  (after :: [Type -> Type])
+  (before :: Bool)
+  (after :: Bool)
   (constructorname :: Symbol)
   (params :: [Type]) =
   "I can't create a Wire instance for this type:"
@@ -725,28 +727,28 @@ type MustUseRecordTypeInsteadOfParams
 
 type family
   FrameRelevantConstructor
-    (before :: [Type -> Type])
-    (after :: [Type -> Type])
+    (before :: Bool)
+    (after :: Bool)
     (constructor :: ErrorMessage) ::
     ErrorMessage
   where
-  FrameRelevantConstructor '[] '[] current =
+  FrameRelevantConstructor 'False 'False current =
     "= " <> current
-  FrameRelevantConstructor (x ': xs) '[] current =
+  FrameRelevantConstructor 'True 'False current =
     "= ..."
       % "| " <> current
-  FrameRelevantConstructor '[] (y ': ys) current =
+  FrameRelevantConstructor 'False 'True current =
     "= " <> current
       % "| ..."
-  FrameRelevantConstructor (x ': xs) (y ': ys) current =
+  FrameRelevantConstructor 'True 'True current =
     "= ..."
       % "| " <> current
       % "| ..."
 
 type UseSeparateRecordType
   (typename :: Symbol)
-  (before :: [Type -> Type])
-  (after :: [Type -> Type])
+  (before :: Bool)
+  (after :: Bool)
   (constructorname :: Symbol)
   (fields :: [Type]) =
   "I can't create a Wire instance for this type:"
