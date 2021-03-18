@@ -529,8 +529,8 @@ type family KindOfType t where
 type family KindOfConstructor (typename :: Symbol) (constructor :: Type -> Type) :: Type where
   KindOfConstructor typename (C1 ('MetaCons n f b) U1) =
     RecordType
-  KindOfConstructor typename (C1 ('MetaCons n f 'True) a) =
-    Seq (FieldsHaveWireTypes a) RecordType
+  KindOfConstructor typename (C1 ('MetaCons constructorname f 'True) a) =
+    Seq (FieldsHaveWireTypes typename constructorname 'False 'False a) RecordType
   KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
     TypeError
       ( MustUseRecordNotationError
@@ -599,9 +599,26 @@ type family EnsureRecord typename constructorname params t where
   EnsureRecord typename constructorname params t =
     TypeError (MustUseRecordNotationError typename constructorname params)
 
-type family FieldsHaveWireTypes (t :: Type -> Type) :: Type where
-  FieldsHaveWireTypes (a :*: b) = Seq (FieldsHaveWireTypes a) (FieldsHaveWireTypes b)
-  FieldsHaveWireTypes (S1 m (Rec0 a)) = Seq (WhenStuck (TypeError FieldMustBeWireTypeError) (HasKindOfType a)) ()
+type family
+  FieldsHaveWireTypes
+    (typename :: Symbol)
+    (constructorname :: Symbol)
+    (before :: Bool)
+    (after :: Bool)
+    (t :: Type -> Type) ::
+    Type
+  where
+  FieldsHaveWireTypes typename constructorname before after (a :*: b) =
+    Seq
+      (FieldsHaveWireTypes typename constructorname before 'True a)
+      (FieldsHaveWireTypes typename constructorname 'True after b)
+  FieldsHaveWireTypes typename constructorname before after (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 a)) =
+    Seq
+      ( WhenStuck
+          (TypeError (FieldMustBeWireTypeError typename constructorname fieldname before after a))
+          (HasKindOfType a)
+      )
+      ()
 
 type family ParamTypes (t :: Type -> Type) (acc :: [Type]) :: [Type] where
   ParamTypes (a :*: b) acc = ParamTypes a (ParamTypes b acc)
@@ -789,8 +806,47 @@ type family PrintFields (fields :: [Type]) :: GHC.TypeLits.ErrorMessage where
       % ", ..."
       % "}"
 
-type FieldMustBeWireTypeError =
-  'GHC.TypeLits.Text "All the field types of a record with a Wire instance must themselves have a Wire instance."
+type FieldMustBeWireTypeError
+  (typename :: Symbol)
+  (constructorname :: Symbol)
+  (fieldname :: Symbol)
+  (before :: Bool)
+  (after :: Bool)
+  (a :: Type) =
+  "I'm trying to make a Wire instance of this type:"
+    % ""
+    % Indent
+        ( "data " <> typename <> " = " <> constructorname
+            % Indent (FrameFields before after (fieldname <> " :: " <> a))
+        )
+    % ""
+    % "I need all the field types to have a Wire instance themselves,"
+    % "but miss an instance for the type: " <> a
+    % ""
+
+type family
+  FrameFields
+    (before :: Bool)
+    (after :: Bool)
+    (a :: ErrorMessage) ::
+    ErrorMessage
+  where
+  FrameFields 'False 'False field =
+    "{ " <> field
+      % "}"
+  FrameFields 'True 'False field =
+    "{ ..."
+      % ", " <> field
+      % "}"
+  FrameFields 'True 'True field =
+    "{ ..."
+      % ", " <> field
+      % ", ..."
+      % "}"
+  FrameFields 'False 'True field =
+    "{ " <> field
+      % ", ..."
+      % "}"
 
 type ParameterMustBeWireTypeError (typename :: Symbol) (param :: Type) =
   "Before I can make a Wire instance for this type:"

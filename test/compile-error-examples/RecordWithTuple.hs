@@ -14,7 +14,15 @@ instance Wire.Wire RecordWithTuple
 
 -- Compilation error:
 --
--- • All the field types of a record with a Wire instance must themselves have a Wire instance.
+-- • I'm trying to make a Wire instance of this type:
+--
+--     data RecordWithTuple = RecordWithTuple
+--       { fn :: (Int, ())
+--       }
+--
+--   I need all the field types to have a Wire instance themselves,
+--   but miss an instance for the type: (Int, ())
+--
 -- • In the expression: $dmrec @(RecordWithTuple)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithTuple)
 --   In the instance declaration for ‘Wire RecordWithTuple’
