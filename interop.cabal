@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d2dfb18bab147b3f01a2105d8a5f6c2be9ab781f34e8af584e821e0944e9582c
+-- hash: 37309c560f70d98cae8f05fc59011a54a82494c45f8a63731ac4006fa9c86e77
 
 name:           interop
 version:        0.1.0.0
@@ -63,11 +63,15 @@ test-suite tests
       Interop.Wire.Flat
       TypeChangeExamples.Base
       TypeChangeExamples.V2.AddConstructor
+      TypeChangeExamples.V2.AddListField
       TypeChangeExamples.V2.AddNonOptionalField
       TypeChangeExamples.V2.AddOptionalField
+      TypeChangeExamples.V2.DropListField
       TypeChangeExamples.V2.DropNonOptionalField
       TypeChangeExamples.V2.DropOptionalField
       TypeChangeExamples.V2.ModifyFieldType
+      TypeChangeExamples.V2.ModifyListToOptionalField
+      TypeChangeExamples.V2.ModifyOptionalToListField
       TypeChangeExamples.V2.RemoveConstructor
       TypeExamples.EnumType
       TypeExamples.Float

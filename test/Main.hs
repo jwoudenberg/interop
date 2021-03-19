@@ -31,11 +31,15 @@ import qualified Outputable
 import qualified System.Directory as Directory
 import qualified TypeChangeExamples.Base
 import qualified TypeChangeExamples.V2.AddConstructor
+import qualified TypeChangeExamples.V2.AddListField
 import qualified TypeChangeExamples.V2.AddNonOptionalField
 import qualified TypeChangeExamples.V2.AddOptionalField
+import qualified TypeChangeExamples.V2.DropListField
 import qualified TypeChangeExamples.V2.DropNonOptionalField
 import qualified TypeChangeExamples.V2.DropOptionalField
 import qualified TypeChangeExamples.V2.ModifyFieldType
+import qualified TypeChangeExamples.V2.ModifyListToOptionalField
+import qualified TypeChangeExamples.V2.ModifyOptionalToListField
 import qualified TypeChangeExamples.V2.RemoveConstructor
 import qualified TypeExamples.EnumType
 import qualified TypeExamples.Float
@@ -93,6 +97,11 @@ backwardsCompatibleDecodingTests =
       let encoded = encode oldType
       (_ :: TypeChangeExamples.V2.AddOptionalField.TestType) <- evalEither (decode encoded)
       pure (),
+    test "Server with new list field can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.AddListField.TestType) <- evalEither (decode encoded)
+      pure (),
     test "Server which dropped a non-optional field can still decode old types" $ do
       oldType <- forAll TypeChangeExamples.Base.gen
       let encoded = encode oldType
@@ -102,6 +111,11 @@ backwardsCompatibleDecodingTests =
       oldType <- forAll TypeChangeExamples.Base.gen
       let encoded = encode oldType
       (_ :: TypeChangeExamples.V2.DropOptionalField.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server which dropped a list field can still decode old types" $ do
+      oldType <- forAll TypeChangeExamples.Base.gen
+      let encoded = encode oldType
+      (_ :: TypeChangeExamples.V2.DropListField.TestType) <- evalEither (decode encoded)
       pure ()
   ]
 
@@ -183,11 +197,23 @@ changeExampleTypes =
       "test/TypeChangeExamples/V2/AddOptionalField.hs"
       (Proxy :: Proxy TypeChangeExamples.V2.AddOptionalField.TestType),
     ChangeExampleType
+      "test/TypeChangeExamples/V2/AddListField.hs"
+      (Proxy :: Proxy TypeChangeExamples.V2.AddListField.TestType),
+    ChangeExampleType
       "test/TypeChangeExamples/V2/DropNonOptionalField.hs"
       (Proxy :: Proxy TypeChangeExamples.V2.DropNonOptionalField.TestType),
     ChangeExampleType
       "test/TypeChangeExamples/V2/DropOptionalField.hs"
       (Proxy :: Proxy TypeChangeExamples.V2.DropOptionalField.TestType),
+    ChangeExampleType
+      "test/TypeChangeExamples/V2/DropListField.hs"
+      (Proxy :: Proxy TypeChangeExamples.V2.DropListField.TestType),
+    ChangeExampleType
+      "test/TypeChangeExamples/V2/ModifyListToOptionalField.hs"
+      (Proxy :: Proxy TypeChangeExamples.V2.ModifyListToOptionalField.TestType),
+    ChangeExampleType
+      "test/TypeChangeExamples/V2/ModifyOptionalToListField.hs"
+      (Proxy :: Proxy TypeChangeExamples.V2.ModifyOptionalToListField.TestType),
     ChangeExampleType
       "test/TypeChangeExamples/V2/ModifyFieldType.hs"
       (Proxy :: Proxy TypeChangeExamples.V2.ModifyFieldType.TestType),

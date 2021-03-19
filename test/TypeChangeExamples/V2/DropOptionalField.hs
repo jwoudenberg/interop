@@ -11,7 +11,8 @@ data TestType
 instance Wire.Wire TestType
 
 data Record = Record
-  { field :: Int
+  { field :: Int,
+    listField :: [Int]
   }
   deriving (Generic)
 

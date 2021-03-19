@@ -15,7 +15,8 @@ instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int
+    optionalField :: Maybe Int,
+    listField :: [Int]
   }
   deriving (Generic, Eq, Show)
 
@@ -27,6 +28,7 @@ gen =
     [ do
         int <- Gen.int Range.exponentialBounded
         maybeInt <- Gen.maybe $ Gen.int Range.exponentialBounded
-        pure $ OneConstructor (Record int maybeInt),
+        listInt <- Gen.list (Range.linear 0 100) (Gen.int Range.exponentialBounded)
+        pure $ OneConstructor (Record int maybeInt listInt),
       pure OtherConstructor
     ]

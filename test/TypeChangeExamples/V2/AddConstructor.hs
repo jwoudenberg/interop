@@ -13,7 +13,8 @@ instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int
+    optionalField :: Maybe Int,
+    listField :: [Int]
   }
   deriving (Generic)
 

@@ -1,4 +1,4 @@
-module TypeChangeExamples.V2.AddNonOptionalField where
+module TypeChangeExamples.V2.AddListField where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
@@ -6,7 +6,7 @@ import qualified Interop.Wire as Wire
 data TestType
   = OneConstructor Record
   | OtherConstructor
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire TestType
 
@@ -14,13 +14,13 @@ data Record = Record
   { field :: Int,
     optionalField :: Maybe Int,
     listField :: [Int],
-    newField :: Int
+    otherListField :: [Int]
   }
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- In field: newField, In constructor: OneConstructor, In type: TestType,
+-- In field: otherListField, In constructor: OneConstructor, In type: TestType,
 -- Error: A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.
