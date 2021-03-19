@@ -32,6 +32,7 @@ import qualified Data.Foldable as Foldable
 import Data.Function ((&))
 import qualified Data.Int
 import Data.Kind (Constraint, Type)
+import qualified Data.Maybe
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
 import Data.Text (Text)
@@ -446,9 +447,9 @@ instance
 
 instance
   ( KnownSymbol fieldname,
-    ParseField (IsMaybe field) field,
+    ParseField (IsOptional field) field,
     Wire field,
-    Wire (Unwrapped (IsMaybe field) field)
+    Wire (Unwrapped (IsOptional field) field)
   ) =>
   FieldsG (S1 ('MetaSel ('Just fieldname) unpackedness strictness lazyness) (Rec0 field))
   where
@@ -460,7 +461,7 @@ instance
   encodeFieldsG = Encoding.pair (T.pack (symbolVal (Proxy :: Proxy fieldname))) . encode . unK1 . unM1
   decodeFieldsG obj =
     parseField
-      (Proxy :: Proxy (IsMaybe field))
+      (Proxy :: Proxy (IsOptional field))
       decode
       obj
       (T.pack (symbolVal (Proxy :: Proxy fieldname)))
@@ -482,9 +483,9 @@ instance
 -- it doesn't failed parsing a JSON object missing that field. When the type of
 -- the field is not 'Maybe a' we have to use 'explicitParseField'.
 --
--- This type class and its supporting type family 'IsMaybe' exist solely to pick
--- the right Aeson helper function depending on whether the type of the field is
--- a 'Maybe a' or not.
+-- This type class and its supporting type family 'IsOptional' exist solely to
+-- pick the right Aeson helper function depending on whether the type of the
+-- field is a 'Maybe a' or not.
 class ParseField (isMaybe :: Bool) a where
   type Unwrapped isMaybe a
   parseField ::
@@ -498,13 +499,20 @@ instance ParseField 'True (Maybe a) where
   type Unwrapped 'True (Maybe a) = a
   parseField _ = Aeson.explicitParseFieldMaybe
 
+instance ParseField 'True [a] where
+  type Unwrapped 'True [a] = [a]
+  parseField _ parse object key =
+    Aeson.explicitParseFieldMaybe parse object key
+      & fmap (Data.Maybe.fromMaybe [])
+
 instance ParseField 'False a where
   type Unwrapped 'False a = a
   parseField _ = Aeson.explicitParseField
 
-type family IsMaybe a :: Bool where
-  IsMaybe (Maybe a) = 'True
-  IsMaybe a = 'False
+type family IsOptional a :: Bool where
+  IsOptional (Maybe a) = 'True
+  IsOptional [a] = 'True
+  IsOptional a = 'False
 
 -- | Depending on the kind of type we're dealing with (record, multiple
 -- constructors, ...) we want a different set of Generics instances deriving the
