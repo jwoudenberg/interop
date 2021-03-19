@@ -12,7 +12,12 @@ instance Wire.Wire Type
 
 -- Compilation error:
 --
--- • Type must have at least one constructor to have a 'Wire' instance.
+-- • I can't create a Wire instance for this type:
+--
+--     data 'False
+--
+--   I need a type to have at least one constructor.
+--
 -- • In the expression: $dmrec @(Type)
 --   In an equation for ‘rec’: rec = $dmrec @(Type)
 --   In the instance declaration for ‘Wire Type’

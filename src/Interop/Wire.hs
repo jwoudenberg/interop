@@ -517,8 +517,8 @@ type family IsMaybe a :: Bool where
 -- This type family returns the kindOfType belonging to a particular generics
 -- representation.
 type family KindOfType t where
-  KindOfType (D1 md V1) =
-    TypeError AtLeastOneConstructorError
+  KindOfType (D1 ('MetaData typename m p f) V1) =
+    TypeError (AtLeastOneConstructorError f)
   KindOfType (D1 ('MetaData typename m p f) (a :+: b)) =
     Seq
       (ValidateConstructors typename 'False (Constructors (a :+: b)))
@@ -666,8 +666,13 @@ data DoNotUseF a
 
 type family Any :: k
 
-type AtLeastOneConstructorError =
-  'GHC.TypeLits.Text "Type must have at least one constructor to have a 'Wire' instance."
+type AtLeastOneConstructorError f =
+  "I can't create a Wire instance for this type:"
+    % ""
+    % Indent ("data " <> f)
+    % ""
+    % "I need a type to have at least one constructor."
+    % ""
 
 type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol) (params :: [Type]) =
   "I can't create a Wire instance for this type:"
