@@ -75,7 +75,7 @@ data TypeDefinition = TypeDefinition
 -- | Class representing types that can be encoded/decoded to wire format.
 class Wire a where
   type HasKindOfType a
-  type HasKindOfType a = KindOfType (WhenStuckF (TypeError NoGenericInstanceError) (Rep a))
+  type HasKindOfType a = KindOfType (WhenStuckF (TypeError (NoGenericInstanceError a)) (Rep a))
   rec :: Proxy a -> WireRec a
   default rec ::
     ( Generic a,
@@ -861,8 +861,19 @@ type ParameterMustBeWireTypeError (typename :: Symbol) (param :: Type) =
     % Indent (ToErrorMessage param)
     % ""
 
-type NoGenericInstanceError =
-  'GHC.TypeLits.Text "Missing Generic instance."
+type NoGenericInstanceError (a :: Type) =
+  "I'm trying to make a wire instance for this type:"
+    % ""
+    % Indent ("data " <> a <> " = ...")
+    % ""
+    % "I need a Generic instance of this type to learn more about it."
+    % "Add one like this:"
+    % ""
+    % Indent
+        ( "data " <> a <> " = ..."
+            % Indent (ToErrorMessage "deriving (Generic)")
+        )
+    % ""
 
 data RecordType
 
