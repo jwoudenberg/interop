@@ -136,6 +136,8 @@ fieldWarnings path =
   concatMap $ \case
     FieldAdded field ->
       case fieldType field of
+        List _ ->
+          []
         Optional _ ->
           []
         _ ->
@@ -148,6 +150,8 @@ fieldWarnings path =
           ]
     FieldRemoved field ->
       case fieldType field of
+        List _ ->
+          []
         Optional _ ->
           []
         _ ->
