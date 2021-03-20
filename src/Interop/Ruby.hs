@@ -52,7 +52,7 @@ toCode service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    foldr (>>) pure (fmap endpoint (Map.keys (unService service')))
+    foldr (>>) pure (fmap (uncurry endpoint) (Map.toList (unService service')))
   "end"
 
 customType :: Flat.CustomType -> Ruby
@@ -60,8 +60,8 @@ customType type' = do
   chunks ["class", Text.unpack (Flat.typeName type')]
   "end"
 
-endpoint :: Text -> Ruby
-endpoint name = do
+endpoint :: Text -> Endpoint m -> Ruby
+endpoint name (Endpoint _ (_ :: req -> m res)) = do
   ""
   chunks ["def ", toSnakeCase name, "(body:)"] $ do
     "req = Net::HTTP::Post.new(@origin)"
