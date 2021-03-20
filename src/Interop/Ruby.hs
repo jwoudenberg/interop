@@ -64,13 +64,15 @@ customType type' = do
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
   ""
-  "sig {" $ do
-    "params(" $ do
-      type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
-    ").returns(" $ do
-      type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
-    ")"
-  "}"
+  "sig { params(body: "
+    <> type_
+      (toCamelCase name <> "Request")
+      (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+    <> ").returns("
+    <> type_
+      (toCamelCase name <> "Response")
+      (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
+    <> ") }"
   chunks ["def ", toSnakeCase name, "(body:)"] $ do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
@@ -78,22 +80,17 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     "@http.request(req, body)"
   "end"
 
-type_ :: Flat.Type -> Ruby
-type_ t =
+type_ :: Text -> Flat.Type -> Ruby
+type_ recordName t =
   case t of
-    Flat.Optional sub -> "T.nilable(" <> type_ sub <> ")"
-    Flat.List sub -> "T::Array[" <> type_ sub <> "]"
+    Flat.Optional sub -> "T.nilable(" <> type_ recordName sub <> ")"
+    Flat.List sub -> "T::Array[" <> type_ recordName sub <> "]"
     Flat.Text -> "String"
     Flat.Int -> "Integer"
     Flat.Float -> "Float"
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
-    Flat.Record fields ->
-      mapRuby
-        ( \(Flat.Field name sub) ->
-            fromString (Text.unpack name) <> ": " <> (type_ sub)
-        )
-        fields
+    Flat.Record _ -> fromString (Text.unpack recordName)
     Flat.NestedCustomType name -> fromString (Text.unpack name)
 
 -- DSL for generating ruby code from Haskell.
@@ -157,3 +154,9 @@ toSnakeCase text =
     []
     text
     & reverse
+
+toCamelCase :: Text -> Text
+toCamelCase text =
+  case Text.uncons text of
+    Nothing -> text
+    Just (x, rest) -> Text.cons (Char.toUpper x) rest

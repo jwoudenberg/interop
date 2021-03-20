@@ -36,13 +36,7 @@ instance Interop.Wire DoubleNumber
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
---   sig {
---     params(
---       n: Integer
---     ).returns(
---       Integer
---     )
---   }
+--   sig { params(body: DoubleRequest).returns(Integer) }
 --   def double(body:)
 --     req = Net::HTTP::Post.new(@origin)
 --     req["Content-Type"] = "application/json"
