@@ -14,19 +14,23 @@ import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Interop
+import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
 
 generate :: FilePath -> Service m -> IO ()
 generate path service' =
-  System.IO.withFile path System.IO.WriteMode $
-    \handle ->
-      toCode service'
-        & render
-        & Builder.hPutBuilder handle
+  case types service' of
+    Left err -> fail (Text.unpack err)
+    Right types' ->
+      System.IO.withFile path System.IO.WriteMode $
+        \handle ->
+          toCode service' types'
+            & render
+            & Builder.hPutBuilder handle
 
-toCode :: Service m -> Ruby
-toCode (Service endpointMap) = do
+toCode :: Service m -> [Flat.CustomType] -> Ruby
+toCode service' types' = do
   "require \"json\""
   "require \"net/http\""
   "require \"uri\""
@@ -37,6 +41,7 @@ toCode (Service endpointMap) = do
     "extend T::Sig"
     "extend T::Helpers"
     ""
+    foldr (>>) pure (fmap customType types')
     "def initialize(origin, timeout = nil)" $ do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
@@ -47,7 +52,12 @@ toCode (Service endpointMap) = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    foldr (>>) pure (fmap endpoint (Map.keys endpointMap))
+    foldr (>>) pure (fmap endpoint (Map.keys (unService service')))
+  "end"
+
+customType :: Flat.CustomType -> Ruby
+customType type' = do
+  chunks ["class", Text.unpack (Flat.typeName type')]
   "end"
 
 endpoint :: Text -> Ruby

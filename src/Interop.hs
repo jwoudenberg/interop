@@ -31,7 +31,7 @@ import qualified Network.Wai as Wai
 data Endpoint m where
   Endpoint :: (Wire req, Wire res) => {name :: Text, fn :: (req -> m res)} -> Endpoint m
 
-newtype Service m = Service (Map.Map Text (Endpoint m))
+newtype Service m = Service {unService :: Map.Map Text (Endpoint m)}
 
 convert :: (forall a. m a -> n a) -> Service m -> Service n
 convert nt (Service endpointMap) =
