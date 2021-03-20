@@ -258,7 +258,7 @@ typeChangeWarnings before after = do
 
 diffableType :: Wire.WireType -> PropertyT IO (Map.Map Text Flat.CustomType, Flat.Type)
 diffableType wireType = do
-  customTypes <- evalEither $ Flat.customTypes wireType
+  customTypes <- evalEither $ Flat.customTypes [wireType]
   pure
     ( fmap
         (\customType -> (Flat.typeName customType, customType))

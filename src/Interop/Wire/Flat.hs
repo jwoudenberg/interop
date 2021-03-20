@@ -65,13 +65,13 @@ typeAsText type_ =
        in "{ " <> T.intercalate ", " (fieldAsText <$> fields) <> " }"
     NestedCustomType name -> name
 
-customTypes :: Wire.WireType -> Either Text [CustomType]
-customTypes wireType =
+customTypes :: [Wire.WireType] -> Either Text [CustomType]
+customTypes wireTypes =
   case withDuplicateNames of
     [] -> Right (Map.elems typesByDef)
     _ -> Left "Some types share the same name and I don't support that, <add more error detail>"
   where
-    typesByDef = customTypesByDef wireType Map.empty
+    typesByDef = foldr customTypesByDef Map.empty wireTypes
     withDuplicateNames =
       typesByDef
         & Map.toList
