@@ -9,6 +9,7 @@ module Interop
     convert,
     wai,
     customTypes,
+    types,
   )
 where
 
@@ -19,6 +20,7 @@ import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map
+import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Interop.Wire (Wire)
@@ -70,3 +72,15 @@ wai service' =
     reqBytes <- Wai.strictRequestBody req
     res <- run service' reqBytes Control.Exception.throwIO
     respond (Wai.responseLBS (toEnum 200) [] res)
+
+types :: Service m -> Either Text [CustomType]
+types (Service service') =
+  Map.elems service'
+    & concatMap endpointTypes
+    & customTypes
+
+endpointTypes :: Endpoint m -> [Wire.WireType]
+endpointTypes (Endpoint _ (_ :: req -> m res)) =
+  [ Wire.type_ (Proxy :: Proxy req),
+    Wire.type_ (Proxy :: Proxy res)
+  ]
