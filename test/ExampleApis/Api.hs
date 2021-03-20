@@ -16,40 +16,37 @@ instance Interop.Wire DoubleNumber
 -- generated-ruby
 --
 -- require "json"
---   require "net/http"
---   require "uri"
---   require "sorbet-runtime"
+-- require "net/http"
+-- require "uri"
+-- require "sorbet-runtime"
 --
---   module Api
+-- module Api
 --
---     extend T::Sig
---     extend T::Helpers
+--   extend T::Sig
+--   extend T::Helpers
 --
+--   def initialize(origin, timeout = nil)
+--     @origin = URI(origin)
+--     @http = Net::HTTP.new(@origin.host, @origin.port)
 --
---     def initialize(origin, timeout = nil)
---       @origin = URI(origin)
---       @http = Net::HTTP.new(@origin.host, @origin.port)
---
---       unless timeout.nil?
---         @http.open_timeout = timeout
---         @http.read_timeout = timeout
---       end
---       @http.use_ssl = @origin.scheme == 'https'
+--     unless timeout.nil?
+--       @http.open_timeout = timeout
+--       @http.read_timeout = timeout
 --     end
---
---     sig {
---       params(
---         n: Integer
---
---       ).returns(
---         Integer
---       )
---     }
---     def double(body:)
---       req = Net::HTTP::Post.new(@origin)
---       req["Content-Type"] = "application/json"
---
---       @http.request(req, body)
---     end
---
+--     @http.use_ssl = @origin.scheme == 'https'
 --   end
+--
+--   sig {
+--     params(
+--       n: Integer
+--     ).returns(
+--       Integer
+--     )
+--   }
+--   def double(body:)
+--     req = Net::HTTP::Post.new(@origin)
+--     req["Content-Type"] = "application/json"
+--
+--     @http.request(req, body)
+--   end
+-- end

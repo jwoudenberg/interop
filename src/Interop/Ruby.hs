@@ -42,8 +42,7 @@ toCode service' types' = do
     ""
     "extend T::Sig"
     "extend T::Helpers"
-    ""
-    foldr (>>) pure (fmap customType types')
+    mapRuby customType types'
     "def initialize(origin, timeout = nil)" $ do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
@@ -54,7 +53,7 @@ toCode service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    foldr (>>) pure (fmap (uncurry endpoint) (Map.toList (unService service')))
+    mapRuby (uncurry endpoint) (Map.toList (unService service'))
   "end"
 
 customType :: Flat.CustomType -> Ruby
@@ -90,12 +89,11 @@ type_ t =
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
     Flat.Record fields ->
-      fields
-        & fmap
-          ( \(Flat.Field name sub) ->
-              fromString (Text.unpack name) <> ": " <> (type_ sub)
-          )
-        & foldr (>>) pure
+      mapRuby
+        ( \(Flat.Field name sub) ->
+            fromString (Text.unpack name) <> ": " <> (type_ sub)
+        )
+        fields
     Flat.NestedCustomType name -> fromString (Text.unpack name)
 
 -- DSL for generating ruby code from Haskell.
@@ -128,10 +126,14 @@ instance Chunks (Ruby -> Ruby) where
     )
 
 (>>) :: Ruby -> Ruby -> Ruby
-x >> y = x <> "\n  " <> indentation <> y
+x >> y = x <> "\n" <> indentation <> y
 
 pure :: Ruby
 pure = ""
+
+mapRuby :: (a -> Ruby) -> [a] -> Ruby
+mapRuby _ [] = pure
+mapRuby f (x : xs) = foldr (>>) (f x) (fmap f xs)
 
 indent :: Ruby -> Ruby
 indent (Ruby block) =
