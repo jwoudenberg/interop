@@ -108,19 +108,17 @@ type_ t =
 -- DSL for generating ruby code from Haskell.
 
 newtype Ruby = Ruby (Int -> Builder.Builder)
+  deriving (Semigroup, Monoid)
 
 instance IsString Ruby where
   fromString str =
-    Ruby
-      ( \indent ->
-          stimesMonoid (2 * indent) " " <> Builder.stringUtf8 str <> "\n"
-      )
+    Ruby (\_ -> Builder.stringUtf8 str)
 
 instance IsString (Ruby -> Ruby) where
   fromString str =
-    ( \(Ruby block) -> do
+    ( \block -> do
         fromString str
-        (Ruby (\indent -> block (1 + indent)))
+        indent ("  " <> block)
     )
 
 class Chunks a where
@@ -131,16 +129,23 @@ instance Chunks Ruby where
 
 instance Chunks (Ruby -> Ruby) where
   chunks strs =
-    ( \(Ruby block) -> do
+    ( \block -> do
         chunks strs
-        (Ruby (\indent -> block (1 + indent)))
+        indent ("  " <> block)
     )
 
 (>>) :: Ruby -> Ruby -> Ruby
-Ruby x >> Ruby y = Ruby (x <> y)
+x >> y = x <> "\n  " <> indentation <> y
 
 pure :: Ruby
 pure = ""
+
+indent :: Ruby -> Ruby
+indent (Ruby block) =
+  Ruby (\i -> block (1 + i))
+
+indentation :: Ruby
+indentation = Ruby (\i -> stimesMonoid (2 * i) " ")
 
 render :: Ruby -> Builder.Builder
 render (Ruby f) = f 0
