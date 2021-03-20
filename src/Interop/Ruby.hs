@@ -30,8 +30,13 @@ toCode (Service endpointMap) = do
   "require \"json\""
   "require \"net/http\""
   "require \"uri\""
+  "require \"sorbet-runtime\""
   ""
-  "class Api" $ do
+  "module Api" $ do
+    ""
+    "extend T::Sig"
+    "extend T::Helpers"
+    ""
     "def initialize(origin, timeout = nil)" $ do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"

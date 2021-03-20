@@ -18,8 +18,13 @@ instance Interop.Wire DoubleNumber
 -- require "json"
 -- require "net/http"
 -- require "uri"
+-- require "sorbet-runtime"
 --
--- class Api
+-- module Api
+--
+--   extend T::Sig
+--   extend T::Helpers
+--
 --   def initialize(origin, timeout = nil)
 --     @origin = URI(origin)
 --     @http = Net::HTTP.new(@origin.host, @origin.port)
