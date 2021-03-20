@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 37309c560f70d98cae8f05fc59011a54a82494c45f8a63731ac4006fa9c86e77
+-- hash: 326a5886c848a2545023ce1bd6f14aaccb7da83c2de1d08e93a82c579e52c81a
 
 name:           interop
 version:        0.1.0.0
@@ -32,7 +32,6 @@ library
       Interop
       Interop.Ruby
   other-modules:
-      Devel
       Interop.Diff
       Interop.Wire
       Interop.Wire.Flat
@@ -55,12 +54,12 @@ test-suite tests
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Devel
       Interop
       Interop.Diff
       Interop.Ruby
       Interop.Wire
       Interop.Wire.Flat
+      ExampleApis.Api
       TypeChangeExamples.Base
       TypeChangeExamples.V2.AddConstructor
       TypeChangeExamples.V2.AddListField

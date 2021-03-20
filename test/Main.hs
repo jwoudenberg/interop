@@ -20,15 +20,18 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
+import qualified ExampleApis.Api
 import qualified GHC
 import qualified GHC.Paths
 import Hedgehog hiding (test)
 import qualified Hedgehog.Main
 import qualified Interop.Diff
+import qualified Interop.Ruby
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified Outputable
 import qualified System.Directory as Directory
+import qualified System.IO
 import qualified TypeChangeExamples.Base
 import qualified TypeChangeExamples.V2.AddConstructor
 import qualified TypeChangeExamples.V2.AddListField
@@ -59,7 +62,8 @@ main = do
       checkParallel (Group "encoding" (encodingTest <$> exampleTypes)),
       checkParallel (Group "diff" (diffTest <$> changeExampleTypes)),
       checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
-      checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests)
+      checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests),
+      checkParallel (Group "ruby client generation" rubyClientGenerationTests)
     ]
 
 encodeDecodeRoundtripTest :: ExampleType -> (PropertyName, Property)
@@ -117,6 +121,16 @@ backwardsCompatibleDecodingTests =
       let encoded = encode oldType
       (_ :: TypeChangeExamples.V2.DropListField.TestType) <- evalEither (decode encoded)
       pure ()
+  ]
+
+rubyClientGenerationTests :: [(PropertyName, Property)]
+rubyClientGenerationTests =
+  [ test "Generation of ruby client for API" $ do
+      (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
+      evalIO $ System.IO.hClose h
+      evalIO $ Interop.Ruby.generate path ExampleApis.Api.service
+      generated <- evalIO $ Data.Text.IO.readFile path
+      equalToCommentsInFile "generated-ruby" "test/ExampleApis/Api.hs" generated
   ]
 
 -- | We'd like to test our custom compilation errors for Wire instances, and
