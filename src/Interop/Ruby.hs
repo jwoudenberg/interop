@@ -9,11 +9,13 @@ import qualified Data.ByteString.Builder as Builder
 import Data.Char as Char
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map
+import Data.Proxy (Proxy (Proxy))
 import Data.Semigroup (stimesMonoid)
 import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Interop
+import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
@@ -63,12 +65,45 @@ customType type' = do
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
   ""
+  "sig {" $ do
+    "params(" $ do
+      type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+    ").returns(" $ do
+      type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
+    ")"
+  "}"
   chunks ["def ", toSnakeCase name, "(body:)"] $ do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
     "@http.request(req, body)"
   "end"
+
+type_ :: Flat.Type -> Ruby
+type_ t =
+  case t of
+    Flat.Optional sub -> do
+      "T.nilable(" $ do
+        type_ sub
+      ")"
+    Flat.List sub -> do
+      "T::Array[" $ do
+        type_ sub
+      "]"
+    Flat.Text -> "String"
+    Flat.Int -> "Integer"
+    Flat.Float -> "Float"
+    Flat.Bool -> "T::Boolean"
+    Flat.Unit -> "NilClass"
+    Flat.Record fields ->
+      fields
+        & fmap
+          ( \(Flat.Field name sub) ->
+              fromString (Text.unpack name <> ":") $ do
+                type_ sub
+          )
+        & foldr (>>) pure
+    Flat.NestedCustomType name -> fromString (Text.unpack name)
 
 -- DSL for generating ruby code from Haskell.
 

@@ -25,6 +25,7 @@ instance Interop.Wire DoubleNumber
 --   extend T::Sig
 --   extend T::Helpers
 --
+--
 --   def initialize(origin, timeout = nil)
 --     @origin = URI(origin)
 --     @http = Net::HTTP.new(@origin.host, @origin.port)
@@ -36,10 +37,18 @@ instance Interop.Wire DoubleNumber
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
---   def double(body:, authorization:)
+--   sig {
+--     params(
+--       n:
+--         Integer
+--
+--     ).returns(
+--       Integer
+--     )
+--   }
+--   def double(body:)
 --     req = Net::HTTP::Post.new(@origin)
 --     req["Content-Type"] = "application/json"
---     req["Authorization"] = authorization
 --
 --     @http.request(req, body)
 --   end
