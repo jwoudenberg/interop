@@ -63,10 +63,9 @@ customType type' = do
 endpoint :: Text -> Ruby
 endpoint name = do
   ""
-  chunks ["def ", toSnakeCase name, "(body:, authorization:)"] $ do
+  chunks ["def ", toSnakeCase name, "(body:)"] $ do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
-    "req[\"Authorization\"] = authorization"
     ""
     "@http.request(req, body)"
   "end"
