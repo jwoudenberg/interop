@@ -82,14 +82,8 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
 type_ :: Flat.Type -> Ruby
 type_ t =
   case t of
-    Flat.Optional sub -> do
-      "T.nilable(" $ do
-        type_ sub
-      ")"
-    Flat.List sub -> do
-      "T::Array[" $ do
-        type_ sub
-      "]"
+    Flat.Optional sub -> "T.nilable(" <> type_ sub <> ")"
+    Flat.List sub -> "T::Array[" <> type_ sub <> "]"
     Flat.Text -> "String"
     Flat.Int -> "Integer"
     Flat.Float -> "Float"
@@ -99,8 +93,7 @@ type_ t =
       fields
         & fmap
           ( \(Flat.Field name sub) ->
-              fromString (Text.unpack name <> ":") $ do
-                type_ sub
+              fromString (Text.unpack name) <> ": " <> (type_ sub)
           )
         & foldr (>>) pure
     Flat.NestedCustomType name -> fromString (Text.unpack name)
