@@ -44,7 +44,6 @@ import qualified GHC.TypeLits
 
 data WireType
   = Type TypeDefinition [Constructor]
-  | Record [Field]
   | List WireType
   | Optional WireType
   | Unit
@@ -388,12 +387,30 @@ instance
 -- >       }
 --
 instance
-  ( KnownSymbol ctorname,
+  ( KnownSymbol typename,
+    KnownSymbol packname,
+    KnownSymbol modname,
+    KnownSymbol ctorname,
     FieldsG fields
   ) =>
-  WireG RecordType (D1 metadata (C1 ('MetaCons ctorname fix 'True) fields))
+  WireG
+    RecordType
+    ( D1
+        ('MetaData typename modname packname isnewtype)
+        (C1 ('MetaCons ctorname fix 'True) fields)
+    )
   where
-  typeG _ _ = Record (typeFieldsG (Proxy :: Proxy fields))
+  typeG _ _ =
+    Type
+      TypeDefinition
+        { packageName = T.pack (symbolVal (Proxy :: Proxy packname)),
+          moduleName = T.pack (symbolVal (Proxy :: Proxy modname)),
+          typeName = T.pack (symbolVal (Proxy :: Proxy typename))
+        }
+      [ Constructor
+          (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+          (typeFieldsG (Proxy :: Proxy fields))
+      ]
   encodeG _ = Encoding.pairs . encodeFieldsG . unM1 . unM1
   decodeG _ = fmap (M1 . M1) . Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG
 

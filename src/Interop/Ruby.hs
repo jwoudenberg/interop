@@ -43,6 +43,7 @@ toCode service' types' = do
     "extend T::Sig"
     "extend T::Helpers"
     mapRuby customType types'
+    ""
     "def initialize(origin, timeout = nil)" $ do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
@@ -58,56 +59,44 @@ toCode service' types' = do
 
 customType :: Flat.CustomType -> Ruby
 customType type' = do
+  ""
   chunks ["class", Text.unpack (Flat.typeName type')]
   "end"
 
 endpoint :: Text -> Endpoint m -> Ruby
-endpoint name (Endpoint _ (_ :: req -> m res)) =
-  let reqRecordName = toCamelCase name <> "Request"
-      resRecordName = toCamelCase name <> "Response"
-      (maybeReqRecord, reqType) =
-        type_
-          reqRecordName
-          (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
-      (maybeResRecord, resType) =
-        type_
-          resRecordName
-          (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
-   in do
-        maybe mempty (renderRecord reqRecordName) maybeReqRecord
-        maybe mempty (renderRecord resRecordName) maybeResRecord
-        "sig { params(body: "
-          <> reqType
-          <> ").returns("
-          <> resType
-          <> ") }"
-        chunks ["def ", toSnakeCase name, "(body:)"] $ do
-          "req = Net::HTTP::Post.new(@origin)"
-          "req[\"Content-Type\"] = \"application/json\""
-          ""
-          "@http.request(req, body)"
-        "end"
+endpoint name (Endpoint _ (_ :: req -> m res)) = do
+  ""
+  "sig { params(body: "
+    <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+    <> ").returns("
+    <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
+    <> ") }"
+  chunks ["def ", toSnakeCase name, "(body:)"] $ do
+    "req = Net::HTTP::Post.new(@origin)"
+    "req[\"Content-Type\"] = \"application/json\""
+    ""
+    "@http.request(req, body)"
+  "end"
 
-type_ :: Text -> Flat.Type -> (Maybe [Flat.Field], Ruby)
-type_ recordName t =
+type_ :: Flat.Type -> Ruby
+type_ t =
   case t of
-    Flat.Optional sub -> fmap (\subName -> "T.nilable(" <> subName <> ")") (type_ recordName sub)
-    Flat.List sub -> fmap (\subName -> "T::Array[" <> subName <> "]") (type_ recordName sub)
-    Flat.Text -> (Nothing, "String")
-    Flat.Int -> (Nothing, "Integer")
-    Flat.Float -> (Nothing, "Float")
-    Flat.Bool -> (Nothing, "T::Boolean")
-    Flat.Unit -> (Nothing, "NilClass")
-    Flat.Record fields -> (Just fields, fromString (Text.unpack recordName))
-    Flat.NestedCustomType name -> (Nothing, fromString (Text.unpack name))
+    Flat.Optional sub -> "T.nilable(" <> type_ sub <> ")"
+    Flat.List sub -> "T::Array[" <> type_ sub <> "]"
+    Flat.Text -> "String"
+    Flat.Int -> "Integer"
+    Flat.Float -> "Float"
+    Flat.Bool -> "T::Boolean"
+    Flat.Unit -> "NilClass"
+    Flat.NestedCustomType name -> fromString (Text.unpack name)
 
-renderRecord :: Text -> [Flat.Field] -> Ruby
-renderRecord recordName fields = do
+_renderRecord :: Text -> [Flat.Field] -> Ruby
+_renderRecord recordName fields = do
   ""
   chunks ["class ", fromString (Text.unpack recordName), " < T::Struct"] $
     mapRuby
       ( \(Flat.Field fieldName fieldType) ->
-          "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> snd (type_ "???" fieldType)
+          "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> type_ fieldType
       )
       fields
   "end"
@@ -173,9 +162,3 @@ toSnakeCase text =
     []
     text
     & reverse
-
-toCamelCase :: Text -> Text
-toCamelCase text =
-  case Text.uncons text of
-    Nothing -> text
-    Just (x, rest) -> Text.cons (Char.toUpper x) rest

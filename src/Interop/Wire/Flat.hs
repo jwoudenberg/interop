@@ -15,7 +15,6 @@ import Data.Function ((&))
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
-import qualified Data.Text as T
 import GHC.Exts (groupWith)
 import qualified Interop.Wire as Wire
 
@@ -46,7 +45,6 @@ data Type
   | Float
   | Bool
   | Unit
-  | Record [Field]
   | NestedCustomType Text
 
 typeAsText :: Type -> Text
@@ -59,10 +57,6 @@ typeAsText type_ =
     Unit -> "Unit"
     Optional subType -> "Maybe " <> typeAsText subType
     List subType -> "List " <> typeAsText subType
-    Record fields ->
-      let fieldAsText field =
-            fieldName field <> " : " <> typeAsText (fieldType field)
-       in "{ " <> T.intercalate ", " (fieldAsText <$> fields) <> " }"
     NestedCustomType name -> name
 
 customTypes :: [Wire.WireType] -> Either Text [CustomType]
@@ -84,7 +78,6 @@ customTypesByDef ::
   Map.Map Wire.TypeDefinition CustomType
 customTypesByDef wireType acc =
   case wireType of
-    Wire.Record fields -> foldl' (flip customTypesByDef) acc (Wire.fieldType <$> fields)
     Wire.List subType -> customTypesByDef subType acc
     Wire.Optional subType -> customTypesByDef subType acc
     Wire.Unit -> acc
@@ -135,10 +128,6 @@ fromFieldType :: Wire.WireType -> Type
 fromFieldType fieldType =
   case fieldType of
     Wire.Type nestedDef _ -> NestedCustomType (Wire.typeName nestedDef)
-    Wire.Record fields ->
-      fields
-        & fmap (\field -> Field (Wire.fieldName field) (fromFieldType (Wire.fieldType field)))
-        & Record
     Wire.List subType -> List (fromFieldType subType)
     Wire.Optional subType -> Optional (fromFieldType subType)
     Wire.Unit -> Unit
