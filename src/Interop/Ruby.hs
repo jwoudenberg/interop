@@ -59,9 +59,24 @@ toCode service' types' = do
   "end"
 
 customType :: Flat.CustomType -> Ruby
-customType type' = do
+customType (Flat.CustomType typeName constructors) = do
   ""
-  chunks ["class", Text.unpack (Flat.typeName type')]
+  chunks ["module ", Text.unpack typeName] do
+    "sealed!"
+    mapRuby
+      ( \(Flat.Constructor constructorName fields) -> do
+          ""
+          chunks ["class ", fromString (Text.unpack constructorName), " < T::Struct"] do
+            "include " <> fromString (Text.unpack typeName)
+            ""
+            mapRuby
+              ( \(Flat.Field fieldName fieldType) ->
+                  "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> type_ fieldType
+              )
+              fields
+          "end"
+      )
+      constructors
   "end"
 
 endpoint :: Text -> Endpoint m -> Ruby
@@ -90,17 +105,6 @@ type_ t =
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
     Flat.NestedCustomType name -> fromString (Text.unpack name)
-
-_renderRecord :: Text -> [Flat.Field] -> Ruby
-_renderRecord recordName fields = do
-  ""
-  chunks ["class ", fromString (Text.unpack recordName), " < T::Struct"] $
-    mapRuby
-      ( \(Flat.Field fieldName fieldType) ->
-          "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> type_ fieldType
-      )
-      fields
-  "end"
 
 -- DSL for generating ruby code from Haskell.
 

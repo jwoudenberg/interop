@@ -6,12 +6,29 @@ import qualified Interop
 service :: Interop.Service IO
 service =
   Interop.service
-    [ Interop.Endpoint "double" (\(DoubleNumber n) -> pure (n * 2))
+    [ Interop.Endpoint
+        "math"
+        ( \instruction ->
+            case instruction of
+              DoubleNumber (OneNumber n) -> pure (n * 2)
+              MultiplyNumber (TwoNumbers x y) -> pure (x * y)
+        )
     ]
 
-newtype DoubleNumber = DoubleNumber {n :: Int} deriving (Generic)
+data Math
+  = DoubleNumber OneNumber
+  | MultiplyNumber TwoNumbers
+  deriving (Generic)
 
-instance Interop.Wire DoubleNumber
+instance Interop.Wire Math
+
+newtype OneNumber = OneNumber {n :: Int} deriving (Generic)
+
+instance Interop.Wire OneNumber
+
+data TwoNumbers = TwoNumbers {x :: Int, y :: Int} deriving (Generic)
+
+instance Interop.Wire TwoNumbers
 
 -- generated-ruby
 --
@@ -25,7 +42,21 @@ instance Interop.Wire DoubleNumber
 --   extend T::Sig
 --   extend T::Helpers
 --
---   classDoubleNumber
+--   module Math
+--     sealed!
+--
+--     class MultiplyNumber < T::Struct
+--       include Math
+--
+--       prop :y, Integer
+--       prop :x, Integer
+--     end
+--
+--     class DoubleNumber < T::Struct
+--       include Math
+--
+--       prop :n, Integer
+--     end
 --   end
 --
 --   def initialize(origin, timeout = nil)
@@ -39,8 +70,8 @@ instance Interop.Wire DoubleNumber
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
---   sig { params(body: DoubleNumber).returns(Integer) }
---   def double(body:)
+--   sig { params(body: Math).returns(Integer) }
+--   def math(body:)
 --     req = Net::HTTP::Post.new(@origin)
 --     req["Content-Type"] = "application/json"
 --
