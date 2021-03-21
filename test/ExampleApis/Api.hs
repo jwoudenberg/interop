@@ -36,6 +36,10 @@ instance Interop.Wire DoubleNumber
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
+--   class DoubleRequest < T::Struct
+--     prop :n, Integer
+--   end
+--
 --   sig { params(body: DoubleRequest).returns(Integer) }
 --   def double(body:)
 --     req = Net::HTTP::Post.new(@origin)
