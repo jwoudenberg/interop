@@ -62,36 +62,55 @@ customType type' = do
   "end"
 
 endpoint :: Text -> Endpoint m -> Ruby
-endpoint name (Endpoint _ (_ :: req -> m res)) = do
-  ""
-  "sig { params(body: "
-    <> type_
-      (toCamelCase name <> "Request")
-      (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
-    <> ").returns("
-    <> type_
-      (toCamelCase name <> "Response")
-      (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
-    <> ") }"
-  chunks ["def ", toSnakeCase name, "(body:)"] $ do
-    "req = Net::HTTP::Post.new(@origin)"
-    "req[\"Content-Type\"] = \"application/json\""
-    ""
-    "@http.request(req, body)"
-  "end"
+endpoint name (Endpoint _ (_ :: req -> m res)) =
+  let reqRecordName = toCamelCase name <> "Request"
+      resRecordName = toCamelCase name <> "Response"
+      (maybeReqRecord, reqType) =
+        type_
+          reqRecordName
+          (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+      (maybeResRecord, resType) =
+        type_
+          resRecordName
+          (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
+   in do
+        maybe mempty (renderRecord reqRecordName) maybeReqRecord
+        maybe mempty (renderRecord resRecordName) maybeResRecord
+        "sig { params(body: "
+          <> reqType
+          <> ").returns("
+          <> resType
+          <> ") }"
+        chunks ["def ", toSnakeCase name, "(body:)"] $ do
+          "req = Net::HTTP::Post.new(@origin)"
+          "req[\"Content-Type\"] = \"application/json\""
+          ""
+          "@http.request(req, body)"
+        "end"
 
-type_ :: Text -> Flat.Type -> Ruby
+type_ :: Text -> Flat.Type -> (Maybe [Flat.Field], Ruby)
 type_ recordName t =
   case t of
-    Flat.Optional sub -> "T.nilable(" <> type_ recordName sub <> ")"
-    Flat.List sub -> "T::Array[" <> type_ recordName sub <> "]"
-    Flat.Text -> "String"
-    Flat.Int -> "Integer"
-    Flat.Float -> "Float"
-    Flat.Bool -> "T::Boolean"
-    Flat.Unit -> "NilClass"
-    Flat.Record _ -> fromString (Text.unpack recordName)
-    Flat.NestedCustomType name -> fromString (Text.unpack name)
+    Flat.Optional sub -> fmap (\subName -> "T.nilable(" <> subName <> ")") (type_ recordName sub)
+    Flat.List sub -> fmap (\subName -> "T::Array[" <> subName <> "]") (type_ recordName sub)
+    Flat.Text -> (Nothing, "String")
+    Flat.Int -> (Nothing, "Integer")
+    Flat.Float -> (Nothing, "Float")
+    Flat.Bool -> (Nothing, "T::Boolean")
+    Flat.Unit -> (Nothing, "NilClass")
+    Flat.Record fields -> (Just fields, fromString (Text.unpack recordName))
+    Flat.NestedCustomType name -> (Nothing, fromString (Text.unpack name))
+
+renderRecord :: Text -> [Flat.Field] -> Ruby
+renderRecord recordName fields = do
+  ""
+  chunks ["class ", fromString (Text.unpack recordName), " < T::Struct"] $
+    mapRuby
+      ( \(Flat.Field fieldName fieldType) ->
+          "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> snd (type_ "???" fieldType)
+      )
+      fields
+  "end"
 
 -- DSL for generating ruby code from Haskell.
 
