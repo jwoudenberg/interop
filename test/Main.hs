@@ -37,6 +37,7 @@ import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
 import qualified ExampleTypes.Int
 import qualified ExampleTypes.List
+import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
 import qualified ExampleTypes.Record
 import qualified ExampleTypes.RecursiveType
@@ -186,6 +187,7 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Int.hs" (ExampleTypes.Int.example) (ExampleTypes.Int.gen),
     ExampleType "test/ExampleTypes/List.hs" (ExampleTypes.List.example) (ExampleTypes.List.gen),
     ExampleType "test/ExampleTypes/NestedType.hs" (ExampleTypes.NestedType.example) (ExampleTypes.NestedType.gen),
+    ExampleType "test/ExampleTypes/NestedRecord.hs" (ExampleTypes.NestedRecord.example) (ExampleTypes.NestedRecord.gen),
     ExampleType "test/ExampleTypes/Record.hs" (ExampleTypes.Record.example) (ExampleTypes.Record.gen),
     ExampleType "test/ExampleTypes/RecursiveType.hs" (ExampleTypes.RecursiveType.example) (ExampleTypes.RecursiveType.gen),
     ExampleType "test/ExampleTypes/Text.hs" (ExampleTypes.Text.example) (ExampleTypes.Text.gen),
