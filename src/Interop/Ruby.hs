@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RebindableSyntax #-}
 
@@ -38,17 +39,17 @@ toCode service' types' = do
   "require \"uri\""
   "require \"sorbet-runtime\""
   ""
-  "module Api" $ do
+  "module Api" do
     ""
     "extend T::Sig"
     "extend T::Helpers"
     mapRuby customType types'
     ""
-    "def initialize(origin, timeout = nil)" $ do
+    "def initialize(origin, timeout = nil)" do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
       ""
-      "unless timeout.nil?" $ do
+      "unless timeout.nil?" do
         "@http.open_timeout = timeout"
         "@http.read_timeout = timeout"
       "end"
@@ -71,7 +72,7 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     <> ").returns("
     <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
     <> ") }"
-  chunks ["def ", toSnakeCase name, "(body:)"] $ do
+  chunks ["def ", toSnakeCase name, "(body:)"] do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
