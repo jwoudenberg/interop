@@ -10,8 +10,8 @@ service =
         "math"
         ( \instruction ->
             case instruction of
-              DoubleNumber (OneNumber n) -> pure (n * 2)
-              MultiplyNumber (TwoNumbers x y) -> pure (x * y)
+              DoubleNumber (OneNumber n) -> pure (Result (OneNumber (n * 2)))
+              MultiplyNumber (TwoNumbers x y) -> pure (Result (OneNumber (x * y)))
         )
     ]
 
@@ -30,6 +30,13 @@ data TwoNumbers = TwoNumbers {x :: Int, y :: Int} deriving (Generic)
 
 instance Interop.Wire TwoNumbers
 
+data Result
+  = Result OneNumber
+  | CannotDivideByZero
+  deriving (Generic)
+
+instance Interop.Wire Result
+
 -- generated-ruby
 --
 -- require "json"
@@ -43,19 +50,46 @@ instance Interop.Wire TwoNumbers
 --   extend T::Helpers
 --
 --   module JsonSerialization
---     sig { params(x: T.self_type).returns(String) }
---     def to_json(x)
---       Hash[x.class.to_s.split("::").last, x.serialize].to_json
+--     sig { returns(String) }
+--     def to_json
+--       Hash[class.class_name, serialize].to_json
 --     end
 --
 --     sig { params(json: String).returns(T.self_type) }
---     def parse_json(json)
+--     def self.from_json(json)
+--       parsed = JSON.parse(json)
+--       klass = "#{class_name}::#{parsed[parsed.keys.first]}".constantize
+--       klass.new(parsed)
+--     end
+--
+--     sig { returns(String) }
+--     def self.class_name
+--       to_s.split("::").last
+--     end
+--   end
+--
+--   module Result
+--     sealed!
+--     include JsonSerialization
+--     extend JsonSerialization
+--
+--     class CannotDivideByZero < T::Struct
+--       include Result
+--
+--
+--     end
+--
+--     class Result < T::Struct
+--       include Result
+--
+--       prop :n, Integer
 --     end
 --   end
 --
 --   module Math
 --     sealed!
 --     include JsonSerialization
+--     extend JsonSerialization
 --
 --     class MultiplyNumber < T::Struct
 --       include Math
@@ -82,11 +116,12 @@ instance Interop.Wire TwoNumbers
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
---   sig { params(body: Math).returns(Integer) }
+--   sig { params(body: Math).returns(Result) }
 --   def math(body:)
 --     req = Net::HTTP::Post.new(@origin)
 --     req["Content-Type"] = "application/json"
 --
---     @http.request(req, body)
+--     res = @http.request(req, body)
+--     Result.parse_json(res.body)
 --   end
 -- end

@@ -45,13 +45,21 @@ toCode service' types' = do
     "extend T::Helpers"
     ""
     "module JsonSerialization" do
-      "sig { params(x: T.self_type).returns(String) }"
-      "def to_json(x)" $
-        ("Hash[x.class.to_s.split(\"::\").last, x.serialize].to_json" :: Ruby)
+      "sig { returns(String) }"
+      "def to_json" do
+        ("Hash[class.class_name, serialize].to_json" :: Ruby)
       "end"
       ""
       "sig { params(json: String).returns(T.self_type) }"
-      "def parse_json(json)"
+      "def self.from_json(json)" do
+        "parsed = JSON.parse(json)"
+        "klass = \"#{class_name}::#{parsed[parsed.keys.first]}\".constantize"
+        "klass.new(parsed)"
+      "end"
+      ""
+      "sig { returns(String) }"
+      "def self.class_name" do
+        ("to_s.split(\"::\").last" :: Ruby)
       "end"
     "end"
     mapRuby customType types'
@@ -75,6 +83,7 @@ customType (Flat.CustomType typeName constructors) = do
   chunks ["module ", Text.unpack typeName] do
     "sealed!"
     "include JsonSerialization"
+    "extend JsonSerialization"
     mapRuby
       ( \(Flat.Constructor constructorName fields) -> do
           ""
@@ -93,17 +102,19 @@ customType (Flat.CustomType typeName constructors) = do
 
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
+  let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
   ""
   "sig { params(body: "
     <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
     <> ").returns("
-    <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res)))
+    <> type_ responseType
     <> ") }"
   chunks ["def ", toSnakeCase name, "(body:)"] do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
-    "@http.request(req, body)"
+    "res = @http.request(req, body)"
+    parseJson responseType <> "(res.body)"
   "end"
 
 type_ :: Flat.Type -> Ruby
@@ -117,6 +128,18 @@ type_ t =
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
     Flat.NestedCustomType name -> fromString (Text.unpack name)
+
+parseJson :: Flat.Type -> Ruby
+parseJson t =
+  case t of
+    Flat.Optional _ -> "JSON.parse"
+    Flat.List _ -> "JSON.parse"
+    Flat.Text -> "JSON.parse"
+    Flat.Int -> "JSON.parse"
+    Flat.Float -> "JSON.parse"
+    Flat.Bool -> "JSON.parse"
+    Flat.Unit -> "JSON.parse"
+    Flat.NestedCustomType name -> fromString (Text.unpack name) <> ".parse_json"
 
 -- DSL for generating ruby code from Haskell.
 
