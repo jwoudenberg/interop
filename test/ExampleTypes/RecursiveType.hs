@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeExamples.RecursiveType (example, gen) where
+module ExampleTypes.RecursiveType (example, gen) where
 
 import GHC.Generics (Generic)
 import qualified Hedgehog

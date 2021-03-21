@@ -1,4 +1,4 @@
-module TypeChangeExamples.V2.DropListField where
+module ExampleTypeChanges.V2.DropListField where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire

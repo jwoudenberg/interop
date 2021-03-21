@@ -1,4 +1,4 @@
-module TypeChangeExamples.Base where
+module ExampleTypeChanges.Base where
 
 import GHC.Generics (Generic)
 import qualified Hedgehog

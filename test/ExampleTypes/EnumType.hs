@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeExamples.EnumType (example, gen) where
+module ExampleTypes.EnumType (example, gen) where
 
 import GHC.Generics (Generic)
 import qualified Hedgehog

@@ -1,4 +1,4 @@
-module TypeExamples.List (example, gen) where
+module ExampleTypes.List (example, gen) where
 
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen

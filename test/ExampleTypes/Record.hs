@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeExamples.Record (example, gen) where
+module ExampleTypes.Record (example, gen) where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)

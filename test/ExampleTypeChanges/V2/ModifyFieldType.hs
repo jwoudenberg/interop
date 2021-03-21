@@ -1,4 +1,4 @@
-module TypeChangeExamples.V2.ModifyFieldType where
+module ExampleTypeChanges.V2.ModifyFieldType where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)

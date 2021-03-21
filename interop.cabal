@@ -60,27 +60,27 @@ test-suite tests
       Interop.Wire
       Interop.Wire.Flat
       ExampleApis.Api
-      TypeChangeExamples.Base
-      TypeChangeExamples.V2.AddConstructor
-      TypeChangeExamples.V2.AddListField
-      TypeChangeExamples.V2.AddNonOptionalField
-      TypeChangeExamples.V2.AddOptionalField
-      TypeChangeExamples.V2.DropListField
-      TypeChangeExamples.V2.DropNonOptionalField
-      TypeChangeExamples.V2.DropOptionalField
-      TypeChangeExamples.V2.ModifyFieldType
-      TypeChangeExamples.V2.ModifyListToOptionalField
-      TypeChangeExamples.V2.ModifyOptionalToListField
-      TypeChangeExamples.V2.RemoveConstructor
-      TypeExamples.EnumType
-      TypeExamples.Float
-      TypeExamples.Int
-      TypeExamples.List
-      TypeExamples.NestedType
-      TypeExamples.Record
-      TypeExamples.RecursiveType
-      TypeExamples.Text
-      TypeExamples.Unit
+      ExampleTypeChanges.Base
+      ExampleTypeChanges.V2.AddConstructor
+      ExampleTypeChanges.V2.AddListField
+      ExampleTypeChanges.V2.AddNonOptionalField
+      ExampleTypeChanges.V2.AddOptionalField
+      ExampleTypeChanges.V2.DropListField
+      ExampleTypeChanges.V2.DropNonOptionalField
+      ExampleTypeChanges.V2.DropOptionalField
+      ExampleTypeChanges.V2.ModifyFieldType
+      ExampleTypeChanges.V2.ModifyListToOptionalField
+      ExampleTypeChanges.V2.ModifyOptionalToListField
+      ExampleTypeChanges.V2.RemoveConstructor
+      ExampleTypes.EnumType
+      ExampleTypes.Float
+      ExampleTypes.Int
+      ExampleTypes.List
+      ExampleTypes.NestedType
+      ExampleTypes.Record
+      ExampleTypes.RecursiveType
+      ExampleTypes.Text
+      ExampleTypes.Unit
       Paths_interop
   hs-source-dirs:
       src

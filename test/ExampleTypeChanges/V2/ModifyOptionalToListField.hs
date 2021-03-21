@@ -1,4 +1,4 @@
-module TypeChangeExamples.V2.ModifyOptionalToListField where
+module ExampleTypeChanges.V2.ModifyOptionalToListField where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire

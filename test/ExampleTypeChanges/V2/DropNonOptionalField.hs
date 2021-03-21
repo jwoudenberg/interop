@@ -1,4 +1,4 @@
-module TypeChangeExamples.V2.DropNonOptionalField where
+module ExampleTypeChanges.V2.DropNonOptionalField where
 
 import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire

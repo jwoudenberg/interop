@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeExamples.Text (example, gen) where
+module ExampleTypes.Text (example, gen) where
 
 import Data.Text (Text)
 import qualified Hedgehog

@@ -1,4 +1,4 @@
-module TypeExamples.Float (example, gen) where
+module ExampleTypes.Float (example, gen) where
 
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeExamples.NestedType (example, gen) where
+module ExampleTypes.NestedType (example, gen) where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)

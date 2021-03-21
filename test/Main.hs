@@ -21,6 +21,27 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
 import qualified ExampleApis.Api
+import qualified ExampleTypeChanges.Base
+import qualified ExampleTypeChanges.V2.AddConstructor
+import qualified ExampleTypeChanges.V2.AddListField
+import qualified ExampleTypeChanges.V2.AddNonOptionalField
+import qualified ExampleTypeChanges.V2.AddOptionalField
+import qualified ExampleTypeChanges.V2.DropListField
+import qualified ExampleTypeChanges.V2.DropNonOptionalField
+import qualified ExampleTypeChanges.V2.DropOptionalField
+import qualified ExampleTypeChanges.V2.ModifyFieldType
+import qualified ExampleTypeChanges.V2.ModifyListToOptionalField
+import qualified ExampleTypeChanges.V2.ModifyOptionalToListField
+import qualified ExampleTypeChanges.V2.RemoveConstructor
+import qualified ExampleTypes.EnumType
+import qualified ExampleTypes.Float
+import qualified ExampleTypes.Int
+import qualified ExampleTypes.List
+import qualified ExampleTypes.NestedType
+import qualified ExampleTypes.Record
+import qualified ExampleTypes.RecursiveType
+import qualified ExampleTypes.Text
+import qualified ExampleTypes.Unit
 import qualified GHC
 import qualified GHC.Paths
 import Hedgehog hiding (test)
@@ -32,27 +53,6 @@ import qualified Interop.Wire.Flat as Flat
 import qualified Outputable
 import qualified System.Directory as Directory
 import qualified System.IO
-import qualified TypeChangeExamples.Base
-import qualified TypeChangeExamples.V2.AddConstructor
-import qualified TypeChangeExamples.V2.AddListField
-import qualified TypeChangeExamples.V2.AddNonOptionalField
-import qualified TypeChangeExamples.V2.AddOptionalField
-import qualified TypeChangeExamples.V2.DropListField
-import qualified TypeChangeExamples.V2.DropNonOptionalField
-import qualified TypeChangeExamples.V2.DropOptionalField
-import qualified TypeChangeExamples.V2.ModifyFieldType
-import qualified TypeChangeExamples.V2.ModifyListToOptionalField
-import qualified TypeChangeExamples.V2.ModifyOptionalToListField
-import qualified TypeChangeExamples.V2.RemoveConstructor
-import qualified TypeExamples.EnumType
-import qualified TypeExamples.Float
-import qualified TypeExamples.Int
-import qualified TypeExamples.List
-import qualified TypeExamples.NestedType
-import qualified TypeExamples.Record
-import qualified TypeExamples.RecursiveType
-import qualified TypeExamples.Text
-import qualified TypeExamples.Unit
 
 main :: IO ()
 main = do
@@ -85,41 +85,41 @@ diffTest (ChangeExampleType path changedType) =
   test1 (fromString path) $ do
     warnings <-
       typeChangeWarnings
-        (Proxy :: Proxy TypeChangeExamples.Base.TestType)
+        (Proxy :: Proxy ExampleTypeChanges.Base.TestType)
         changedType
     equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
 backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
 backwardsCompatibleDecodingTests =
   [ test "Server with new constructor can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.AddConstructor.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.AddConstructor.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server with new optional field can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.AddOptionalField.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.AddOptionalField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server with new list field can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.AddListField.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.AddListField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server which dropped a non-optional field can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.DropNonOptionalField.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.DropNonOptionalField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server which dropped an optional field can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.DropOptionalField.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.DropOptionalField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server which dropped a list field can still decode old types" $ do
-      oldType <- forAll TypeChangeExamples.Base.gen
+      oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
-      (_ :: TypeChangeExamples.V2.DropListField.TestType) <- evalEither (decode encoded)
+      (_ :: ExampleTypeChanges.V2.DropListField.TestType) <- evalEither (decode encoded)
       pure ()
   ]
 
@@ -138,7 +138,7 @@ rubyClientGenerationTests =
 -- for unsupported types in our regular source tree, or our test suite won't
 -- compile!
 --
--- Instead we put bad examples in the compile-error-examples directory, which
+-- Instead we put bad examples in the example-compile-errors directory, which
 -- we don't list as a source directory so Cabal won't attempt to compile it.
 -- Then we call GHC as a library to compile those module's and intercept the
 -- compilation errors this results in.
@@ -181,15 +181,15 @@ data ExampleType where
 
 exampleTypes :: [ExampleType]
 exampleTypes =
-  [ ExampleType "test/TypeExamples/EnumType.hs" (TypeExamples.EnumType.example) (TypeExamples.EnumType.gen),
-    ExampleType "test/TypeExamples/Float.hs" (TypeExamples.Float.example) (TypeExamples.Float.gen),
-    ExampleType "test/TypeExamples/Int.hs" (TypeExamples.Int.example) (TypeExamples.Int.gen),
-    ExampleType "test/TypeExamples/List.hs" (TypeExamples.List.example) (TypeExamples.List.gen),
-    ExampleType "test/TypeExamples/NestedType.hs" (TypeExamples.NestedType.example) (TypeExamples.NestedType.gen),
-    ExampleType "test/TypeExamples/Record.hs" (TypeExamples.Record.example) (TypeExamples.Record.gen),
-    ExampleType "test/TypeExamples/RecursiveType.hs" (TypeExamples.RecursiveType.example) (TypeExamples.RecursiveType.gen),
-    ExampleType "test/TypeExamples/Text.hs" (TypeExamples.Text.example) (TypeExamples.Text.gen),
-    ExampleType "test/TypeExamples/Unit.hs" (TypeExamples.Unit.example) (TypeExamples.Unit.gen)
+  [ ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
+    ExampleType "test/ExampleTypes/Float.hs" (ExampleTypes.Float.example) (ExampleTypes.Float.gen),
+    ExampleType "test/ExampleTypes/Int.hs" (ExampleTypes.Int.example) (ExampleTypes.Int.gen),
+    ExampleType "test/ExampleTypes/List.hs" (ExampleTypes.List.example) (ExampleTypes.List.gen),
+    ExampleType "test/ExampleTypes/NestedType.hs" (ExampleTypes.NestedType.example) (ExampleTypes.NestedType.gen),
+    ExampleType "test/ExampleTypes/Record.hs" (ExampleTypes.Record.example) (ExampleTypes.Record.gen),
+    ExampleType "test/ExampleTypes/RecursiveType.hs" (ExampleTypes.RecursiveType.example) (ExampleTypes.RecursiveType.gen),
+    ExampleType "test/ExampleTypes/Text.hs" (ExampleTypes.Text.example) (ExampleTypes.Text.gen),
+    ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen)
   ]
 
 data ChangeExampleType where
@@ -202,43 +202,43 @@ data ChangeExampleType where
 changeExampleTypes :: [ChangeExampleType]
 changeExampleTypes =
   [ ChangeExampleType
-      "test/TypeChangeExamples/V2/AddConstructor.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.AddConstructor.TestType),
+      "test/ExampleTypeChanges/V2/AddConstructor.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.AddConstructor.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/AddNonOptionalField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.AddNonOptionalField.TestType),
+      "test/ExampleTypeChanges/V2/AddNonOptionalField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.AddNonOptionalField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/AddOptionalField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.AddOptionalField.TestType),
+      "test/ExampleTypeChanges/V2/AddOptionalField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.AddOptionalField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/AddListField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.AddListField.TestType),
+      "test/ExampleTypeChanges/V2/AddListField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.AddListField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/DropNonOptionalField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.DropNonOptionalField.TestType),
+      "test/ExampleTypeChanges/V2/DropNonOptionalField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.DropNonOptionalField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/DropOptionalField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.DropOptionalField.TestType),
+      "test/ExampleTypeChanges/V2/DropOptionalField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.DropOptionalField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/DropListField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.DropListField.TestType),
+      "test/ExampleTypeChanges/V2/DropListField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.DropListField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/ModifyListToOptionalField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.ModifyListToOptionalField.TestType),
+      "test/ExampleTypeChanges/V2/ModifyListToOptionalField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyListToOptionalField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/ModifyOptionalToListField.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.ModifyOptionalToListField.TestType),
+      "test/ExampleTypeChanges/V2/ModifyOptionalToListField.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyOptionalToListField.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/ModifyFieldType.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.ModifyFieldType.TestType),
+      "test/ExampleTypeChanges/V2/ModifyFieldType.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyFieldType.TestType),
     ChangeExampleType
-      "test/TypeChangeExamples/V2/RemoveConstructor.hs"
-      (Proxy :: Proxy TypeChangeExamples.V2.RemoveConstructor.TestType)
+      "test/ExampleTypeChanges/V2/RemoveConstructor.hs"
+      (Proxy :: Proxy ExampleTypeChanges.V2.RemoveConstructor.TestType)
   ]
 
 getCompileErrorExamples :: IO [FilePath]
 getCompileErrorExamples =
-  let dir = "test/compile-error-examples/"
+  let dir = "test/example-compile-errors/"
    in fmap (dir <>) <$> Directory.listDirectory dir
 
 typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO Text
