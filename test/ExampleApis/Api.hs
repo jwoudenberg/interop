@@ -42,8 +42,20 @@ instance Interop.Wire TwoNumbers
 --   extend T::Sig
 --   extend T::Helpers
 --
+--   module JsonSerialization
+--     sig { params(x: T.self_type).returns(String) }
+--     def to_json(x)
+--       Hash[x.class.to_s.split("::").last, x.serialize].to_json
+--     end
+--
+--     sig { params(json: String).returns(T.self_type) }
+--     def parse_json(json)
+--     end
+--   end
+--
 --   module Math
 --     sealed!
+--     include JsonSerialization
 --
 --     class MultiplyNumber < T::Struct
 --       include Math

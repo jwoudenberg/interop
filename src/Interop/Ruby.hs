@@ -43,6 +43,17 @@ toCode service' types' = do
     ""
     "extend T::Sig"
     "extend T::Helpers"
+    ""
+    "module JsonSerialization" do
+      "sig { params(x: T.self_type).returns(String) }"
+      "def to_json(x)" $
+        ("Hash[x.class.to_s.split(\"::\").last, x.serialize].to_json" :: Ruby)
+      "end"
+      ""
+      "sig { params(json: String).returns(T.self_type) }"
+      "def parse_json(json)"
+      "end"
+    "end"
     mapRuby customType types'
     ""
     "def initialize(origin, timeout = nil)" do
@@ -63,6 +74,7 @@ customType (Flat.CustomType typeName constructors) = do
   ""
   chunks ["module ", Text.unpack typeName] do
     "sealed!"
+    "include JsonSerialization"
     mapRuby
       ( \(Flat.Constructor constructorName fields) -> do
           ""
