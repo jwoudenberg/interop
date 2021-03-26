@@ -155,6 +155,12 @@ compileErrorTest examplePath =
                 dflags
                   { -- Make GHC aware of the library source code.
                     GHC.importPaths = "src/" : GHC.importPaths dflags,
+                    -- Don't generate .hi or .o files of compiled code. These
+                    -- aren't necessary (we only want a compilation check), slow
+                    -- down tests, and can result in test flakiness when
+                    -- parallel tests compiling the same module try to write the
+                    -- same files.
+                    GHC.hscTarget = GHC.HscNothing,
                     -- Prevent GHC from logging to stdout. Use our own logic.
                     GHC.log_action = \dflags' _ severity _ _ msg ->
                       case severity of
