@@ -77,8 +77,18 @@ customType (Flat.CustomType typeName constructors) = do
               fields
             ""
             "sig { returns(Hash) }"
-            ("def to_h" :: Ruby -> Ruby) $
-              chunks ["Hash[", className, ", serialize]"]
+            "def to_h" do
+              chunks ["Hash[\"", className, "\", {"] do
+                mapRuby
+                  ( \(Flat.Field fieldName fieldType) ->
+                      "\""
+                        <> fromText fieldName
+                        <> "\": "
+                        <> encodeFieldType fieldName fieldType
+                        <> ","
+                  )
+                  fields
+              "}]"
             "end"
             ""
             "sig { params(json: Hash).returns(T.self_type) }"
@@ -89,6 +99,32 @@ customType (Flat.CustomType typeName constructors) = do
       )
       constructors
   "end"
+
+encodeFieldType :: Text -> Flat.Type -> Ruby
+encodeFieldType fieldName fieldType =
+  case fieldType of
+    Flat.Optional sub ->
+      encodeFieldType fieldName sub
+        <> " unless "
+        <> fromString (toSnakeCase fieldName)
+        <> ".nil?"
+    Flat.List sub ->
+      fromString (toSnakeCase fieldName)
+        <> ".map { |elem| "
+        <> encodeFieldType "elem" sub
+        <> " }"
+    Flat.Text ->
+      fromString (toSnakeCase fieldName)
+    Flat.Int ->
+      fromString (toSnakeCase fieldName)
+    Flat.Float ->
+      fromString (toSnakeCase fieldName)
+    Flat.Bool ->
+      fromString (toSnakeCase fieldName)
+    Flat.Unit ->
+      "[]"
+    Flat.NestedCustomType _ ->
+      fromString (toSnakeCase fieldName) <> ".to_h"
 
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
@@ -179,6 +215,9 @@ indentation = Ruby (\i -> stimesMonoid (2 * i) " ")
 
 render :: Ruby -> Builder.Builder
 render (Ruby f) = f 0
+
+fromText :: Text -> Ruby
+fromText = fromString . Text.unpack
 
 toSnakeCase :: Text -> String
 toSnakeCase text =

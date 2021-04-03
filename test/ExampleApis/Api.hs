@@ -1,5 +1,7 @@
 module ExampleApis.Api (service) where
 
+import qualified Data.Map.Strict as Map
+import Data.Text (Text)
 import GHC.Generics (Generic)
 import qualified Interop
 
@@ -7,35 +9,31 @@ service :: Interop.Service IO
 service =
   Interop.service
     [ Interop.Endpoint
-        "math"
-        ( \instruction ->
-            case instruction of
-              DoubleNumber (OneNumber n) -> pure (Result (OneNumber (n * 2)))
-              MultiplyNumber (TwoNumbers x y) -> pure (Result (OneNumber (x * y)))
-        )
+        "get_person_by_id"
+        (\id' -> pure (Map.lookup id' people)),
+      Interop.Endpoint
+        "get_all_people"
+        (\() -> pure (Map.elems people))
     ]
 
-data Math
-  = DoubleNumber OneNumber
-  | MultiplyNumber TwoNumbers
+people :: Map.Map Int Person
+people = Map.singleton 42 (Person "Jasper" "Woudenberg" [Hobby "boardgames"])
+
+data Person = Person
+  { firstName :: Text,
+    lastName :: Text,
+    hobbies :: [Hobby]
+  }
   deriving (Generic)
 
-instance Interop.Wire Math
+instance Interop.Wire Person
 
-newtype OneNumber = OneNumber {n :: Int} deriving (Generic)
-
-instance Interop.Wire OneNumber
-
-data TwoNumbers = TwoNumbers {x :: Int, y :: Int} deriving (Generic)
-
-instance Interop.Wire TwoNumbers
-
-data Result
-  = Result OneNumber
-  | CannotDivideByZero
+data Hobby = Hobby
+  { description :: Text
+  }
   deriving (Generic)
 
-instance Interop.Wire Result
+instance Interop.Wire Hobby
 
 -- generated-ruby
 --
@@ -49,33 +47,23 @@ instance Interop.Wire Result
 --   extend T::Sig
 --   extend T::Helpers
 --
---   module Result
+--   module Person
 --     sealed!
 --
---     class CannotDivideByZero < T::Struct
---       include Result
+--     class Person < T::Struct
+--       include Person
 --
---
---
---       sig { returns(Hash) }
---       def to_h
---         Hash[CannotDivideByZero, serialize]
---       end
---
---       sig { params(json: Hash).returns(T.self_type) }
---       def self.from_h(json)
---         new(json)
---       end
---     end
---
---     class Result < T::Struct
---       include Result
---
---       prop :n, Integer
+--       prop :last_name, String
+--       prop :hobbies, T::Array[Hobby]
+--       prop :first_name, String
 --
 --       sig { returns(Hash) }
 --       def to_h
---         Hash[Result, serialize]
+--         Hash["Person", {
+--           "lastName": last_name,
+--           "hobbies": hobbies.map { |elem| elem.to_h },
+--           "firstName": first_name,
+--         }]
 --       end
 --
 --       sig { params(json: Hash).returns(T.self_type) }
@@ -85,34 +73,19 @@ instance Interop.Wire Result
 --     end
 --   end
 --
---   module Math
+--   module Hobby
 --     sealed!
 --
---     class MultiplyNumber < T::Struct
---       include Math
+--     class Hobby < T::Struct
+--       include Hobby
 --
---       prop :y, Integer
---       prop :x, Integer
---
---       sig { returns(Hash) }
---       def to_h
---         Hash[MultiplyNumber, serialize]
---       end
---
---       sig { params(json: Hash).returns(T.self_type) }
---       def self.from_h(json)
---         new(json)
---       end
---     end
---
---     class DoubleNumber < T::Struct
---       include Math
---
---       prop :n, Integer
+--       prop :description, String
 --
 --       sig { returns(Hash) }
 --       def to_h
---         Hash[DoubleNumber, serialize]
+--         Hash["Hobby", {
+--           "description": description,
+--         }]
 --       end
 --
 --       sig { params(json: Hash).returns(T.self_type) }
@@ -133,12 +106,21 @@ instance Interop.Wire Result
 --     @http.use_ssl = @origin.scheme == 'https'
 --   end
 --
---   sig { params(body: Math).returns(Result) }
---   def math(body:)
+--   sig { params(body: Integer).returns(T.nilable(Person)) }
+--   def get_person_by_id(body:)
 --     req = Net::HTTP::Post.new(@origin)
 --     req["Content-Type"] = "application/json"
 --
 --     res = @http.request(req, body)
---     Result.parse_json(res.body)
+--     JSON.parse(res.body)
+--   end
+--
+--   sig { params(body: NilClass).returns(T::Array[Person]) }
+--   def get_all_people(body:)
+--     req = Net::HTTP::Post.new(@origin)
+--     req["Content-Type"] = "application/json"
+--
+--     res = @http.request(req, body)
+--     JSON.parse(res.body)
 --   end
 -- end
