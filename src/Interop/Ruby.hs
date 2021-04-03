@@ -68,7 +68,7 @@ customType (Flat.CustomType typeName constructors) = do
           let className = fromString (Text.unpack constructorName)
           ""
           chunks ["class ", className, " < T::Struct"] do
-            "include " <> fromString (Text.unpack typeName)
+            "include " <> fromText typeName
             ""
             mapRuby
               ( \(Flat.Field fieldName fieldType) ->
@@ -92,12 +92,38 @@ customType (Flat.CustomType typeName constructors) = do
             "end"
             ""
             "sig { params(json: Hash).returns(T.self_type) }"
-            ("def self.from_h(json)" :: Ruby -> Ruby) do
-              "new(json)"
+            "def self.from_h(json)" do
+              "new(" do
+                mapRuby
+                  ( \(Flat.Field fieldName fieldType) ->
+                      fromString (toSnakeCase fieldName)
+                        <> ": "
+                        <> decodeFieldType "json" fieldName fieldType
+                        <> ","
+                  )
+                  fields
+              ")"
             "end"
           "end"
       )
       constructors
+    ""
+    "sig { params(json: Hash).returns(T.self_type) }"
+    "def self.from_h(json)" do
+      "ctor_name, ctor_json = json.first"
+      "case ctor_name" do
+        mapRuby
+          ( \(Flat.Constructor constructorName _fields) -> do
+              "when \""
+                <> fromText constructorName
+                <> "\": "
+                <> fromText constructorName
+                <> ".from_h(ctor_json)"
+          )
+          constructors
+
+      "end"
+    "end"
   "end"
 
 encodeFieldType :: Text -> Flat.Type -> Ruby
@@ -126,6 +152,36 @@ encodeFieldType fieldName fieldType =
     Flat.NestedCustomType _ ->
       fromString (toSnakeCase fieldName) <> ".to_h"
 
+decodeFieldType :: Text -> Text -> Flat.Type -> Ruby
+decodeFieldType jsonVar fieldName fieldType =
+  case fieldType of
+    Flat.Optional sub ->
+      decodeFieldType jsonVar fieldName sub
+        <> " unless "
+        <> fromText jsonVar
+        <> "[\""
+        <> fromText fieldName
+        <> "\"]"
+        <> ".empty?"
+    Flat.List sub ->
+      "json[\""
+        <> fromText fieldName
+        <> "\"].map { |elem| "
+        <> decodeFieldType "elem" fieldName sub
+        <> " }"
+    Flat.Text ->
+      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+    Flat.Int ->
+      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+    Flat.Float ->
+      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+    Flat.Bool ->
+      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+    Flat.Unit ->
+      "nil"
+    Flat.NestedCustomType varName ->
+      fromText varName <> ".from_h(" <> fromText jsonVar <> ")"
+
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
   let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
@@ -153,7 +209,7 @@ type_ t =
     Flat.Float -> "Float"
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
-    Flat.NestedCustomType name -> fromString (Text.unpack name)
+    Flat.NestedCustomType name -> fromText name
 
 parseJson :: Flat.Type -> Ruby
 parseJson t =
@@ -165,7 +221,7 @@ parseJson t =
     Flat.Float -> "JSON.parse"
     Flat.Bool -> "JSON.parse"
     Flat.Unit -> "JSON.parse"
-    Flat.NestedCustomType name -> fromString (Text.unpack name) <> ".parse_json"
+    Flat.NestedCustomType name -> fromText name <> ".parse_json"
 
 -- DSL for generating ruby code from Haskell.
 

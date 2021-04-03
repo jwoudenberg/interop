@@ -68,7 +68,19 @@ instance Interop.Wire Hobby
 --
 --       sig { params(json: Hash).returns(T.self_type) }
 --       def self.from_h(json)
---         new(json)
+--         new(
+--           last_name: json["lastName"],
+--           hobbies: json["hobbies"].map { |elem| Hobby.from_h(elem) },
+--           first_name: json["firstName"],
+--         )
+--       end
+--     end
+--
+--     sig { params(json: Hash).returns(T.self_type) }
+--     def self.from_h(json)
+--       ctor_name, ctor_json = json.first
+--       case ctor_name
+--         when "Person": Person.from_h(ctor_json)
 --       end
 --     end
 --   end
@@ -90,7 +102,17 @@ instance Interop.Wire Hobby
 --
 --       sig { params(json: Hash).returns(T.self_type) }
 --       def self.from_h(json)
---         new(json)
+--         new(
+--           description: json["description"],
+--         )
+--       end
+--     end
+--
+--     sig { params(json: Hash).returns(T.self_type) }
+--     def self.from_h(json)
+--       ctor_name, ctor_json = json.first
+--       case ctor_name
+--         when "Hobby": Hobby.from_h(ctor_json)
 --       end
 --     end
 --   end
