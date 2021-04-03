@@ -43,25 +43,6 @@ toCode service' types' = do
     ""
     "extend T::Sig"
     "extend T::Helpers"
-    ""
-    "module JsonSerialization" do
-      "sig { returns(String) }"
-      "def to_json" do
-        ("Hash[class.class_name, serialize].to_json" :: Ruby)
-      "end"
-      ""
-      "sig { params(json: String).returns(T.self_type) }"
-      "def self.from_json(json)" do
-        "parsed = JSON.parse(json)"
-        "klass = \"#{class_name}::#{parsed[parsed.keys.first]}\".constantize"
-        "klass.new(parsed)"
-      "end"
-      ""
-      "sig { returns(String) }"
-      "def self.class_name" do
-        ("to_s.split(\"::\").last" :: Ruby)
-      "end"
-    "end"
     mapRuby customType types'
     ""
     "def initialize(origin, timeout = nil)" do
@@ -82,12 +63,11 @@ customType (Flat.CustomType typeName constructors) = do
   ""
   chunks ["module ", Text.unpack typeName] do
     "sealed!"
-    "include JsonSerialization"
-    "extend JsonSerialization"
     mapRuby
       ( \(Flat.Constructor constructorName fields) -> do
+          let className = fromString (Text.unpack constructorName)
           ""
-          chunks ["class ", fromString (Text.unpack constructorName), " < T::Struct"] do
+          chunks ["class ", className, " < T::Struct"] do
             "include " <> fromString (Text.unpack typeName)
             ""
             mapRuby
@@ -95,6 +75,16 @@ customType (Flat.CustomType typeName constructors) = do
                   "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> type_ fieldType
               )
               fields
+            ""
+            "sig { returns(Hash) }"
+            ("def to_h" :: Ruby -> Ruby) $
+              chunks ["Hash[", className, ", serialize]"]
+            "end"
+            ""
+            "sig { params(json: Hash).returns(T.self_type) }"
+            ("def self.from_h(json)" :: Ruby -> Ruby) do
+              "new(json)"
+            "end"
           "end"
       )
       constructors

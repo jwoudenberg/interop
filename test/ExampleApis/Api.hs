@@ -49,59 +49,76 @@ instance Interop.Wire Result
 --   extend T::Sig
 --   extend T::Helpers
 --
---   module JsonSerialization
---     sig { returns(String) }
---     def to_json
---       Hash[class.class_name, serialize].to_json
---     end
---
---     sig { params(json: String).returns(T.self_type) }
---     def self.from_json(json)
---       parsed = JSON.parse(json)
---       klass = "#{class_name}::#{parsed[parsed.keys.first]}".constantize
---       klass.new(parsed)
---     end
---
---     sig { returns(String) }
---     def self.class_name
---       to_s.split("::").last
---     end
---   end
---
 --   module Result
 --     sealed!
---     include JsonSerialization
---     extend JsonSerialization
 --
 --     class CannotDivideByZero < T::Struct
 --       include Result
 --
 --
+--
+--       sig { returns(Hash) }
+--       def to_h
+--         Hash[CannotDivideByZero, serialize]
+--       end
+--
+--       sig { params(json: Hash).returns(T.self_type) }
+--       def self.from_h(json)
+--         new(json)
+--       end
 --     end
 --
 --     class Result < T::Struct
 --       include Result
 --
 --       prop :n, Integer
+--
+--       sig { returns(Hash) }
+--       def to_h
+--         Hash[Result, serialize]
+--       end
+--
+--       sig { params(json: Hash).returns(T.self_type) }
+--       def self.from_h(json)
+--         new(json)
+--       end
 --     end
 --   end
 --
 --   module Math
 --     sealed!
---     include JsonSerialization
---     extend JsonSerialization
 --
 --     class MultiplyNumber < T::Struct
 --       include Math
 --
 --       prop :y, Integer
 --       prop :x, Integer
+--
+--       sig { returns(Hash) }
+--       def to_h
+--         Hash[MultiplyNumber, serialize]
+--       end
+--
+--       sig { params(json: Hash).returns(T.self_type) }
+--       def self.from_h(json)
+--         new(json)
+--       end
 --     end
 --
 --     class DoubleNumber < T::Struct
 --       include Math
 --
 --       prop :n, Integer
+--
+--       sig { returns(Hash) }
+--       def to_h
+--         Hash[DoubleNumber, serialize]
+--       end
+--
+--       sig { params(json: Hash).returns(T.self_type) }
+--       def self.from_h(json)
+--         new(json)
+--       end
 --     end
 --   end
 --
