@@ -41,7 +41,8 @@ module Api
     def self.from_h(json)
       ctor_name, ctor_json = json.first
       case ctor_name
-        when "Person": Person.from_h(ctor_json)
+        when "Person"
+          Person.from_h(ctor_json)
       end
     end
   end
@@ -73,7 +74,8 @@ module Api
     def self.from_h(json)
       ctor_name, ctor_json = json.first
       case ctor_name
-        when "Hobby": Hobby.from_h(ctor_json)
+        when "Hobby"
+          Hobby.from_h(ctor_json)
       end
     end
   end

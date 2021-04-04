@@ -100,12 +100,8 @@ customType (Flat.CustomType typeName constructors) = do
       "ctor_name, ctor_json = json.first"
       "case ctor_name" do
         forRuby constructors \(Flat.Constructor constructorName _fields) ->
-          "when \""
-            >< fromText constructorName
-            >< "\": "
-            >< fromText constructorName
-            >< ".from_h(ctor_json)"
-
+          "when \"" >< fromText constructorName >< "\"" do
+            fromText constructorName >< ".from_h(ctor_json)" :: Ruby
       "end"
     "end"
   "end"
