@@ -61,13 +61,13 @@ toCode service' types' = do
 customType :: Flat.CustomType -> Ruby
 customType (Flat.CustomType typeName constructors) = do
   ""
-  chunks ["module ", Text.unpack typeName] do
+  "module " >< fromString (Text.unpack typeName) do
     "sealed!"
     mapRuby
       ( \(Flat.Constructor constructorName fields) -> do
           let className = fromString (Text.unpack constructorName)
           ""
-          chunks ["class ", className, " < T::Struct"] do
+          "class " >< className >< " < T::Struct" do
             "include " <> fromText typeName
             ""
             mapRuby
@@ -78,7 +78,7 @@ customType (Flat.CustomType typeName constructors) = do
             ""
             "sig { returns(Hash) }"
             "def to_h" do
-              chunks ["Hash[\"", className, "\", {"] do
+              "Hash[\"" >< className >< "\", {" do
                 mapRuby
                   ( \(Flat.Field fieldName fieldType) ->
                       "\""
@@ -191,7 +191,7 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     <> ").returns("
     <> type_ responseType
     <> ") }"
-  chunks ["def ", toSnakeCase name, "(body:)"] do
+  "def " >< fromString (toSnakeCase name) >< "(body:)" do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
@@ -233,24 +233,23 @@ instance IsString Ruby where
     Ruby (\_ -> Builder.stringUtf8 str)
 
 instance IsString (Ruby -> Ruby) where
-  fromString str =
+  fromString str = fromRuby (fromString str)
+
+class FromRuby ruby where
+  fromRuby :: Ruby -> ruby
+
+instance FromRuby Ruby where
+  fromRuby = id
+
+instance FromRuby (Ruby -> Ruby) where
+  fromRuby ruby =
     ( \block -> do
-        fromString str
+        ruby
         indent ("  " <> block)
     )
 
-class Chunks a where
-  chunks :: [String] -> a
-
-instance Chunks Ruby where
-  chunks strs = fromString (mconcat strs)
-
-instance Chunks (Ruby -> Ruby) where
-  chunks strs =
-    ( \block -> do
-        chunks strs
-        indent ("  " <> block)
-    )
+(><) :: FromRuby ruby => Ruby -> Ruby -> ruby
+(><) (Ruby x) (Ruby y) = fromRuby (Ruby (x <> y))
 
 (>>) :: Ruby -> Ruby -> Ruby
 x >> y = x <> "\n" <> indentation <> y
