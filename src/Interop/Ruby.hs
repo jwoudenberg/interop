@@ -61,13 +61,12 @@ toCode service' types' = do
 customType :: Flat.CustomType -> Ruby
 customType (Flat.CustomType typeName constructors) = do
   ""
-  "module " >< fromString (Text.unpack typeName) do
+  "module " >< fromText typeName do
     "sealed!"
     mapRuby
       ( \(Flat.Constructor constructorName fields) -> do
-          let className = fromString (Text.unpack constructorName)
           ""
-          "class " >< className >< " < T::Struct" do
+          "class " >< fromText constructorName >< " < T::Struct" do
             "include " >< fromText typeName
             ""
             mapRuby
@@ -78,7 +77,7 @@ customType (Flat.CustomType typeName constructors) = do
             ""
             "sig { returns(Hash) }"
             "def to_h" do
-              "Hash[\"" >< className >< "\", {" do
+              "Hash[\"" >< fromText constructorName >< "\", {" do
                 mapRuby
                   ( \(Flat.Field fieldName fieldType) ->
                       "\""
@@ -280,8 +279,8 @@ indentation = Ruby (\i -> stimesMonoid (2 * i) " ")
 render :: Ruby -> Builder.Builder
 render (Ruby f) = f 0
 
-fromText :: Text -> Ruby
-fromText = fromString . Text.unpack
+fromText :: FromRuby ruby => Text -> ruby
+fromText = fromRuby . fromString . Text.unpack
 
 toSnakeCase :: Text -> Ruby
 toSnakeCase text =
