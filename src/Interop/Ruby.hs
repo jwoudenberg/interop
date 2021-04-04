@@ -72,7 +72,7 @@ customType (Flat.CustomType typeName constructors) = do
             ""
             mapRuby
               ( \(Flat.Field fieldName fieldType) ->
-                  "prop :" >< fromString (toSnakeCase fieldName) >< ", " >< type_ fieldType
+                  "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
               )
               fields
             ""
@@ -96,7 +96,7 @@ customType (Flat.CustomType typeName constructors) = do
               "new(" do
                 mapRuby
                   ( \(Flat.Field fieldName fieldType) ->
-                      fromString (toSnakeCase fieldName)
+                      toSnakeCase fieldName
                         >< ": "
                         >< decodeFieldType "json" fieldName fieldType
                         >< ","
@@ -132,25 +132,25 @@ encodeFieldType fieldName fieldType =
     Flat.Optional sub ->
       encodeFieldType fieldName sub
         >< " unless "
-        >< fromString (toSnakeCase fieldName)
+        >< toSnakeCase fieldName
         >< ".nil?"
     Flat.List sub ->
-      fromString (toSnakeCase fieldName)
+      toSnakeCase fieldName
         >< ".map { |elem| "
         >< encodeFieldType "elem" sub
         >< " }"
     Flat.Text ->
-      fromString (toSnakeCase fieldName)
+      toSnakeCase fieldName
     Flat.Int ->
-      fromString (toSnakeCase fieldName)
+      toSnakeCase fieldName
     Flat.Float ->
-      fromString (toSnakeCase fieldName)
+      toSnakeCase fieldName
     Flat.Bool ->
-      fromString (toSnakeCase fieldName)
+      toSnakeCase fieldName
     Flat.Unit ->
       "[]"
     Flat.NestedCustomType _ ->
-      fromString (toSnakeCase fieldName) >< ".to_h"
+      toSnakeCase fieldName >< ".to_h"
 
 decodeFieldType :: Text -> Text -> Flat.Type -> Ruby
 decodeFieldType jsonVar fieldName fieldType =
@@ -191,7 +191,7 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     >< ").returns("
     >< type_ responseType
     >< ") }"
-  "def " >< fromString (toSnakeCase name) >< "(body:)" do
+  "def " >< toSnakeCase name >< "(body:)" do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
@@ -273,7 +273,7 @@ render (Ruby f) = f 0
 fromText :: Text -> Ruby
 fromText = fromString . Text.unpack
 
-toSnakeCase :: Text -> String
+toSnakeCase :: Text -> Ruby
 toSnakeCase text =
   Text.foldl
     ( \acc char ->
@@ -285,3 +285,4 @@ toSnakeCase text =
     []
     text
     & reverse
+    & fromString
