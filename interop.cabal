@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 326a5886c848a2545023ce1bd6f14aaccb7da83c2de1d08e93a82c579e52c81a
+-- hash: 2bcefa77669b875ed1ea282344247d326a7bdce2c95f1ae98f8d3426bba87002
 
 name:           interop
 version:        0.1.0.0
@@ -76,6 +76,7 @@ test-suite tests
       ExampleTypes.Float
       ExampleTypes.Int
       ExampleTypes.List
+      ExampleTypes.NestedRecord
       ExampleTypes.NestedType
       ExampleTypes.Record
       ExampleTypes.RecursiveType
@@ -94,6 +95,7 @@ test-suite tests
     , bytestring >=0.10.8.2 && <0.12
     , containers >=0.6.0.1 && <0.7
     , directory >=1.3.3.0 && <1.4
+    , filepath >=1.4.0.0 && <1.5
     , ghc >=8.8 && <9.1
     , ghc-paths >=0.1 && <0.2
     , hedgehog >=1.0 && <1.1

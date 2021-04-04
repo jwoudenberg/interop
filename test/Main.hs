@@ -53,6 +53,7 @@ import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified Outputable
 import qualified System.Directory as Directory
+import qualified System.FilePath as FilePath
 import qualified System.IO
 
 main :: IO ()
@@ -131,7 +132,7 @@ rubyClientGenerationTests =
       evalIO $ System.IO.hClose h
       evalIO $ Interop.Ruby.generate path ExampleApis.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
-      equalToCommentsInFile "generated-ruby" "test/ExampleApis/Api.hs" generated
+      equalToContentsOfFile "test/ruby-tests/api.rb" generated
   ]
 
 -- | We'd like to test our custom compilation errors for Wire instances, and
@@ -314,6 +315,18 @@ equalToCommentsInFile header path actualUncommented = do
   if Text.null expected
     then evalIO $ Data.Text.IO.appendFile path ("\n" <> actual)
     else ShowUnquoted (Text.strip actual) === ShowUnquoted (Text.strip expected)
+
+-- | Checks the passed in Text value is equal to the contents of a file.
+-- If the file does not exist it is created.
+equalToContentsOfFile :: FilePath -> Text -> PropertyT IO ()
+equalToContentsOfFile path actual = do
+  evalIO $ Directory.createDirectoryIfMissing True (FilePath.takeDirectory path)
+  exists <- evalIO $ Directory.doesFileExist path
+  if exists
+    then do
+      expected <- evalIO $ Data.Text.IO.readFile path
+      ShowUnquoted (Text.strip actual) === ShowUnquoted (Text.strip expected)
+    else evalIO $ Data.Text.IO.writeFile path actual
 
 -- | Has a `Show` instance that prints contained text without any escape
 -- characters.
