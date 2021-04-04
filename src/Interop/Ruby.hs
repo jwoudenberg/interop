@@ -62,6 +62,8 @@ customType :: Flat.CustomType -> Ruby
 customType (Flat.CustomType typeName constructors) = do
   ""
   "module " >< fromText typeName do
+    "extend T::Sig"
+    "extend T::Helpers"
     "sealed!"
     forRuby constructors \(Flat.Constructor constructorName fields) -> do
       ""

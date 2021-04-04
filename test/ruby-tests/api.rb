@@ -9,6 +9,8 @@ module Api
   extend T::Helpers
   
   module Person
+    extend T::Sig
+    extend T::Helpers
     sealed!
     
     class Person < T::Struct
@@ -48,6 +50,8 @@ module Api
   end
   
   module Hobby
+    extend T::Sig
+    extend T::Helpers
     sealed!
     
     class Hobby < T::Struct
