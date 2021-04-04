@@ -68,11 +68,11 @@ customType (Flat.CustomType typeName constructors) = do
           let className = fromString (Text.unpack constructorName)
           ""
           "class " >< className >< " < T::Struct" do
-            "include " <> fromText typeName
+            "include " >< fromText typeName
             ""
             mapRuby
               ( \(Flat.Field fieldName fieldType) ->
-                  "prop :" <> fromString (toSnakeCase fieldName) <> ", " <> type_ fieldType
+                  "prop :" >< fromString (toSnakeCase fieldName) >< ", " >< type_ fieldType
               )
               fields
             ""
@@ -82,10 +82,10 @@ customType (Flat.CustomType typeName constructors) = do
                 mapRuby
                   ( \(Flat.Field fieldName fieldType) ->
                       "\""
-                        <> fromText fieldName
-                        <> "\": "
-                        <> encodeFieldType fieldName fieldType
-                        <> ","
+                        >< fromText fieldName
+                        >< "\": "
+                        >< encodeFieldType fieldName fieldType
+                        >< ","
                   )
                   fields
               "}]"
@@ -97,9 +97,9 @@ customType (Flat.CustomType typeName constructors) = do
                 mapRuby
                   ( \(Flat.Field fieldName fieldType) ->
                       fromString (toSnakeCase fieldName)
-                        <> ": "
-                        <> decodeFieldType "json" fieldName fieldType
-                        <> ","
+                        >< ": "
+                        >< decodeFieldType "json" fieldName fieldType
+                        >< ","
                   )
                   fields
               ")"
@@ -115,10 +115,10 @@ customType (Flat.CustomType typeName constructors) = do
         mapRuby
           ( \(Flat.Constructor constructorName _fields) -> do
               "when \""
-                <> fromText constructorName
-                <> "\": "
-                <> fromText constructorName
-                <> ".from_h(ctor_json)"
+                >< fromText constructorName
+                >< "\": "
+                >< fromText constructorName
+                >< ".from_h(ctor_json)"
           )
           constructors
 
@@ -131,14 +131,14 @@ encodeFieldType fieldName fieldType =
   case fieldType of
     Flat.Optional sub ->
       encodeFieldType fieldName sub
-        <> " unless "
-        <> fromString (toSnakeCase fieldName)
-        <> ".nil?"
+        >< " unless "
+        >< fromString (toSnakeCase fieldName)
+        >< ".nil?"
     Flat.List sub ->
       fromString (toSnakeCase fieldName)
-        <> ".map { |elem| "
-        <> encodeFieldType "elem" sub
-        <> " }"
+        >< ".map { |elem| "
+        >< encodeFieldType "elem" sub
+        >< " }"
     Flat.Text ->
       fromString (toSnakeCase fieldName)
     Flat.Int ->
@@ -150,60 +150,60 @@ encodeFieldType fieldName fieldType =
     Flat.Unit ->
       "[]"
     Flat.NestedCustomType _ ->
-      fromString (toSnakeCase fieldName) <> ".to_h"
+      fromString (toSnakeCase fieldName) >< ".to_h"
 
 decodeFieldType :: Text -> Text -> Flat.Type -> Ruby
 decodeFieldType jsonVar fieldName fieldType =
   case fieldType of
     Flat.Optional sub ->
       decodeFieldType jsonVar fieldName sub
-        <> " unless "
-        <> fromText jsonVar
-        <> "[\""
-        <> fromText fieldName
-        <> "\"]"
-        <> ".empty?"
+        >< " unless "
+        >< fromText jsonVar
+        >< "[\""
+        >< fromText fieldName
+        >< "\"]"
+        >< ".empty?"
     Flat.List sub ->
       "json[\""
-        <> fromText fieldName
-        <> "\"].map { |elem| "
-        <> decodeFieldType "elem" fieldName sub
-        <> " }"
+        >< fromText fieldName
+        >< "\"].map { |elem| "
+        >< decodeFieldType "elem" fieldName sub
+        >< " }"
     Flat.Text ->
-      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
     Flat.Int ->
-      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
     Flat.Float ->
-      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
     Flat.Bool ->
-      fromText jsonVar <> "[\"" <> fromText fieldName <> "\"]"
+      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
     Flat.Unit ->
       "nil"
     Flat.NestedCustomType varName ->
-      fromText varName <> ".from_h(" <> fromText jsonVar <> ")"
+      fromText varName >< ".from_h(" >< fromText jsonVar >< ")"
 
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
   let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
   ""
   "sig { params(body: "
-    <> type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
-    <> ").returns("
-    <> type_ responseType
-    <> ") }"
+    >< type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+    >< ").returns("
+    >< type_ responseType
+    >< ") }"
   "def " >< fromString (toSnakeCase name) >< "(body:)" do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
     "res = @http.request(req, body)"
-    parseJson responseType <> "(res.body)"
+    parseJson responseType >< "(res.body)"
   "end"
 
 type_ :: Flat.Type -> Ruby
 type_ t =
   case t of
-    Flat.Optional sub -> "T.nilable(" <> type_ sub <> ")"
-    Flat.List sub -> "T::Array[" <> type_ sub <> "]"
+    Flat.Optional sub -> "T.nilable(" >< type_ sub >< ")"
+    Flat.List sub -> "T::Array[" >< type_ sub >< "]"
     Flat.Text -> "String"
     Flat.Int -> "Integer"
     Flat.Float -> "Float"
@@ -221,12 +221,11 @@ parseJson t =
     Flat.Float -> "JSON.parse"
     Flat.Bool -> "JSON.parse"
     Flat.Unit -> "JSON.parse"
-    Flat.NestedCustomType name -> fromText name <> ".parse_json"
+    Flat.NestedCustomType name -> fromText name >< ".parse_json"
 
 -- DSL for generating ruby code from Haskell.
 
 newtype Ruby = Ruby (Int -> Builder.Builder)
-  deriving (Semigroup, Monoid)
 
 instance IsString Ruby where
   fromString str =
@@ -245,14 +244,14 @@ instance FromRuby (Ruby -> Ruby) where
   fromRuby ruby =
     ( \block -> do
         ruby
-        indent ("  " <> block)
+        indent ("  " >< block)
     )
 
 (><) :: FromRuby ruby => Ruby -> Ruby -> ruby
 (><) (Ruby x) (Ruby y) = fromRuby (Ruby (x <> y))
 
 (>>) :: Ruby -> Ruby -> Ruby
-x >> y = x <> "\n" <> indentation <> y
+x >> y = x >< "\n" >< indentation >< y
 
 pure :: Ruby
 pure = ""
