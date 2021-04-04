@@ -142,7 +142,7 @@ rubyClientGenerationTests =
 
 generatedRubyCodeTests :: [(PropertyName, Property)]
 generatedRubyCodeTests =
-  [ test1 "Generateed ruby code" $ do
+  [ test1 "Generated ruby code" $ do
       let app = Interop.wai ExampleApis.Api.service
       (exitCode, stdout, _stderr) <-
         evalIO $

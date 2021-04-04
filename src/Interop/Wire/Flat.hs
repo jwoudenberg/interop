@@ -11,6 +11,7 @@ module Interop.Wire.Flat
   )
 where
 
+import Data.Bifunctor (bimap)
 import Data.Function ((&))
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
@@ -24,7 +25,7 @@ import qualified Interop.Wire as Wire
 -- `NestedCustomType` constructor instead of embedding it entirely.
 data CustomType = CustomType
   { typeName :: Text,
-    constructors :: [Constructor]
+    subTypes :: Either [Field] [Constructor]
   }
 
 data Constructor = Constructor
@@ -85,29 +86,37 @@ customTypesByDef wireType acc =
     Wire.Int -> acc
     Wire.Float -> acc
     Wire.Bool -> acc
-    Wire.Type def wireConstructors ->
+    Wire.Type def subTypes ->
       -- We bail if we've already seen this type, so recursive types don't send
       -- us into an infinite loop.
       if Map.member def acc
         then acc
-        else
-          foldl'
-            ( \acc' constructor ->
-                foldl'
-                  ( \acc'' field ->
-                      customTypesByDef (Wire.fieldType field) acc''
-                  )
-                  acc'
-                  (Wire.fields constructor)
-            )
-            (Map.insert def (fromWireType def wireConstructors) acc)
-            wireConstructors
+        else case subTypes of
+          Left wireFields ->
+            foldl'
+              ( \acc'' field ->
+                  customTypesByDef (Wire.fieldType field) acc''
+              )
+              (Map.insert def (fromWireType def (Left wireFields)) acc)
+              wireFields
+          Right wireConstructors ->
+            foldl'
+              ( \acc' constructor ->
+                  foldl'
+                    ( \acc'' field ->
+                        customTypesByDef (Wire.fieldType field) acc''
+                    )
+                    acc'
+                    (Wire.fields constructor)
+              )
+              (Map.insert def (fromWireType def (Right wireConstructors)) acc)
+              wireConstructors
 
-fromWireType :: Wire.TypeDefinition -> [Wire.Constructor] -> CustomType
+fromWireType :: Wire.TypeDefinition -> Either [Wire.Field] [Wire.Constructor] -> CustomType
 fromWireType def wireConstructors =
   CustomType
     { typeName = Wire.typeName def,
-      constructors = fmap fromWireConstructor wireConstructors
+      subTypes = bimap (fmap fromWireField) (fmap fromWireConstructor) wireConstructors
     }
 
 fromWireConstructor :: Wire.Constructor -> Constructor

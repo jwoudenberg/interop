@@ -19,6 +19,7 @@ import Interop.Wire.Flat
 
 data TypeDiff
   = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)
+  | FieldsChanged CustomType (NonEmpty FieldDiff)
   | TypeMadeOptional Type
   | TypeMadeNonOptional Type
   | TypeChanged Type Type
@@ -106,6 +107,8 @@ typeWarnings path =
       ]
     CustomTypeChanged type_ constructorDiffs ->
       constructorWarnings (InType (typeName type_) path) constructorDiffs
+    FieldsChanged type_ fieldDiffs ->
+      fieldWarnings (InType (typeName type_) path) fieldDiffs
 
 constructorWarnings :: Path -> NonEmpty ConstructorDiff -> [TypeChangeWarning]
 constructorWarnings path =
@@ -176,11 +179,21 @@ diffType (beforeTypes, before) (afterTypes, after) =
     (NestedCustomType beforeName, NestedCustomType afterName) -> do
       beforeType <- maybe [] pure (Map.lookup beforeName beforeTypes)
       afterType <- maybe [] pure (Map.lookup afterName afterTypes)
-      diffCustomType
-        (beforeTypes, beforeType)
-        (afterTypes, afterType)
-        & nonEmpty
-        & maybe [] (pure . CustomTypeChanged beforeType)
+      case (subTypes beforeType, subTypes afterType) of
+        (Right beforeConstructors, Right afterConstructors) ->
+          diffCustomType
+            (beforeTypes, beforeConstructors)
+            (afterTypes, afterConstructors)
+            & nonEmpty
+            & maybe [] (pure . CustomTypeChanged beforeType)
+        (Left beforeFields, Left afterFields) ->
+          diffFields
+            (beforeTypes, beforeFields)
+            (afterTypes, afterFields)
+            & nonEmpty
+            & maybe [] (pure . FieldsChanged beforeType)
+        (_, _) ->
+          [TypeChanged before after]
     (List subBefore, List subAfter) ->
       case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
         [] -> []
@@ -205,16 +218,16 @@ diffType (beforeTypes, before) (afterTypes, after) =
     _ -> [TypeChanged before after]
 
 diffCustomType ::
-  (Map.Map Text CustomType, CustomType) ->
-  (Map.Map Text CustomType, CustomType) ->
+  (Map.Map Text CustomType, [Constructor]) ->
+  (Map.Map Text CustomType, [Constructor]) ->
   [ConstructorDiff]
 diffCustomType (beforeTypes, before) (afterTypes, after) =
   merge
     (\_ constructor diffs -> ConstructorRemoved constructor : diffs)
     ( \_ beforeConstructor afterConstructor diffs ->
-        diffConstructor
-          (beforeTypes, beforeConstructor)
-          (afterTypes, afterConstructor)
+        diffFields
+          (beforeTypes, fields beforeConstructor)
+          (afterTypes, fields afterConstructor)
           & nonEmpty
           & maybe diffs ((: diffs) . ConstructorChanged beforeConstructor)
     )
@@ -223,16 +236,16 @@ diffCustomType (beforeTypes, before) (afterTypes, after) =
     (constructorTuples after)
     []
   where
-    constructorTuples customType =
+    constructorTuples constructors =
       fmap
         (\constructor -> (constructorName constructor, constructor))
-        (constructors customType)
+        constructors
 
-diffConstructor ::
-  (Map.Map Text CustomType, Constructor) ->
-  (Map.Map Text CustomType, Constructor) ->
+diffFields ::
+  (Map.Map Text CustomType, [Field]) ->
+  (Map.Map Text CustomType, [Field]) ->
   [FieldDiff]
-diffConstructor (beforeTypes, before) (afterTypes, after) =
+diffFields (beforeTypes, before) (afterTypes, after) =
   merge
     (\_ field diffs -> FieldRemoved field : diffs)
     ( \_ beforeField afterField diffs ->
@@ -247,10 +260,10 @@ diffConstructor (beforeTypes, before) (afterTypes, after) =
     (fieldTuples after)
     []
   where
-    fieldTuples customType =
+    fieldTuples fields =
       fmap
         (\field -> (fieldName field, field))
-        (fields customType)
+        fields
 
 merge ::
   Ord key =>

@@ -43,7 +43,7 @@ import GHC.TypeLits hiding (Text)
 import qualified GHC.TypeLits
 
 data WireType
-  = Type TypeDefinition [Constructor]
+  = Type TypeDefinition (Either [Field] [Constructor])
   | List WireType
   | Optional WireType
   | Unit
@@ -343,7 +343,7 @@ instance
           moduleName = T.pack (symbolVal (Proxy :: Proxy modname)),
           typeName = T.pack (symbolVal (Proxy :: Proxy typename))
         }
-      (typeCtorsG (Proxy :: Proxy ctors))
+      (Right (typeCtorsG (Proxy :: Proxy ctors)))
   encodeG _ = Aeson.pairs . encodeCtorsG . unM1
   decodeG _ = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
 
@@ -407,10 +407,7 @@ instance
           moduleName = T.pack (symbolVal (Proxy :: Proxy modname)),
           typeName = T.pack (symbolVal (Proxy :: Proxy typename))
         }
-      [ Constructor
-          (T.pack (symbolVal (Proxy :: Proxy ctorname)))
-          (typeFieldsG (Proxy :: Proxy fields))
-      ]
+      (Left (typeFieldsG (Proxy :: Proxy fields)))
   encodeG _ = Encoding.pairs . encodeFieldsG . unM1 . unM1
   decodeG _ = fmap (M1 . M1) . Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG
 

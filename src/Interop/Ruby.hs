@@ -62,7 +62,7 @@ toCode service' types' = do
   "end"
 
 customTypeHead :: Flat.CustomType -> Ruby
-customTypeHead (Flat.CustomType typeName constructors) = do
+customTypeHead (Flat.CustomType typeName (Right constructors)) = do
   ""
   "module " >< fromText typeName do
     "extend T::Sig"
@@ -86,9 +86,12 @@ customTypeHead (Flat.CustomType typeName constructors) = do
       "end"
     "end"
   "end"
+customTypeHead (Flat.CustomType typeName (Left _)) = do
+  ""
+  "class " >< fromText typeName >< " < T::Struct; end"
 
 customType :: Flat.CustomType -> Ruby
-customType (Flat.CustomType typeName constructors) = do
+customType (Flat.CustomType typeName (Right constructors)) = do
   forRuby constructors \(Flat.Constructor constructorName fields) -> do
     ""
     "class " >< fromText typeName >< "::" >< fromText constructorName do
@@ -121,6 +124,38 @@ customType (Flat.CustomType typeName constructors) = do
         ")"
       "end"
     "end"
+customType (Flat.CustomType typeName (Left fields)) = do
+  ""
+  "class " >< fromText typeName do
+    "extend T::Sig"
+    "extend T::Helpers"
+    ""
+    forRuby fields \(Flat.Field fieldName fieldType) ->
+      "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
+    ""
+    "sig { returns(Hash) }"
+    "def to_h" do
+      "{" do
+        forRuby fields \(Flat.Field fieldName fieldType) ->
+          "\""
+            >< fromText fieldName
+            >< "\": "
+            >< encodeFieldType fieldName fieldType
+            >< ","
+      "}"
+    "end"
+    ""
+    "sig { params(json: Hash).returns(T.self_type) }"
+    "def self.from_h(json)" do
+      "new(" do
+        forRuby fields \(Flat.Field fieldName fieldType) ->
+          toSnakeCase fieldName
+            >< ": "
+            >< decodeFieldType "json" fieldName fieldType
+            >< ","
+      ")"
+    "end"
+  "end"
 
 encodeFieldType :: Text -> Flat.Type -> Ruby
 encodeFieldType fieldName fieldType =

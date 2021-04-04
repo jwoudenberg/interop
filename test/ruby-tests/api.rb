@@ -8,41 +8,11 @@ class Api
   extend T::Sig
   extend T::Helpers
   
-  module Person
-    extend T::Sig
-    extend T::Helpers
-    sealed!
-    
-    class Person < T::Struct; include Api::Person; end
-    
-    sig { params(json: Hash).returns(T.self_type) }
-    def self.from_h(json)
-      ctor_name, ctor_json = json.first
-      case ctor_name
-        when "Person"
-          Person.from_h(ctor_json)
-      end
-    end
-  end
+  class Person < T::Struct; end
   
-  module Hobby
-    extend T::Sig
-    extend T::Helpers
-    sealed!
-    
-    class Hobby < T::Struct; include Api::Hobby; end
-    
-    sig { params(json: Hash).returns(T.self_type) }
-    def self.from_h(json)
-      ctor_name, ctor_json = json.first
-      case ctor_name
-        when "Hobby"
-          Hobby.from_h(ctor_json)
-      end
-    end
-  end
+  class Hobby < T::Struct; end
   
-  class Person::Person
+  class Person
     extend T::Sig
     extend T::Helpers
     
@@ -52,11 +22,11 @@ class Api
     
     sig { returns(Hash) }
     def to_h
-      Hash["Person", {
+      {
         "lastName": last_name,
         "hobbies": hobbies.map { |elem| elem.to_h },
         "firstName": first_name,
-      }]
+      }
     end
     
     sig { params(json: Hash).returns(T.self_type) }
@@ -69,7 +39,7 @@ class Api
     end
   end
   
-  class Hobby::Hobby
+  class Hobby
     extend T::Sig
     extend T::Helpers
     
@@ -77,9 +47,9 @@ class Api
     
     sig { returns(Hash) }
     def to_h
-      Hash["Hobby", {
+      {
         "description": description,
-      }]
+      }
     end
     
     sig { params(json: Hash).returns(T.self_type) }
