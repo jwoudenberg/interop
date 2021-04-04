@@ -15,6 +15,6 @@ class TestApi < MiniTest::Unit::TestCase
           ),
         ],
       )
-    assert_equal response, expected
+    assert_equal response.serialize, expected.serialize
   end
 end
