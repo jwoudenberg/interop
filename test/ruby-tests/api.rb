@@ -101,22 +101,22 @@ class Api
     @http.use_ssl = @origin.scheme == 'https'
   end
   
-  sig { params(body: Integer).returns(T.nilable(Person)) }
-  def get_person_by_id(body)
+  sig { params(arg: Integer).returns(T.nilable(Person)) }
+  def get_person_by_id(arg)
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     
-    res = @http.request(req, body)
+    res = @http.request(req, arg.to_json)
     json = JSON.parse(res.body)
     Person.from_h(json) unless json.empty?
   end
   
-  sig { params(body: NilClass).returns(T::Array[Person]) }
-  def get_all_people(body)
+  sig { params(arg: NilClass).returns(T::Array[Person]) }
+  def get_all_people(arg)
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     
-    res = @http.request(req, body)
+    res = @http.request(req, arg.to_json)
     json = JSON.parse(res.body)
     json.map { |elem| Person.from_h(elem) }
   end

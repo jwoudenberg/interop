@@ -182,17 +182,18 @@ decodeFieldType jsonVar fieldName fieldType =
 endpoint :: Text -> Endpoint m -> Ruby
 endpoint name (Endpoint _ (_ :: req -> m res)) = do
   let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
+  let requestType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req))
   ""
-  "sig { params(body: "
-    >< type_ (Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req)))
+  "sig { params(arg: "
+    >< type_ requestType
     >< ").returns("
     >< type_ responseType
     >< ") }"
-  "def " >< toSnakeCase name >< "(body)" do
+  "def " >< toSnakeCase name >< "(arg)" do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
-    "res = @http.request(req, body)"
+    "res = @http.request(req, " >< encodeJson "arg" requestType >< ".to_json)"
     "json = JSON.parse(res.body)"
     parseJson "json" responseType
   "end"
@@ -208,6 +209,27 @@ type_ t =
     Flat.Bool -> "T::Boolean"
     Flat.Unit -> "NilClass"
     Flat.NestedCustomType name -> fromText name
+
+encodeJson :: Text -> Flat.Type -> Ruby
+encodeJson jsonVar t =
+  case t of
+    Flat.Optional sub ->
+      "if "
+        >< fromText jsonVar
+        >< ".nil? then {} else "
+        >< encodeJson jsonVar sub
+        >< " end"
+    Flat.List sub ->
+      fromText jsonVar
+        >< ".map { |elem| "
+        >< encodeJson "elem" sub
+        >< " }"
+    Flat.Text -> fromText jsonVar
+    Flat.Int -> fromText jsonVar
+    Flat.Float -> fromText jsonVar
+    Flat.Bool -> fromText jsonVar
+    Flat.Unit -> fromText jsonVar
+    Flat.NestedCustomType _ -> fromText jsonVar >< ".to_h"
 
 parseJson :: Text -> Flat.Type -> Ruby
 parseJson jsonVar t =
