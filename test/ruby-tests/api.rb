@@ -102,7 +102,7 @@ module Api
   end
   
   sig { params(body: Integer).returns(T.nilable(Person)) }
-  def get_person_by_id(body:)
+  def get_person_by_id(body)
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     
@@ -112,7 +112,7 @@ module Api
   end
   
   sig { params(body: NilClass).returns(T::Array[Person]) }
-  def get_all_people(body:)
+  def get_all_people(body)
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     

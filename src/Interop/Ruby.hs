@@ -188,7 +188,7 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     >< ").returns("
     >< type_ responseType
     >< ") }"
-  "def " >< toSnakeCase name >< "(body:)" do
+  "def " >< toSnakeCase name >< "(body)" do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
