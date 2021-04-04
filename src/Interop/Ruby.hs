@@ -193,7 +193,8 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
-    "res = @http.request(req, " >< encodeJson "arg" requestType >< ".to_json)"
+    "body = [\"" >< fromText name >< "\", " >< encodeJson "arg" requestType >< "]"
+    "res = @http.request(req, body.to_json)"
     "json = JSON.parse(res.body)"
     parseJson "json" responseType
   "end"

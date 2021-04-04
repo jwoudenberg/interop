@@ -106,7 +106,8 @@ class Api
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     
-    res = @http.request(req, arg.to_json)
+    body = ["get_person_by_id", arg]
+    res = @http.request(req, body.to_json)
     json = JSON.parse(res.body)
     Person.from_h(json) unless json.empty?
   end
@@ -116,7 +117,8 @@ class Api
     req = Net::HTTP::Post.new(@origin)
     req["Content-Type"] = "application/json"
     
-    res = @http.request(req, arg.to_json)
+    body = ["get_all_people", arg]
+    res = @http.request(req, body.to_json)
     json = JSON.parse(res.body)
     json.map { |elem| Person.from_h(elem) }
   end
