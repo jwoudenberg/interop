@@ -164,7 +164,8 @@ decodeFieldType jsonVar fieldName fieldType =
         >< "\"]"
         >< ".empty?"
     Flat.List sub ->
-      "json[\""
+      fromText jsonVar
+        >< "[\""
         >< fromText fieldName
         >< "\"].map { |elem| "
         >< decodeFieldType "elem" fieldName sub
@@ -196,7 +197,8 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     "req[\"Content-Type\"] = \"application/json\""
     ""
     "res = @http.request(req, body)"
-    parseJson responseType >< "(res.body)"
+    "json = JSON.parse(res.body)"
+    parseJson "json" responseType
   "end"
 
 type_ :: Flat.Type -> Ruby
@@ -211,17 +213,25 @@ type_ t =
     Flat.Unit -> "NilClass"
     Flat.NestedCustomType name -> fromText name
 
-parseJson :: Flat.Type -> Ruby
-parseJson t =
+parseJson :: Text -> Flat.Type -> Ruby
+parseJson jsonVar t =
   case t of
-    Flat.Optional _ -> "JSON.parse"
-    Flat.List _ -> "JSON.parse"
-    Flat.Text -> "JSON.parse"
-    Flat.Int -> "JSON.parse"
-    Flat.Float -> "JSON.parse"
-    Flat.Bool -> "JSON.parse"
-    Flat.Unit -> "JSON.parse"
-    Flat.NestedCustomType name -> fromText name >< ".parse_json"
+    Flat.Optional sub ->
+      parseJson jsonVar sub
+        >< " unless "
+        >< fromText jsonVar
+        >< ".empty?"
+    Flat.List sub ->
+      fromText jsonVar
+        >< ".map { |elem| "
+        >< parseJson "elem" sub
+        >< " }"
+    Flat.Text -> fromText jsonVar
+    Flat.Int -> fromText jsonVar
+    Flat.Float -> fromText jsonVar
+    Flat.Bool -> fromText jsonVar
+    Flat.Unit -> fromText jsonVar
+    Flat.NestedCustomType name -> fromText name >< ".from_h(" >< fromText jsonVar >< ")"
 
 -- DSL for generating ruby code from Haskell.
 

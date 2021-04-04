@@ -134,7 +134,8 @@ instance Interop.Wire Hobby
 --     req["Content-Type"] = "application/json"
 --
 --     res = @http.request(req, body)
---     JSON.parse(res.body)
+--     json = JSON.parse(res.body)
+--     Person.from_h(json) unless json.empty?
 --   end
 --
 --   sig { params(body: NilClass).returns(T::Array[Person]) }
@@ -143,6 +144,7 @@ instance Interop.Wire Hobby
 --     req["Content-Type"] = "application/json"
 --
 --     res = @http.request(req, body)
---     JSON.parse(res.body)
+--     json = JSON.parse(res.body)
+--     json.map { |elem| Person.from_h(elem) }
 --   end
 -- end
