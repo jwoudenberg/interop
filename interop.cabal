@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2bcefa77669b875ed1ea282344247d326a7bdce2c95f1ae98f8d3426bba87002
+-- hash: 7c9b10df7d45fbe9d54bad1f4467e20d49b553998826661b160e3edb0c28dd0d
 
 name:           interop
 version:        0.1.0.0
@@ -99,7 +99,9 @@ test-suite tests
     , ghc >=8.8 && <9.1
     , ghc-paths >=0.1 && <0.2
     , hedgehog >=1.0 && <1.1
+    , process >=1.6.0.0 && <1.7
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
     , wai >=3.2.0 && <3.3
+    , warp
   default-language: Haskell2010

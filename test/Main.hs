@@ -47,14 +47,18 @@ import qualified GHC
 import qualified GHC.Paths
 import Hedgehog hiding (test)
 import qualified Hedgehog.Main
+import qualified Interop
 import qualified Interop.Diff
 import qualified Interop.Ruby
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
+import qualified Network.Wai.Handler.Warp as Warp
 import qualified Outputable
 import qualified System.Directory as Directory
+import qualified System.Exit
 import qualified System.FilePath as FilePath
 import qualified System.IO
+import qualified System.Process as Process
 
 main :: IO ()
 main = do
@@ -65,7 +69,8 @@ main = do
       checkParallel (Group "diff" (diffTest <$> changeExampleTypes)),
       checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
       checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests),
-      checkParallel (Group "ruby client generation" rubyClientGenerationTests)
+      checkParallel (Group "ruby client generation" rubyClientGenerationTests),
+      checkParallel (Group "generated ruby code" generatedRubyCodeTests)
     ]
 
 encodeDecodeRoundtripTest :: ExampleType -> (PropertyName, Property)
@@ -133,6 +138,24 @@ rubyClientGenerationTests =
       evalIO $ Interop.Ruby.generate path ExampleApis.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
       equalToContentsOfFile "test/ruby-tests/api.rb" generated
+  ]
+
+generatedRubyCodeTests :: [(PropertyName, Property)]
+generatedRubyCodeTests =
+  [ test1 "Generateed ruby code" $ do
+      let app = Interop.wai ExampleApis.Api.service
+      (exitCode, stdout, _stderr) <-
+        evalIO $
+          Warp.testWithApplication (pure app) $ \port -> do
+            let proc =
+                  (Process.proc "ruby" ["test.rb"])
+                    { Process.env = Just [("PORT", show port)],
+                      Process.cwd = Just "test/ruby-tests"
+                    }
+            Process.readCreateProcessWithExitCode proc ""
+      case exitCode of
+        System.Exit.ExitSuccess -> pure ()
+        System.Exit.ExitFailure _ -> fail stdout
   ]
 
 -- | We'd like to test our custom compilation errors for Wire instances, and

@@ -3,7 +3,7 @@ load 'api.rb'
 
 class TestApi < MiniTest::Unit::TestCase
   def test_api
-    api = Api.new("http://localhost:9000")
+    api = Api.new("http://localhost:#{ENV['PORT'].to_i}")
     response = api.get_person_by_id(42)
     expected =
       Person::Person.new(
