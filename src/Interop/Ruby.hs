@@ -68,7 +68,7 @@ customType (Flat.CustomType typeName constructors) = do
     forRuby constructors \(Flat.Constructor constructorName fields) -> do
       ""
       "class " >< fromText constructorName >< " < T::Struct" do
-        "include " >< fromText typeName
+        "include Api::" >< fromText typeName
         ""
         forRuby fields \(Flat.Field fieldName fieldType) ->
           "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType

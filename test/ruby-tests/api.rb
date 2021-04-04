@@ -14,7 +14,7 @@ module Api
     sealed!
     
     class Person < T::Struct
-      include Person
+      include Api::Person
       
       prop :last_name, String
       prop :hobbies, T::Array[Hobby]
@@ -55,7 +55,7 @@ module Api
     sealed!
     
     class Hobby < T::Struct
-      include Hobby
+      include Api::Hobby
       
       prop :description, String
       
