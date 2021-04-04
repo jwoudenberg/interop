@@ -9,12 +9,8 @@ class TestApi < MiniTest::Unit::TestCase
       Api::Person.new(
         first_name: "Jasper",
         last_name: "Woudenberg",
-        hobbies: [
-          Api::Hobby.new(
-            description: "boardgames",
-          ),
-        ],
+        hobbies: [Api::Hobby::BoardGames.new],
       )
-    assert_equal response.serialize, expected.serialize
+    assert_equal response.to_h, expected.to_h
   end
 end

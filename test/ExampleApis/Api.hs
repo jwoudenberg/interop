@@ -17,7 +17,7 @@ service =
     ]
 
 people :: Map.Map Int Person
-people = Map.singleton 42 (Person "Jasper" "Woudenberg" [Hobby "boardgames"])
+people = Map.singleton 42 (Person "Jasper" "Woudenberg" [BoardGames])
 
 data Person = Person
   { firstName :: Text,
@@ -28,9 +28,10 @@ data Person = Person
 
 instance Interop.Wire Person
 
-data Hobby = Hobby
-  { description :: Text
-  }
+data Hobby
+  = BoardGames
+  | Piano
+  | Football
   deriving (Generic)
 
 instance Interop.Wire Hobby

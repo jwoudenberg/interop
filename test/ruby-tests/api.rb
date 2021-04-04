@@ -10,7 +10,28 @@ class Api
   
   class Person < T::Struct; end
   
-  class Hobby < T::Struct; end
+  module Hobby
+    extend T::Sig
+    extend T::Helpers
+    sealed!
+    
+    class Piano < T::Struct; include Api::Hobby; end
+    class Football < T::Struct; include Api::Hobby; end
+    class BoardGames < T::Struct; include Api::Hobby; end
+    
+    sig { params(json: Hash).returns(T.self_type) }
+    def self.from_h(json)
+      ctor_name, ctor_json = json.first
+      case ctor_name
+        when "Piano"
+          Piano.from_h(ctor_json)
+        when "Football"
+          Football.from_h(ctor_json)
+        when "BoardGames"
+          BoardGames.from_h(ctor_json)
+      end
+    end
+  end
   
   class Person
     extend T::Sig
@@ -39,23 +60,65 @@ class Api
     end
   end
   
-  class Hobby
+  class Hobby::Piano
     extend T::Sig
     extend T::Helpers
     
-    prop :description, String
+    
     
     sig { returns(Hash) }
     def to_h
-      {
-        "description": description,
-      }
+      Hash["Piano", {
+        
+      }]
     end
     
     sig { params(json: Hash).returns(T.self_type) }
     def self.from_h(json)
       new(
-        description: json["description"],
+        
+      )
+    end
+  end
+  
+  class Hobby::Football
+    extend T::Sig
+    extend T::Helpers
+    
+    
+    
+    sig { returns(Hash) }
+    def to_h
+      Hash["Football", {
+        
+      }]
+    end
+    
+    sig { params(json: Hash).returns(T.self_type) }
+    def self.from_h(json)
+      new(
+        
+      )
+    end
+  end
+  
+  class Hobby::BoardGames
+    extend T::Sig
+    extend T::Helpers
+    
+    
+    
+    sig { returns(Hash) }
+    def to_h
+      Hash["BoardGames", {
+        
+      }]
+    end
+    
+    sig { params(json: Hash).returns(T.self_type) }
+    def self.from_h(json)
+      new(
+        
       )
     end
   end
