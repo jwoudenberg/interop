@@ -43,6 +43,9 @@ toCode service' types' = do
     ""
     "extend T::Sig"
     "extend T::Helpers"
+    -- We define all classes first, then reopen them and add implementations.
+    -- This is necessary to allow mutually recursive references between classes.
+    forRuby types' customTypeHead
     forRuby types' customType
     ""
     "def initialize(origin, timeout = nil)" do
@@ -58,44 +61,20 @@ toCode service' types' = do
     forRuby (Map.toList (unService service')) (uncurry endpoint)
   "end"
 
-customType :: Flat.CustomType -> Ruby
-customType (Flat.CustomType typeName constructors) = do
+customTypeHead :: Flat.CustomType -> Ruby
+customTypeHead (Flat.CustomType typeName constructors) = do
   ""
   "module " >< fromText typeName do
     "extend T::Sig"
     "extend T::Helpers"
     "sealed!"
-    forRuby constructors \(Flat.Constructor constructorName fields) -> do
-      ""
-      "class " >< fromText constructorName >< " < T::Struct" do
-        "include Api::" >< fromText typeName
-        ""
-        forRuby fields \(Flat.Field fieldName fieldType) ->
-          "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
-        ""
-        "sig { returns(Hash) }"
-        "def to_h" do
-          "Hash[\"" >< fromText constructorName >< "\", {" do
-            forRuby fields \(Flat.Field fieldName fieldType) ->
-              "\""
-                >< fromText fieldName
-                >< "\": "
-                >< encodeFieldType fieldName fieldType
-                >< ","
-          "}]"
-        "end"
-        ""
-        "sig { params(json: Hash).returns(T.self_type) }"
-        "def self.from_h(json)" do
-          "new(" do
-            forRuby fields \(Flat.Field fieldName fieldType) ->
-              toSnakeCase fieldName
-                >< ": "
-                >< decodeFieldType "json" fieldName fieldType
-                >< ","
-          ")"
-        "end"
-      "end"
+    ""
+    forRuby constructors \(Flat.Constructor constructorName _) -> do
+      "class "
+        >< fromText constructorName
+        >< " < T::Struct; include Api::"
+        >< fromText typeName
+        >< "; end"
     ""
     "sig { params(json: Hash).returns(T.self_type) }"
     "def self.from_h(json)" do
@@ -107,6 +86,41 @@ customType (Flat.CustomType typeName constructors) = do
       "end"
     "end"
   "end"
+
+customType :: Flat.CustomType -> Ruby
+customType (Flat.CustomType typeName constructors) = do
+  forRuby constructors \(Flat.Constructor constructorName fields) -> do
+    ""
+    "class " >< fromText typeName >< "::" >< fromText constructorName do
+      "extend T::Sig"
+      "extend T::Helpers"
+      ""
+      forRuby fields \(Flat.Field fieldName fieldType) ->
+        "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
+      ""
+      "sig { returns(Hash) }"
+      "def to_h" do
+        "Hash[\"" >< fromText constructorName >< "\", {" do
+          forRuby fields \(Flat.Field fieldName fieldType) ->
+            "\""
+              >< fromText fieldName
+              >< "\": "
+              >< encodeFieldType fieldName fieldType
+              >< ","
+        "}]"
+      "end"
+      ""
+      "sig { params(json: Hash).returns(T.self_type) }"
+      "def self.from_h(json)" do
+        "new(" do
+          forRuby fields \(Flat.Field fieldName fieldType) ->
+            toSnakeCase fieldName
+              >< ": "
+              >< decodeFieldType "json" fieldName fieldType
+              >< ","
+        ")"
+      "end"
+    "end"
 
 encodeFieldType :: Text -> Flat.Type -> Ruby
 encodeFieldType fieldName fieldType =

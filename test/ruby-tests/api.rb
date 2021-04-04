@@ -13,31 +13,7 @@ module Api
     extend T::Helpers
     sealed!
     
-    class Person < T::Struct
-      include Api::Person
-      
-      prop :last_name, String
-      prop :hobbies, T::Array[Hobby]
-      prop :first_name, String
-      
-      sig { returns(Hash) }
-      def to_h
-        Hash["Person", {
-          "lastName": last_name,
-          "hobbies": hobbies.map { |elem| elem.to_h },
-          "firstName": first_name,
-        }]
-      end
-      
-      sig { params(json: Hash).returns(T.self_type) }
-      def self.from_h(json)
-        new(
-          last_name: json["lastName"],
-          hobbies: json["hobbies"].map { |elem| Hobby.from_h(elem) },
-          first_name: json["firstName"],
-        )
-      end
-    end
+    class Person < T::Struct; include Api::Person; end
     
     sig { params(json: Hash).returns(T.self_type) }
     def self.from_h(json)
@@ -54,25 +30,7 @@ module Api
     extend T::Helpers
     sealed!
     
-    class Hobby < T::Struct
-      include Api::Hobby
-      
-      prop :description, String
-      
-      sig { returns(Hash) }
-      def to_h
-        Hash["Hobby", {
-          "description": description,
-        }]
-      end
-      
-      sig { params(json: Hash).returns(T.self_type) }
-      def self.from_h(json)
-        new(
-          description: json["description"],
-        )
-      end
-    end
+    class Hobby < T::Struct; include Api::Hobby; end
     
     sig { params(json: Hash).returns(T.self_type) }
     def self.from_h(json)
@@ -81,6 +39,54 @@ module Api
         when "Hobby"
           Hobby.from_h(ctor_json)
       end
+    end
+  end
+  
+  class Person::Person
+    extend T::Sig
+    extend T::Helpers
+    
+    prop :last_name, String
+    prop :hobbies, T::Array[Hobby]
+    prop :first_name, String
+    
+    sig { returns(Hash) }
+    def to_h
+      Hash["Person", {
+        "lastName": last_name,
+        "hobbies": hobbies.map { |elem| elem.to_h },
+        "firstName": first_name,
+      }]
+    end
+    
+    sig { params(json: Hash).returns(T.self_type) }
+    def self.from_h(json)
+      new(
+        last_name: json["lastName"],
+        hobbies: json["hobbies"].map { |elem| Hobby.from_h(elem) },
+        first_name: json["firstName"],
+      )
+    end
+  end
+  
+  class Hobby::Hobby
+    extend T::Sig
+    extend T::Helpers
+    
+    prop :description, String
+    
+    sig { returns(Hash) }
+    def to_h
+      Hash["Hobby", {
+        "description": description,
+      }]
+    end
+    
+    sig { params(json: Hash).returns(T.self_type) }
+    def self.from_h(json)
+      new(
+        description: json["description"],
+      )
     end
   end
   
