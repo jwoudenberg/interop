@@ -39,7 +39,7 @@ toCode service' types' = do
   "require \"uri\""
   "require \"sorbet-runtime\""
   ""
-  "module Api" do
+  "class Api" do
     ""
     "extend T::Sig"
     "extend T::Helpers"

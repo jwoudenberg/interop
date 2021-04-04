@@ -3,7 +3,7 @@ require "net/http"
 require "uri"
 require "sorbet-runtime"
 
-module Api
+class Api
   
   extend T::Sig
   extend T::Helpers
