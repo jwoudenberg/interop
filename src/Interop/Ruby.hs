@@ -43,7 +43,7 @@ toCode service' types' = do
     ""
     "extend T::Sig"
     "extend T::Helpers"
-    mapRuby customType types'
+    forRuby types' customType
     ""
     "def initialize(origin, timeout = nil)" do
       "@origin = URI(origin)"
@@ -55,7 +55,7 @@ toCode service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    mapRuby (uncurry endpoint) (Map.toList (unService service'))
+    forRuby (Map.toList (unService service')) (uncurry endpoint)
   "end"
 
 customType :: Flat.CustomType -> Ruby
@@ -63,63 +63,48 @@ customType (Flat.CustomType typeName constructors) = do
   ""
   "module " >< fromText typeName do
     "sealed!"
-    mapRuby
-      ( \(Flat.Constructor constructorName fields) -> do
-          ""
-          "class " >< fromText constructorName >< " < T::Struct" do
-            "include " >< fromText typeName
-            ""
-            mapRuby
-              ( \(Flat.Field fieldName fieldType) ->
-                  "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
-              )
-              fields
-            ""
-            "sig { returns(Hash) }"
-            "def to_h" do
-              "Hash[\"" >< fromText constructorName >< "\", {" do
-                mapRuby
-                  ( \(Flat.Field fieldName fieldType) ->
-                      "\""
-                        >< fromText fieldName
-                        >< "\": "
-                        >< encodeFieldType fieldName fieldType
-                        >< ","
-                  )
-                  fields
-              "}]"
-            "end"
-            ""
-            "sig { params(json: Hash).returns(T.self_type) }"
-            "def self.from_h(json)" do
-              "new(" do
-                mapRuby
-                  ( \(Flat.Field fieldName fieldType) ->
-                      toSnakeCase fieldName
-                        >< ": "
-                        >< decodeFieldType "json" fieldName fieldType
-                        >< ","
-                  )
-                  fields
-              ")"
-            "end"
-          "end"
-      )
-      constructors
+    forRuby constructors \(Flat.Constructor constructorName fields) -> do
+      ""
+      "class " >< fromText constructorName >< " < T::Struct" do
+        "include " >< fromText typeName
+        ""
+        forRuby fields \(Flat.Field fieldName fieldType) ->
+          "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
+        ""
+        "sig { returns(Hash) }"
+        "def to_h" do
+          "Hash[\"" >< fromText constructorName >< "\", {" do
+            forRuby fields \(Flat.Field fieldName fieldType) ->
+              "\""
+                >< fromText fieldName
+                >< "\": "
+                >< encodeFieldType fieldName fieldType
+                >< ","
+          "}]"
+        "end"
+        ""
+        "sig { params(json: Hash).returns(T.self_type) }"
+        "def self.from_h(json)" do
+          "new(" do
+            forRuby fields \(Flat.Field fieldName fieldType) ->
+              toSnakeCase fieldName
+                >< ": "
+                >< decodeFieldType "json" fieldName fieldType
+                >< ","
+          ")"
+        "end"
+      "end"
     ""
     "sig { params(json: Hash).returns(T.self_type) }"
     "def self.from_h(json)" do
       "ctor_name, ctor_json = json.first"
       "case ctor_name" do
-        mapRuby
-          ( \(Flat.Constructor constructorName _fields) -> do
-              "when \""
-                >< fromText constructorName
-                >< "\": "
-                >< fromText constructorName
-                >< ".from_h(ctor_json)"
-          )
-          constructors
+        forRuby constructors \(Flat.Constructor constructorName _fields) ->
+          "when \""
+            >< fromText constructorName
+            >< "\": "
+            >< fromText constructorName
+            >< ".from_h(ctor_json)"
 
       "end"
     "end"
@@ -265,9 +250,9 @@ x >> y = x >< "\n" >< indentation >< y
 pure :: Ruby
 pure = ""
 
-mapRuby :: (a -> Ruby) -> [a] -> Ruby
-mapRuby _ [] = pure
-mapRuby f (x : xs) = foldr (>>) (f x) (fmap f xs)
+forRuby :: [a] -> (a -> Ruby) -> Ruby
+forRuby [] _ = pure
+forRuby (x : xs) f = foldr (>>) (f x) (fmap f xs)
 
 indent :: Ruby -> Ruby
 indent (Ruby block) =
