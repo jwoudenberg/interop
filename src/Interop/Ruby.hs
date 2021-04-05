@@ -9,6 +9,7 @@ module Interop.Ruby (generate) where
 import qualified Data.ByteString.Builder as Builder
 import Data.Char as Char
 import Data.Function ((&))
+import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Semigroup (stimesMonoid)
@@ -34,31 +35,35 @@ generate path namespaces service' =
 
 toCode :: [Text] -> Service m -> [Flat.CustomType] -> Ruby
 toCode namespaces service' types' = do
+  let (moduleNames, apiName) =
+        case reverse namespaces of
+          [] -> ([], "Api")
+          first : rest -> (rest, first)
   "require \"json\""
   "require \"net/http\""
   "require \"uri\""
   "require \"sorbet-runtime\""
   ""
-  foldr
+  foldl'
     inNamespace
-    (apiClass service' types')
-    namespaces
+    (apiClass apiName service' types')
+    moduleNames
 
-inNamespace :: Text -> Ruby -> Ruby
-inNamespace namespace ruby = do
+inNamespace :: Ruby -> Text -> Ruby
+inNamespace ruby namespace = do
   "module " >< fromText namespace do
     ruby
   "end"
 
-apiClass :: Service m -> [Flat.CustomType] -> Ruby
-apiClass service' types' = do
-  "class Api" do
+apiClass :: Text -> Service m -> [Flat.CustomType] -> Ruby
+apiClass apiName service' types' = do
+  "class " >< fromText apiName do
     ""
     "extend T::Sig"
     "extend T::Helpers"
     -- We define all classes first, then reopen them and add implementations.
     -- This is necessary to allow mutually recursive references between classes.
-    forRuby types' customTypeHead
+    forRuby types' (customTypeHead apiName)
     forRuby types' customType
     ""
     "def initialize(origin, timeout = nil)" do
@@ -74,8 +79,8 @@ apiClass service' types' = do
     forRuby (Map.toList (unService service')) (uncurry endpoint)
   "end"
 
-customTypeHead :: Flat.CustomType -> Ruby
-customTypeHead (Flat.CustomType typeName (Right constructors)) = do
+customTypeHead :: Text -> Flat.CustomType -> Ruby
+customTypeHead apiName (Flat.CustomType typeName (Right constructors)) = do
   ""
   "module " >< fromText typeName do
     "extend T::Sig"
@@ -85,7 +90,9 @@ customTypeHead (Flat.CustomType typeName (Right constructors)) = do
     forRuby constructors \(Flat.Constructor constructorName _) -> do
       "class "
         >< fromText constructorName
-        >< " < T::Struct; include Api::"
+        >< " < T::Struct; include "
+        >< fromText apiName
+        >< "::"
         >< fromText typeName
         >< "; end"
     ""
@@ -99,7 +106,7 @@ customTypeHead (Flat.CustomType typeName (Right constructors)) = do
       "end"
     "end"
   "end"
-customTypeHead (Flat.CustomType typeName (Left _)) = do
+customTypeHead _ (Flat.CustomType typeName (Left _)) = do
   ""
   "class " >< fromText typeName >< " < T::Struct; end"
 
