@@ -135,9 +135,9 @@ rubyClientGenerationTests =
   [ test1 "Generation of ruby client for API" $ do
       (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
       evalIO $ System.IO.hClose h
-      evalIO $ Interop.Ruby.generate path [] ExampleApis.Api.service
+      evalIO $ Interop.Ruby.generate path ["Apis", "ExampleApi"] ExampleApis.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
-      equalToContentsOfFile "test/ruby-tests/api.rb" generated
+      equalToContentsOfFile "test/ruby-tests/apis/example_api.rb" generated
   ]
 
 generatedRubyCodeTests :: [(PropertyName, Property)]
