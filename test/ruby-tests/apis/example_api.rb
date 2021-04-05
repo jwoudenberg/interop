@@ -1,10 +1,10 @@
+require "json"
+require "net/http"
+require "uri"
+require "sorbet-runtime"
+
 module Apis
   module ExampleApi
-    require "json"
-    require "net/http"
-    require "uri"
-    require "sorbet-runtime"
-    
     class Api
       
       extend T::Sig

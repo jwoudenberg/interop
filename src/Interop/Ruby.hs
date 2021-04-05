@@ -28,12 +28,21 @@ generate path namespaces service' =
     Right types' ->
       System.IO.withFile path System.IO.WriteMode $
         \handle ->
-          foldr
-            inNamespace
-            (toCode service' types')
-            namespaces
+          toCode namespaces service' types'
             & render
             & Builder.hPutBuilder handle
+
+toCode :: [Text] -> Service m -> [Flat.CustomType] -> Ruby
+toCode namespaces service' types' = do
+  "require \"json\""
+  "require \"net/http\""
+  "require \"uri\""
+  "require \"sorbet-runtime\""
+  ""
+  foldr
+    inNamespace
+    (apiClass service' types')
+    namespaces
 
 inNamespace :: Text -> Ruby -> Ruby
 inNamespace namespace ruby = do
@@ -41,13 +50,8 @@ inNamespace namespace ruby = do
     ruby
   "end"
 
-toCode :: Service m -> [Flat.CustomType] -> Ruby
-toCode service' types' = do
-  "require \"json\""
-  "require \"net/http\""
-  "require \"uri\""
-  "require \"sorbet-runtime\""
-  ""
+apiClass :: Service m -> [Flat.CustomType] -> Ruby
+apiClass service' types' = do
   "class Api" do
     ""
     "extend T::Sig"
