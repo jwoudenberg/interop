@@ -21,16 +21,25 @@ import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
 
-generate :: FilePath -> Service m -> IO ()
-generate path service' =
+generate :: FilePath -> [Text] -> Service m -> IO ()
+generate path namespaces service' =
   case types service' of
     Left err -> fail (Text.unpack err)
     Right types' ->
       System.IO.withFile path System.IO.WriteMode $
         \handle ->
-          toCode service' types'
+          foldr
+            inNamespace
+            (toCode service' types')
+            namespaces
             & render
             & Builder.hPutBuilder handle
+
+inNamespace :: Text -> Ruby -> Ruby
+inNamespace namespace ruby = do
+  "module " >< fromText namespace do
+    ruby
+  "end"
 
 toCode :: Service m -> [Flat.CustomType] -> Ruby
 toCode service' types' = do
