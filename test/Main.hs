@@ -11,8 +11,10 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as ByteString
+import qualified Data.Char as Char
 import Data.Function ((&))
 import qualified Data.IORef as IORef
+import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
@@ -88,13 +90,14 @@ encodingTest (ExampleType path example _) =
       & equalToCommentsInFile "JSON encoding of example value:" path
 
 diffTest :: ChangeExampleType -> (PropertyName, Property)
-diffTest (ChangeExampleType path changedType) =
-  test1 (fromString path) $ do
-    warnings <-
-      typeChangeWarnings
-        (Proxy :: Proxy ExampleTypeChanges.Base.TestType)
-        changedType
-    equalToCommentsInFile "Warnings for this change from Base type:" path warnings
+diffTest (ChangeExampleType name changedType) =
+  let path = "test/ExampleTypeChanges/V2/" <> name <> ".hs"
+   in test1 (fromString path) $ do
+        warnings <-
+          typeChangeWarnings
+            (Proxy :: Proxy ExampleTypeChanges.Base.TestType)
+            changedType
+        equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
 backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
 backwardsCompatibleDecodingTests =
@@ -132,13 +135,28 @@ backwardsCompatibleDecodingTests =
 
 rubyClientGenerationTests :: [(PropertyName, Property)]
 rubyClientGenerationTests =
-  [ test1 "Generation of ruby client for API" $ do
+  [ test1 "ExampleApi" $ do
       (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
       evalIO $ System.IO.hClose h
       evalIO $ Interop.Ruby.generate path ["Apis", "ExampleApi"] ExampleApis.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
       equalToContentsOfFile "test/ruby-tests/apis/example_api.rb" generated
   ]
+    <> ( changeExampleTypes
+           & fmap
+             ( \(ChangeExampleType name (_ :: Proxy t)) ->
+                 test1 (fromString name) $ do
+                   (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
+                   evalIO $ System.IO.hClose h
+                   let service =
+                         Interop.service
+                           [ Interop.Endpoint "echo" ((\_ -> Proxy) :: t -> Proxy t)
+                           ]
+                   evalIO $ Interop.Ruby.generate path ["Apis", "V2", Text.pack name] service
+                   generated <- evalIO $ Data.Text.IO.readFile path
+                   equalToContentsOfFile ("test/ruby-tests/apis/v2/" <> toSnakeCase name <> ".rb") generated
+             )
+       )
 
 generatedRubyCodeTests :: [(PropertyName, Property)]
 generatedRubyCodeTests =
@@ -234,37 +252,37 @@ data ChangeExampleType where
 changeExampleTypes :: [ChangeExampleType]
 changeExampleTypes =
   [ ChangeExampleType
-      "test/ExampleTypeChanges/V2/AddConstructor.hs"
+      "AddConstructor"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddConstructor.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/AddNonOptionalField.hs"
+      "AddNonOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddNonOptionalField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/AddOptionalField.hs"
+      "AddOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddOptionalField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/AddListField.hs"
+      "AddListField"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddListField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/DropNonOptionalField.hs"
+      "DropNonOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.DropNonOptionalField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/DropOptionalField.hs"
+      "DropOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.DropOptionalField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/DropListField.hs"
+      "DropListField"
       (Proxy :: Proxy ExampleTypeChanges.V2.DropListField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/ModifyListToOptionalField.hs"
+      "ModifyListToOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.ModifyListToOptionalField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/ModifyOptionalToListField.hs"
+      "ModifyOptionalToListField"
       (Proxy :: Proxy ExampleTypeChanges.V2.ModifyOptionalToListField.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/ModifyFieldType.hs"
+      "ModifyFieldType"
       (Proxy :: Proxy ExampleTypeChanges.V2.ModifyFieldType.TestType),
     ChangeExampleType
-      "test/ExampleTypeChanges/V2/RemoveConstructor.hs"
+      "RemoveConstructor"
       (Proxy :: Proxy ExampleTypeChanges.V2.RemoveConstructor.TestType)
   ]
 
@@ -358,3 +376,16 @@ newtype ShowUnquoted = ShowUnquoted Text
 
 instance Show ShowUnquoted where
   show (ShowUnquoted text) = Text.unpack text
+
+toSnakeCase :: String -> String
+toSnakeCase string =
+  foldl'
+    ( \acc char ->
+        case (acc, Char.isUpper char) of
+          ([], _) -> [Char.toLower char]
+          (_, True) -> Char.toLower char : '_' : acc
+          (_, False) -> char : acc
+    )
+    []
+    string
+    & reverse
