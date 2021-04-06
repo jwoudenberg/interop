@@ -74,8 +74,8 @@ module Apis
         def self.from_h(json)
           new(
             optional_field: json["optionalField"] && json["optionalField"],
-            list_field: json["listField"].map { |elem| elem["listField"] },
-            other_list_field: json["otherListField"].map { |elem| elem["otherListField"] },
+            list_field: json["listField"].map { |elem| elem },
+            other_list_field: json["otherListField"].map { |elem| elem },
             field: json["field"],
           )
         end

@@ -139,7 +139,7 @@ customType (Flat.CustomType typeName (Right constructors)) = do
           forRuby fields \(Flat.Field fieldName fieldType) ->
             toSnakeCase fieldName
               >< ": "
-              >< decodeFieldType "json" fieldName fieldType
+              >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
               >< ","
         ")"
       "end"
@@ -171,7 +171,7 @@ customType (Flat.CustomType typeName (Left fields)) = do
         forRuby fields \(Flat.Field fieldName fieldType) ->
           toSnakeCase fieldName
             >< ": "
-            >< decodeFieldType "json" fieldName fieldType
+            >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
             >< ","
       ")"
     "end"
@@ -202,30 +202,26 @@ encodeFieldType fieldName fieldType =
     Flat.NestedCustomType _ ->
       toSnakeCase fieldName >< ".to_h"
 
-decodeFieldType :: Text -> Text -> Flat.Type -> Ruby
-decodeFieldType jsonVar fieldName fieldType =
-  case fieldType of
+decodeJson :: Text -> Flat.Type -> Ruby
+decodeJson jsonVar type' =
+  case type' of
     Flat.Optional sub ->
       fromText jsonVar
-        >< "[\""
-        >< fromText fieldName
-        >< "\"] && "
-        >< decodeFieldType jsonVar fieldName sub
+        >< " && "
+        >< decodeJson jsonVar sub
     Flat.List sub ->
       fromText jsonVar
-        >< "[\""
-        >< fromText fieldName
-        >< "\"].map { |elem| "
-        >< decodeFieldType "elem" fieldName sub
+        >< ".map { |elem| "
+        >< decodeJson "elem" sub
         >< " }"
     Flat.Text ->
-      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
+      fromText jsonVar
     Flat.Int ->
-      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
+      fromText jsonVar
     Flat.Float ->
-      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
+      fromText jsonVar
     Flat.Bool ->
-      fromText jsonVar >< "[\"" >< fromText fieldName >< "\"]"
+      fromText jsonVar
     Flat.Unit ->
       "nil"
     Flat.NestedCustomType varName ->
