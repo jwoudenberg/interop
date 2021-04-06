@@ -143,7 +143,7 @@ module Apis
       body = ["get_person_by_id", arg]
       res = @http.request(req, body.to_json)
       json = JSON.parse(res.body)
-      Person.from_h(json) unless json.empty?
+      json && Person.from_h(json)
     end
     
     sig { params(arg: NilClass).returns(T::Array[Person]) }

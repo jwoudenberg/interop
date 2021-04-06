@@ -181,10 +181,9 @@ encodeFieldType :: Text -> Flat.Type -> Ruby
 encodeFieldType fieldName fieldType =
   case fieldType of
     Flat.Optional sub ->
-      encodeFieldType fieldName sub
-        >< " unless "
-        >< toSnakeCase fieldName
-        >< ".nil?"
+      toSnakeCase fieldName
+        >< " && "
+        >< encodeFieldType fieldName sub
     Flat.List sub ->
       toSnakeCase fieldName
         >< ".map { |elem| "
@@ -207,13 +206,11 @@ decodeFieldType :: Text -> Text -> Flat.Type -> Ruby
 decodeFieldType jsonVar fieldName fieldType =
   case fieldType of
     Flat.Optional sub ->
-      decodeFieldType jsonVar fieldName sub
-        >< " unless "
-        >< fromText jsonVar
+      fromText jsonVar
         >< "[\""
         >< fromText fieldName
-        >< "\"]"
-        >< ".empty?"
+        >< "\"] && "
+        >< decodeFieldType jsonVar fieldName sub
     Flat.List sub ->
       fromText jsonVar
         >< "[\""
@@ -291,10 +288,9 @@ parseJson :: Text -> Flat.Type -> Ruby
 parseJson jsonVar t =
   case t of
     Flat.Optional sub ->
-      parseJson jsonVar sub
-        >< " unless "
-        >< fromText jsonVar
-        >< ".empty?"
+      fromText jsonVar
+        >< " && "
+        >< parseJson jsonVar sub
     Flat.List sub ->
       fromText jsonVar
         >< ".map { |elem| "

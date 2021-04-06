@@ -86,7 +86,7 @@ module Apis
         sig { returns(Hash) }
         def to_h
           Hash["OneConstructor", {
-            "optionalField": optional_field unless optional_field.nil?,
+            "optionalField": optional_field && optional_field,
             "listField": list_field.map { |elem| elem },
             "field": field,
           }]
@@ -95,7 +95,7 @@ module Apis
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            optional_field: json["optionalField"] unless json["optionalField"].empty?,
+            optional_field: json["optionalField"] && json["optionalField"],
             list_field: json["listField"].map { |elem| elem["listField"] },
             field: json["field"],
           )

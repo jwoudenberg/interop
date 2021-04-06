@@ -62,7 +62,7 @@ module Apis
         def to_h
           Hash["OneConstructor", {
             "listField": list_field.map { |elem| elem },
-            "optionalField": optional_field unless optional_field.nil?,
+            "optionalField": optional_field && optional_field,
           }]
         end
         
@@ -70,7 +70,7 @@ module Apis
         def self.from_h(json)
           new(
             list_field: json["listField"].map { |elem| elem["listField"] },
-            optional_field: json["optionalField"] unless json["optionalField"].empty?,
+            optional_field: json["optionalField"] && json["optionalField"],
           )
         end
       end
