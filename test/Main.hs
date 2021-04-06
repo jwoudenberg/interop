@@ -166,7 +166,7 @@ generatedRubyCodeTests =
               ++ ExampleTypeChanges.Base.endpoints
               & Interop.service
               & Interop.wai
-      (exitCode, stdout, _stderr) <-
+      (exitCode, stdout, stderr) <-
         evalIO $
           Warp.testWithApplication (pure app) $ \port -> do
             let proc =
@@ -177,7 +177,7 @@ generatedRubyCodeTests =
             Process.readCreateProcessWithExitCode proc ""
       case exitCode of
         System.Exit.ExitSuccess -> pure ()
-        System.Exit.ExitFailure _ -> fail stdout
+        System.Exit.ExitFailure _ -> fail (stderr <> stdout)
   ]
 
 -- | We'd like to test our custom compilation errors for Wire instances, and
