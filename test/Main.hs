@@ -161,7 +161,11 @@ rubyClientGenerationTests =
 generatedRubyCodeTests :: [(PropertyName, Property)]
 generatedRubyCodeTests =
   [ test1 "Generated ruby code" $ do
-      let app = Interop.wai ExampleApis.Api.service
+      let app =
+            ExampleApis.Api.endpoints
+              ++ ExampleTypeChanges.Base.endpoints
+              & Interop.service
+              & Interop.wai
       (exitCode, stdout, _stderr) <-
         evalIO $
           Warp.testWithApplication (pure app) $ \port -> do

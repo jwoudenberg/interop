@@ -1,4 +1,4 @@
-module ExampleApis.Api (service) where
+module ExampleApis.Api (endpoints, service) where
 
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
@@ -6,15 +6,17 @@ import GHC.Generics (Generic)
 import qualified Interop
 
 service :: Interop.Service IO
-service =
-  Interop.service
-    [ Interop.Endpoint
-        "get_person_by_id"
-        (\id' -> pure (Map.lookup id' people)),
-      Interop.Endpoint
-        "get_all_people"
-        (\() -> pure (Map.elems people))
-    ]
+service = Interop.service endpoints
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.Endpoint
+      "get_person_by_id"
+      (\id' -> pure (Map.lookup id' people)),
+    Interop.Endpoint
+      "get_all_people"
+      (\() -> pure (Map.elems people))
+  ]
 
 people :: Map.Map Int Person
 people = Map.singleton 42 (Person "Jasper" "Woudenberg" [BoardGames])

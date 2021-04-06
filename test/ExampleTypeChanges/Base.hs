@@ -4,6 +4,7 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import qualified Interop
 import qualified Interop.Wire as Wire
 
 data TestType
@@ -21,6 +22,26 @@ data Record = Record
   deriving (Generic, Eq, Show)
 
 instance Wire.Wire Record
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.Endpoint
+      "echo"
+      ( \req ->
+          case req of
+            OneConstructor _ ->
+              pure
+                ( OneConstructor
+                    Record
+                      { field = 1,
+                        optionalField = Just 2,
+                        listField = [1, 2, 3]
+                      }
+                )
+            OtherConstructor ->
+              pure OtherConstructor
+      )
+  ]
 
 gen :: Hedgehog.Gen TestType
 gen =
