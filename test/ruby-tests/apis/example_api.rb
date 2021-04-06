@@ -55,7 +55,7 @@ module Apis
       def self.from_h(json)
         new(
           last_name: json["lastName"],
-          hobbies: json["hobbies"].map { |elem| Hobby.from_h(elem) },
+          hobbies: (json["hobbies"] || []).map { |elem| Hobby.from_h(elem) },
           first_name: json["firstName"],
         )
       end

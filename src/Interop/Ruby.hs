@@ -210,8 +210,9 @@ decodeJson jsonVar type' =
         >< " && "
         >< decodeJson jsonVar sub
     Flat.List sub ->
-      fromText jsonVar
-        >< ".map { |elem| "
+      "("
+        >< fromText jsonVar
+        >< " || []).map { |elem| "
         >< decodeJson "elem" sub
         >< " }"
     Flat.Text ->

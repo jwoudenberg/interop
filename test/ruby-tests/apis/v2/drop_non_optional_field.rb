@@ -69,7 +69,7 @@ module Apis
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            list_field: json["listField"].map { |elem| elem },
+            list_field: (json["listField"] || []).map { |elem| elem },
             optional_field: json["optionalField"] && json["optionalField"],
           )
         end
