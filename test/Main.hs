@@ -25,6 +25,7 @@ import qualified Data.Text.IO
 import qualified ExampleApis.Api
 import qualified ExampleTypeChanges.Base
 import qualified ExampleTypeChanges.V2.AddConstructor
+import qualified ExampleTypeChanges.V2.AddFirstField
 import qualified ExampleTypeChanges.V2.AddListField
 import qualified ExampleTypeChanges.V2.AddNonOptionalField
 import qualified ExampleTypeChanges.V2.AddOptionalField
@@ -105,6 +106,11 @@ backwardsCompatibleDecodingTests =
       oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
       (_ :: ExampleTypeChanges.V2.AddConstructor.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server with new first field can still serve old types" $ do
+      oldType <- forAll ExampleTypeChanges.Base.gen
+      let encoded = encode oldType
+      (_ :: ExampleTypeChanges.V2.AddFirstField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server with new optional field can still decode old types" $ do
       oldType <- forAll ExampleTypeChanges.Base.gen
@@ -258,6 +264,9 @@ changeExampleTypes =
   [ ChangeExampleType
       "AddConstructor"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddConstructor.TestType),
+    ChangeExampleType
+      "AddFirstField"
+      (Proxy :: Proxy ExampleTypeChanges.V2.AddFirstField.TestType),
     ChangeExampleType
       "AddNonOptionalField"
       (Proxy :: Proxy ExampleTypeChanges.V2.AddNonOptionalField.TestType),

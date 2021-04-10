@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 load 'apis/example_api.rb'
 load 'apis/v2/add_constructor.rb'
+load 'apis/v2/add_first_field.rb'
 load 'apis/v2/add_list_field.rb'
 load 'apis/v2/add_optional_field.rb'
 load 'apis/v2/drop_list_field.rb'
@@ -63,6 +64,20 @@ class TestApi < MiniTest::Unit::TestCase
         optional_field: 2,
         list_field: [1,2,3],
         new_optional_field: nil,
+      )
+    assert_equal response.to_h, expected.to_h
+  end
+
+  def test_add_first_field
+    api = Apis::V2::AddFirstField.new("http://localhost:#{ENV['PORT'].to_i}")
+    request =
+      Apis::V2::AddFirstField::TestType::OtherConstructor.new(
+        new_field: 1,
+      )
+    response = api.echo(request)
+    expected =
+      Apis::V2::AddFirstField::TestType::OtherConstructor.new(
+        new_field: nil,
       )
     assert_equal response.to_h, expected.to_h
   end
