@@ -607,8 +607,8 @@ type family
       )
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'True) params) after =
     TypeError (UseSeparateRecordType typename before after constructorname (FieldTypes params '[]))
-  ValidateSingleConstructor typename before (C1 mc (S1 ms (Rec0 a))) after =
-    WhenStuck (TypeError (ParameterMustBeWireTypeError typename a)) (HasKindOfType a)
+  ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (S1 ms (Rec0 a))) after =
+    EnsureRecordType typename before after constructorname (S1 ms (Rec0 a)) (HasKindOfType a)
 
 type family Constructors (t :: Type -> Type) :: [Type -> Type] where
   Constructors (a :+: b) = Append (Constructors a) (Constructors b)
@@ -622,6 +622,18 @@ type family EnsureRecord typename constructorname params t where
   EnsureRecord typename constructorname params RecordType = ()
   EnsureRecord typename constructorname params t =
     TypeError (MustUseRecordNotationError typename constructorname params)
+
+type family EnsureRecordType typename before after constructorname params t where
+  EnsureRecordType typename before after constructorname params RecordType = ()
+  EnsureRecordType typename before after constructorname params t =
+    TypeError
+      ( MustUseRecordTypeInsteadOfParams
+          typename
+          before
+          after
+          constructorname
+          (ParamTypes params '[])
+      )
 
 type family
   FieldsHaveWireTypes
