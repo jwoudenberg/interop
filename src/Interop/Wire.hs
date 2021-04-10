@@ -540,7 +540,7 @@ type family IsOptional a :: Bool where
 -- representation.
 type family KindOfType t where
   KindOfType (D1 ('MetaData typename m p f) V1) =
-    TypeError (AtLeastOneConstructorError f)
+    TypeError (AtLeastOneConstructorError typename)
   KindOfType (D1 ('MetaData typename m p f) (a :+: b)) =
     Seq
       (ValidateConstructors typename 'False (Constructors (a :+: b)))
