@@ -351,3 +351,15 @@ toSnakeCase text =
     text
     & reverse
     & fromString
+
+types :: Service m -> Either Text [Flat.CustomType]
+types (Service service') =
+  Map.elems service'
+    & concatMap endpointTypes
+    & Flat.customTypes
+
+endpointTypes :: Endpoint m -> [Wire.WireType]
+endpointTypes (Endpoint _ (_ :: req -> m res)) =
+  [ Wire.type_ (Proxy :: Proxy req),
+    Wire.type_ (Proxy :: Proxy res)
+  ]
