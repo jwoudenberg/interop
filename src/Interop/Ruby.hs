@@ -1,4 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RebindableSyntax #-}
 
@@ -51,13 +50,13 @@ toCode namespaces service' types' = do
 
 inNamespace :: Ruby -> Text -> Ruby
 inNamespace ruby namespace = do
-  "module " >< fromText namespace do
+  "module " >< fromText namespace >| do
     ruby
   "end"
 
 apiClass :: Text -> Service m -> [Flat.CustomType] -> Ruby
 apiClass apiName service' types' = do
-  "class " >< fromText apiName do
+  "class " >< fromText apiName >| do
     ""
     "extend T::Sig"
     "extend T::Helpers"
@@ -66,11 +65,11 @@ apiClass apiName service' types' = do
     forRuby types' (customTypeHead apiName)
     forRuby types' customType
     ""
-    "def initialize(origin, timeout = nil)" do
+    "def initialize(origin, timeout = nil)" >| do
       "@origin = URI(origin)"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
       ""
-      "unless timeout.nil?" do
+      "unless timeout.nil?" >| do
         "@http.open_timeout = timeout"
         "@http.read_timeout = timeout"
       "end"
@@ -82,12 +81,12 @@ apiClass apiName service' types' = do
 customTypeHead :: Text -> Flat.CustomType -> Ruby
 customTypeHead apiName (Flat.CustomType typeName (Right constructors)) = do
   ""
-  "module " >< fromText typeName do
+  "module " >< fromText typeName >| do
     "extend T::Sig"
     "extend T::Helpers"
     "sealed!"
     ""
-    forRuby constructors \(Flat.Constructor constructorName _) -> do
+    forRuby constructors $ \(Flat.Constructor constructorName _) -> do
       "class "
         >< fromText constructorName
         >< " < T::Struct; include "
@@ -97,12 +96,12 @@ customTypeHead apiName (Flat.CustomType typeName (Right constructors)) = do
         >< "; end"
     ""
     "sig { params(json: Hash).returns(T.self_type) }"
-    "def self.from_h(json)" do
+    "def self.from_h(json)" >| do
       "ctor_name, ctor_json = json.first"
-      "case ctor_name" do
-        forRuby constructors \(Flat.Constructor constructorName _fields) ->
-          "when \"" >< fromText constructorName >< "\"" do
-            fromText constructorName >< ".from_h(ctor_json)" :: Ruby
+      "case ctor_name" >| do
+        forRuby constructors $ \(Flat.Constructor constructorName _fields) ->
+          "when \"" >< fromText constructorName >< "\"" >| do
+            fromText constructorName >< ".from_h(ctor_json)"
       "end"
     "end"
   "end"
@@ -112,19 +111,19 @@ customTypeHead _ (Flat.CustomType typeName (Left _)) = do
 
 customType :: Flat.CustomType -> Ruby
 customType (Flat.CustomType typeName (Right constructors)) = do
-  forRuby constructors \(Flat.Constructor constructorName fields) -> do
+  forRuby constructors $ \(Flat.Constructor constructorName fields) -> do
     ""
-    "class " >< fromText typeName >< "::" >< fromText constructorName do
+    "class " >< fromText typeName >< "::" >< fromText constructorName >| do
       "extend T::Sig"
       "extend T::Helpers"
       ""
-      forRuby fields \(Flat.Field fieldName fieldType) ->
+      forRuby fields $ \(Flat.Field fieldName fieldType) ->
         "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
       ""
       "sig { returns(Hash) }"
-      "def to_h" do
-        "Hash[\"" >< fromText constructorName >< "\", {" do
-          forRuby fields \(Flat.Field fieldName fieldType) ->
+      "def to_h" >| do
+        "Hash[\"" >< fromText constructorName >< "\", {" >| do
+          forRuby fields $ \(Flat.Field fieldName fieldType) ->
             "\""
               >< fromText fieldName
               >< "\": "
@@ -134,9 +133,9 @@ customType (Flat.CustomType typeName (Right constructors)) = do
       "end"
       ""
       "sig { params(json: Hash).returns(T.self_type) }"
-      "def self.from_h(json)" do
-        "new(" do
-          forRuby fields \(Flat.Field fieldName fieldType) ->
+      "def self.from_h(json)" >| do
+        "new(" >| do
+          forRuby fields $ \(Flat.Field fieldName fieldType) ->
             toSnakeCase fieldName
               >< ": "
               >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
@@ -146,17 +145,17 @@ customType (Flat.CustomType typeName (Right constructors)) = do
     "end"
 customType (Flat.CustomType typeName (Left fields)) = do
   ""
-  "class " >< fromText typeName do
+  "class " >< fromText typeName >| do
     "extend T::Sig"
     "extend T::Helpers"
     ""
-    forRuby fields \(Flat.Field fieldName fieldType) ->
+    forRuby fields $ \(Flat.Field fieldName fieldType) ->
       "prop :" >< toSnakeCase fieldName >< ", " >< type_ fieldType
     ""
     "sig { returns(Hash) }"
-    "def to_h" do
-      "{" do
-        forRuby fields \(Flat.Field fieldName fieldType) ->
+    "def to_h" >| do
+      "{" >| do
+        forRuby fields $ \(Flat.Field fieldName fieldType) ->
           "\""
             >< fromText fieldName
             >< "\": "
@@ -166,9 +165,9 @@ customType (Flat.CustomType typeName (Left fields)) = do
     "end"
     ""
     "sig { params(json: Hash).returns(T.self_type) }"
-    "def self.from_h(json)" do
-      "new(" do
-        forRuby fields \(Flat.Field fieldName fieldType) ->
+    "def self.from_h(json)" >| do
+      "new(" >| do
+        forRuby fields $ \(Flat.Field fieldName fieldType) ->
           toSnakeCase fieldName
             >< ": "
             >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
@@ -238,7 +237,7 @@ endpoint name (Endpoint _ (_ :: req -> m res)) = do
     >< ").returns("
     >< type_ responseType
     >< ") }"
-  "def " >< toSnakeCase name >< "(arg)" do
+  "def " >< toSnakeCase name >< "(arg)" >| do
     "req = Net::HTTP::Post.new(@origin)"
     "req[\"Content-Type\"] = \"application/json\""
     ""
@@ -308,24 +307,13 @@ instance IsString Ruby where
   fromString str =
     Ruby (\_ -> Builder.stringUtf8 str)
 
-instance IsString (Ruby -> Ruby) where
-  fromString str = fromRuby (fromString str)
+(><) :: Ruby -> Ruby -> Ruby
+(><) (Ruby x) (Ruby y) = Ruby (x <> y)
 
-class FromRuby ruby where
-  fromRuby :: Ruby -> ruby
-
-instance FromRuby Ruby where
-  fromRuby = id
-
-instance FromRuby (Ruby -> Ruby) where
-  fromRuby ruby =
-    ( \block -> do
-        ruby
-        indent ("  " >< block)
-    )
-
-(><) :: FromRuby ruby => Ruby -> Ruby -> ruby
-(><) (Ruby x) (Ruby y) = fromRuby (Ruby (x <> y))
+(>|) :: Ruby -> Ruby -> Ruby
+(>|) line block = do
+  line
+  indent ("  " >< block)
 
 (>>) :: Ruby -> Ruby -> Ruby
 x >> y = x >< "\n" >< indentation >< y
@@ -347,8 +335,8 @@ indentation = Ruby (\i -> stimesMonoid (2 * i) " ")
 render :: Ruby -> Builder.Builder
 render (Ruby f) = f 0
 
-fromText :: FromRuby ruby => Text -> ruby
-fromText = fromRuby . fromString . Text.unpack
+fromText :: Text -> Ruby
+fromText = fromString . Text.unpack
 
 toSnakeCase :: Text -> Ruby
 toSnakeCase text =
