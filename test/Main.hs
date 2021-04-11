@@ -301,11 +301,6 @@ typeChangeWarnings server client =
   Interop.Diff.compatible
     server
     client
-    & fmap Interop.Diff.warningToText
-    & ( \case
-          [] -> "No warnings."
-          warnings -> Text.intercalate "\n\n" warnings
-      )
     & pure
 
 encode :: Wire.Wire a => a -> ByteString

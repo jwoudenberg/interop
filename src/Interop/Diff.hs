@@ -4,7 +4,6 @@
 -- compatible or not.
 module Interop.Diff
   ( compatible,
-    warningToText,
   )
 where
 
@@ -15,11 +14,12 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Interop
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
-compatible :: Interop.Service m -> Interop.Service n -> [TypeChangeWarning]
+compatible :: Interop.Service m -> Interop.Service n -> Text
 compatible (Interop.Service server) (Interop.Service client) =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
@@ -38,6 +38,11 @@ compatible (Interop.Service server) (Interop.Service client) =
     (Map.toList server)
     (Map.toList client)
     []
+    & fmap warningToText
+    & ( \case
+          [] -> "No warnings."
+          warnings -> Text.intercalate "\n\n" warnings
+      )
 
 requestType :: Interop.Endpoint m -> (Map.Map Text CustomType, Type)
 requestType (Interop.Endpoint _ (_ :: req -> m res)) =
