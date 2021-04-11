@@ -23,6 +23,7 @@ import qualified Data.Text.IO
 import qualified ExampleApis.Api
 import qualified ExampleTypeChanges.Base
 import qualified ExampleTypeChanges.V2.AddConstructor
+import qualified ExampleTypeChanges.V2.AddEndpoint
 import qualified ExampleTypeChanges.V2.AddFirstField
 import qualified ExampleTypeChanges.V2.AddListField
 import qualified ExampleTypeChanges.V2.AddNonOptionalField
@@ -256,6 +257,9 @@ changeExampleTypes =
   [ ChangeExample
       "AddConstructor"
       ExampleTypeChanges.V2.AddConstructor.service,
+    ChangeExample
+      "AddEndpoint"
+      ExampleTypeChanges.V2.AddEndpoint.service,
     ChangeExample
       "AddFirstField"
       ExampleTypeChanges.V2.AddFirstField.service,

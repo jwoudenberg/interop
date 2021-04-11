@@ -34,7 +34,15 @@ compatible (Interop.Service server) (Interop.Service client) =
                 & filter (\warning -> context warning == InResponse)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
-    (\_endpointName _ acc -> undefined : acc) -- client-only endpoints are problematic
+    ( \endpointName _ acc ->
+        ChangeWarning
+          { path = InEndpoint endpointName,
+            severity = Warning,
+            context = InRequest,
+            warning = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
+          } :
+        acc
+    )
     (Map.toList server)
     (Map.toList client)
     []
@@ -80,7 +88,7 @@ data FieldDiff
   | FieldRemoved Field
   | FieldChanged Field (NonEmpty TypeDiff)
 
-data TypeChangeWarning = TypeChangeWarning
+data ChangeWarning = ChangeWarning
   { path :: Path,
     severity :: Severity,
     context :: Context,
@@ -98,7 +106,7 @@ data Severity = Warning | Error
 data Context = InRequest | InResponse
   deriving (Eq)
 
-warningToText :: TypeChangeWarning -> Text
+warningToText :: ChangeWarning -> Text
 warningToText typeChangeWarning =
   pathToText (path typeChangeWarning)
     <> "\n"
@@ -116,11 +124,11 @@ pathToText (InType typeName rest) = pathToText rest <> ", in type: " <> typeName
 pathToText (InConstructor constructorName rest) = pathToText rest <> ", in constructor: " <> constructorName
 pathToText (InField fieldName rest) = pathToText rest <> ", in field: " <> fieldName
 
-typeWarnings :: Path -> [TypeDiff] -> [TypeChangeWarning]
+typeWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
 typeWarnings path =
   concatMap $ \case
     TypeMadeOptional type_ ->
-      [ TypeChangeWarning
+      [ ChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Warning,
             context = InResponse,
@@ -128,7 +136,7 @@ typeWarnings path =
           }
       ]
     TypeMadeNonOptional type_ ->
-      [ TypeChangeWarning
+      [ ChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Warning,
             context = InRequest,
@@ -136,13 +144,13 @@ typeWarnings path =
           }
       ]
     TypeChanged type_ _ ->
-      [ TypeChangeWarning
+      [ ChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Error,
             context = InRequest,
             warning = "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           },
-        TypeChangeWarning
+        ChangeWarning
           { path = InType (typeAsText type_) path,
             severity = Error,
             context = InResponse,
@@ -154,11 +162,11 @@ typeWarnings path =
     FieldsChanged type_ fieldDiffs ->
       fieldWarnings (InType (typeName type_) path) fieldDiffs
 
-constructorWarnings :: Path -> NonEmpty ConstructorDiff -> [TypeChangeWarning]
+constructorWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
 constructorWarnings path =
   concatMap $ \case
     ConstructorAdded constructor ->
-      [ TypeChangeWarning
+      [ ChangeWarning
           { path = InConstructor (constructorName constructor) path,
             severity = Warning,
             context = InResponse,
@@ -166,7 +174,7 @@ constructorWarnings path =
           }
       ]
     ConstructorRemoved constructor ->
-      [ TypeChangeWarning
+      [ ChangeWarning
           { path = InConstructor (constructorName constructor) path,
             severity = Warning,
             context = InRequest,
@@ -178,7 +186,7 @@ constructorWarnings path =
         (InConstructor (constructorName constructor) path)
         fieldDiffs
 
-fieldWarnings :: Path -> NonEmpty FieldDiff -> [TypeChangeWarning]
+fieldWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
 fieldWarnings path =
   concatMap $ \case
     FieldAdded field ->
@@ -188,7 +196,7 @@ fieldWarnings path =
         Optional _ ->
           []
         _ ->
-          [ TypeChangeWarning
+          [ ChangeWarning
               { path = InField (fieldName field) path,
                 severity = Error,
                 context = InRequest,
@@ -202,7 +210,7 @@ fieldWarnings path =
         Optional _ ->
           []
         _ ->
-          [ TypeChangeWarning
+          [ ChangeWarning
               { path = InField (fieldName field) path,
                 severity = Error,
                 context = InResponse,

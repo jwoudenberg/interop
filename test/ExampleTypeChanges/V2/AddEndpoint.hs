@@ -1,0 +1,34 @@
+module ExampleTypeChanges.V2.AddEndpoint where
+
+import Data.Proxy (Proxy (Proxy))
+import GHC.Generics (Generic)
+import qualified Interop
+import qualified Interop.Wire as Wire
+
+service :: Interop.Service Proxy
+service =
+  Interop.service
+    [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType)),
+      Interop.Endpoint "new-endpoint" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    ]
+
+data TestType
+  = OneConstructor Record
+  | OtherConstructor
+  deriving (Generic, Eq, Show)
+
+instance Wire.Wire TestType
+
+data Record = Record
+  { field :: Int,
+    optionalField :: Maybe Int,
+    listField :: [Int]
+  }
+  deriving (Generic, Eq, Show)
+
+instance Wire.Wire Record
+
+-- Warnings for this change from Base type:
+--
+-- In endpoint: new-endpoint
+-- Warning: The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error.
