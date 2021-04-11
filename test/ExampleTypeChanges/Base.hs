@@ -23,6 +23,9 @@ data Record = Record
 
 instance Wire.Wire Record
 
+service :: Interop.Service IO
+service = Interop.service endpoints
+
 endpoints :: [Interop.Endpoint IO]
 endpoints =
   [ Interop.Endpoint

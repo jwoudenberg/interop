@@ -1,7 +1,15 @@
 module ExampleTypeChanges.V2.AddNonOptionalField where
 
+import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
+import qualified Interop
 import qualified Interop.Wire as Wire
+
+service :: Interop.Service Proxy
+service =
+  Interop.service
+    [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    ]
 
 data TestType
   = OneConstructor Record
@@ -22,5 +30,5 @@ instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- In endpoint: fake-endpoint, in type: TestType, in constructor: OneConstructor, in field: newField
+-- In endpoint: echo, in type: TestType, in constructor: OneConstructor, in field: newField
 -- Error: A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.

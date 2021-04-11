@@ -3,9 +3,8 @@
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.
 module Interop.Diff
-  ( diffType,
+  ( compatible,
     warningToText,
-    checkBackwardsCompatibility,
   )
 where
 
@@ -14,8 +13,50 @@ import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
+import qualified Interop
+import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
+
+compatible :: Interop.Service m -> Interop.Service n -> [TypeChangeWarning]
+compatible (Interop.Service server) (Interop.Service client) =
+  merge
+    (\_ _ acc -> acc) -- server-only endpoints are fine
+    ( \endpointName serverEndpoint clientEndpoint acc ->
+        let requestTypeWarnings =
+              diffType (requestType serverEndpoint) (requestType clientEndpoint)
+                & typeWarnings (InEndpoint endpointName)
+                & filter (\warning -> context warning == InRequest)
+            responseTypeWarnings =
+              diffType (responseType serverEndpoint) (responseType clientEndpoint)
+                & typeWarnings (InEndpoint endpointName)
+                & filter (\warning -> context warning == InResponse)
+         in requestTypeWarnings <> responseTypeWarnings <> acc
+    )
+    (\_endpointName _ acc -> undefined : acc) -- client-only endpoints are problematic
+    (Map.toList server)
+    (Map.toList client)
+    []
+
+requestType :: Interop.Endpoint m -> (Map.Map Text CustomType, Type)
+requestType (Interop.Endpoint _ (_ :: req -> m res)) =
+  getFlatType (Proxy :: Proxy req)
+
+responseType :: Interop.Endpoint m -> (Map.Map Text CustomType, Type)
+responseType (Interop.Endpoint _ (_ :: req -> m res)) =
+  getFlatType (Proxy :: Proxy res)
+
+getFlatType :: Interop.Wire a => Proxy a -> (Map.Map Text CustomType, Type)
+getFlatType p =
+  let wireType = Wire.type_ p
+      flatTypes = either (error "FIXME: address duplicate typenames") id (customTypes [wireType])
+   in ( fmap
+          (\customType -> (typeName customType, customType))
+          flatTypes
+          & Map.fromList,
+        fromFieldType wireType
+      )
 
 data TypeDiff
   = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)
@@ -50,6 +91,7 @@ data Path
 data Severity = Warning | Error
 
 data Context = InRequest | InResponse
+  deriving (Eq)
 
 warningToText :: TypeChangeWarning -> Text
 warningToText typeChangeWarning =
@@ -68,9 +110,6 @@ pathToText (InEndpoint endpointName) = "In endpoint: " <> endpointName
 pathToText (InType typeName rest) = pathToText rest <> ", in type: " <> typeName
 pathToText (InConstructor constructorName rest) = pathToText rest <> ", in constructor: " <> constructorName
 pathToText (InField fieldName rest) = pathToText rest <> ", in field: " <> fieldName
-
-checkBackwardsCompatibility :: Text -> [TypeDiff] -> [TypeChangeWarning]
-checkBackwardsCompatibility endpointName = typeWarnings (InEndpoint endpointName)
 
 typeWarnings :: Path -> [TypeDiff] -> [TypeChangeWarning]
 typeWarnings path =

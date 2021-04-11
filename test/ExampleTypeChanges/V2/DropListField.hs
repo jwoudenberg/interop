@@ -1,7 +1,15 @@
 module ExampleTypeChanges.V2.DropListField where
 
+import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
+import qualified Interop
 import qualified Interop.Wire as Wire
+
+service :: Interop.Service Proxy
+service =
+  Interop.service
+    [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    ]
 
 data TestType
   = OneConstructor Record

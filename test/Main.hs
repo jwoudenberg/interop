@@ -15,8 +15,6 @@ import qualified Data.Char as Char
 import Data.Function ((&))
 import qualified Data.IORef as IORef
 import Data.List (foldl')
-import qualified Data.Map.Strict as Map
-import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -54,7 +52,6 @@ import qualified Interop
 import qualified Interop.Diff
 import qualified Interop.Ruby
 import qualified Interop.Wire as Wire
-import qualified Interop.Wire.Flat as Flat
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Outputable
 import qualified System.Directory as Directory
@@ -90,14 +87,14 @@ encodingTest (ExampleType path example _) =
       & Data.Text.Encoding.decodeUtf8
       & equalToCommentsInFile "JSON encoding of example value:" path
 
-diffTest :: ChangeExampleType -> (PropertyName, Property)
-diffTest (ChangeExampleType name changedType) =
+diffTest :: ChangeExample -> (PropertyName, Property)
+diffTest (ChangeExample name changedService) =
   let path = "test/ExampleTypeChanges/V2/" <> name <> ".hs"
    in test1 (fromString path) $ do
         warnings <-
           typeChangeWarnings
-            (Proxy :: Proxy ExampleTypeChanges.Base.TestType)
-            changedType
+            ExampleTypeChanges.Base.service
+            changedService
         equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
 backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
@@ -150,14 +147,10 @@ rubyClientGenerationTests =
   ]
     <> ( changeExampleTypes
            & fmap
-             ( \(ChangeExampleType name (_ :: Proxy t)) ->
+             ( \(ChangeExample name service) ->
                  test1 (fromString name) $ do
                    (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
                    evalIO $ System.IO.hClose h
-                   let service =
-                         Interop.service
-                           [ Interop.Endpoint "echo" ((\_ -> Proxy) :: t -> Proxy t)
-                           ]
                    evalIO $ Interop.Ruby.generate path ["Apis", "V2", Text.pack name] service
                    generated <- evalIO $ Data.Text.IO.readFile path
                    equalToContentsOfFile ("test/ruby-tests/apis/v2/" <> toSnakeCase name <> ".rb") generated
@@ -252,51 +245,50 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen)
   ]
 
-data ChangeExampleType where
-  ChangeExampleType ::
-    Wire.Wire a =>
+data ChangeExample where
+  ChangeExample ::
     FilePath ->
-    Proxy a ->
-    ChangeExampleType
+    Interop.Service a ->
+    ChangeExample
 
-changeExampleTypes :: [ChangeExampleType]
+changeExampleTypes :: [ChangeExample]
 changeExampleTypes =
-  [ ChangeExampleType
+  [ ChangeExample
       "AddConstructor"
-      (Proxy :: Proxy ExampleTypeChanges.V2.AddConstructor.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.AddConstructor.service,
+    ChangeExample
       "AddFirstField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.AddFirstField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.AddFirstField.service,
+    ChangeExample
       "AddNonOptionalField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.AddNonOptionalField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.AddNonOptionalField.service,
+    ChangeExample
       "AddOptionalField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.AddOptionalField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.AddOptionalField.service,
+    ChangeExample
       "AddListField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.AddListField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.AddListField.service,
+    ChangeExample
       "DropNonOptionalField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.DropNonOptionalField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.DropNonOptionalField.service,
+    ChangeExample
       "DropOptionalField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.DropOptionalField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.DropOptionalField.service,
+    ChangeExample
       "DropListField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.DropListField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.DropListField.service,
+    ChangeExample
       "ModifyListToOptionalField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyListToOptionalField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.ModifyListToOptionalField.service,
+    ChangeExample
       "ModifyOptionalToListField"
-      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyOptionalToListField.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.ModifyOptionalToListField.service,
+    ChangeExample
       "ModifyFieldType"
-      (Proxy :: Proxy ExampleTypeChanges.V2.ModifyFieldType.TestType),
-    ChangeExampleType
+      ExampleTypeChanges.V2.ModifyFieldType.service,
+    ChangeExample
       "RemoveConstructor"
-      (Proxy :: Proxy ExampleTypeChanges.V2.RemoveConstructor.TestType)
+      ExampleTypeChanges.V2.RemoveConstructor.service
   ]
 
 getCompileErrorExamples :: IO [FilePath]
@@ -304,31 +296,17 @@ getCompileErrorExamples =
   let dir = "test/example-compile-errors/"
    in fmap (dir <>) <$> Directory.listDirectory dir
 
-typeChangeWarnings :: (Wire.Wire a, Wire.Wire b) => Proxy a -> Proxy b -> PropertyT IO Text
-typeChangeWarnings before after = do
-  flatBefore <- diffableType (Wire.type_ before)
-  flatAfter <- diffableType (Wire.type_ after)
-  Interop.Diff.diffType
-    flatBefore
-    flatAfter
-    & Interop.Diff.checkBackwardsCompatibility "fake-endpoint"
+typeChangeWarnings :: Interop.Service a -> Interop.Service b -> PropertyT IO Text
+typeChangeWarnings server client =
+  Interop.Diff.compatible
+    server
+    client
     & fmap Interop.Diff.warningToText
     & ( \case
           [] -> "No warnings."
           warnings -> Text.intercalate "\n\n" warnings
       )
     & pure
-
-diffableType :: Wire.WireType -> PropertyT IO (Map.Map Text Flat.CustomType, Flat.Type)
-diffableType wireType = do
-  customTypes <- evalEither $ Flat.customTypes [wireType]
-  pure
-    ( fmap
-        (\customType -> (Flat.typeName customType, customType))
-        customTypes
-        & Map.fromList,
-      Flat.fromFieldType wireType
-    )
 
 encode :: Wire.Wire a => a -> ByteString
 encode = Encoding.encodingToLazyByteString . Wire.encode
