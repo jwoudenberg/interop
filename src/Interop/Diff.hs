@@ -42,10 +42,10 @@ data TypeChangeWarning = TypeChangeWarning
   }
 
 data Path
-  = InType Text Path
+  = InEndpoint Text
+  | InType Text Path
   | InConstructor Text Path
   | InField Text Path
-  | Root
 
 data Severity = Warning | Error
 
@@ -64,13 +64,13 @@ severityToText Warning = "Warning"
 severityToText Error = "Error"
 
 pathToText :: Path -> Text
-pathToText (InType typeName rest) = "In type: " <> typeName <> ", " <> pathToText rest
-pathToText (InConstructor constructorName rest) = "In constructor: " <> constructorName <> ", " <> pathToText rest
-pathToText (InField fieldName rest) = "In field: " <> fieldName <> ", " <> pathToText rest
-pathToText Root = ""
+pathToText (InEndpoint endpointName) = "In endpoint: " <> endpointName
+pathToText (InType typeName rest) = pathToText rest <> ", in type: " <> typeName
+pathToText (InConstructor constructorName rest) = pathToText rest <> ", in constructor: " <> constructorName
+pathToText (InField fieldName rest) = pathToText rest <> ", in field: " <> fieldName
 
-checkBackwardsCompatibility :: [TypeDiff] -> [TypeChangeWarning]
-checkBackwardsCompatibility = typeWarnings Root
+checkBackwardsCompatibility :: Text -> [TypeDiff] -> [TypeChangeWarning]
+checkBackwardsCompatibility endpointName = typeWarnings (InEndpoint endpointName)
 
 typeWarnings :: Path -> [TypeDiff] -> [TypeChangeWarning]
 typeWarnings path =

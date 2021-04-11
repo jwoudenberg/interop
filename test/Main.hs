@@ -311,7 +311,7 @@ typeChangeWarnings before after = do
   Interop.Diff.diffType
     flatBefore
     flatAfter
-    & Interop.Diff.checkBackwardsCompatibility
+    & Interop.Diff.checkBackwardsCompatibility "fake-endpoint"
     & fmap Interop.Diff.warningToText
     & ( \case
           [] -> "No warnings."

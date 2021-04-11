@@ -20,5 +20,5 @@ instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- In constructor: OtherConstructor, In type: TestType,
+-- In endpoint: fake-endpoint, in type: TestType, in constructor: OtherConstructor
 -- Warning: A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!
