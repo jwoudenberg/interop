@@ -19,11 +19,11 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Function ((&))
+import Data.List.NonEmpty (NonEmpty ((:|)), groupWith)
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import GHC.Exts (groupWith)
 import qualified GHC.Stack as Stack
 import Interop.Wire (Wire)
 import qualified Interop.Wire as Wire
@@ -88,9 +88,8 @@ service endpoints' = do
       & groupWith name
       & traverse
         ( \case
-            [] -> error "groupWith returned an empty group."
-            [endpoint'] -> Right (name endpoint', endpoint')
-            endpoint1 : endpoint2 : _ ->
+            endpoint' :| [] -> Right (name endpoint', endpoint')
+            endpoint1 :| endpoint2 : _ ->
               Left
                 ( DuplicateEndpointName
                     (name endpoint1)
@@ -109,9 +108,8 @@ findCustomTypes wireTypes =
         & groupWith (Flat.typeName . snd)
         & traverse
           ( \case
-              [] -> error "groupWith returned empty group."
-              [(_, customType)] -> Right customType
-              (def1, _) : (def2, _) : _ -> Left (DuplicateType def1 def2)
+              (_, customType) :| [] -> Right customType
+              (def1, _) :| (def2, _) : _ -> Left (DuplicateType def1 def2)
           )
 
 endpointTypes :: Endpoint m -> [Wire.WireType]
