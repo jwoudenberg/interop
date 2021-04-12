@@ -83,14 +83,23 @@ service endpoints' = do
     endpoints'
       & concatMap endpointTypes
       & findCustomTypes
-  Right
-    Service
-      { endpoints =
-          endpoints'
-            & fmap (\endpoint' -> (name endpoint', endpoint'))
-            & Map.fromList,
-        customTypes
-      }
+  endpoints <-
+    endpoints'
+      & groupWith name
+      & traverse
+        ( \case
+            [] -> error "groupWith returned an empty group."
+            [endpoint'] -> Right (name endpoint', endpoint')
+            endpoint1 : endpoint2 : _ ->
+              Left
+                ( DuplicateEndpointName
+                    (name endpoint1)
+                    (srcLoc endpoint1)
+                    (srcLoc endpoint2)
+                )
+        )
+      & fmap Map.fromList
+  Right Service {endpoints, customTypes}
 
 findCustomTypes :: [Wire.WireType] -> Either NamingCollision [Flat.CustomType]
 findCustomTypes wireTypes =
