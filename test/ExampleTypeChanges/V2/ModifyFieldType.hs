@@ -1,5 +1,6 @@
 module ExampleTypeChanges.V2.ModifyFieldType where
 
+import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -11,6 +12,7 @@ service =
   Interop.service
     [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
     ]
+    & either (error . show) id
 
 data TestType
   = OneConstructor Record

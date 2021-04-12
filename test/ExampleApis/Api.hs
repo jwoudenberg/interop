@@ -1,12 +1,15 @@
 module ExampleApis.Api (endpoints, service) where
 
+import Data.Function ((&))
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import qualified Interop
 
 service :: Interop.Service IO
-service = Interop.service endpoints
+service =
+  Interop.service endpoints
+    & either (error . show) id
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =

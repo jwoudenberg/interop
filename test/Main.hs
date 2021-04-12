@@ -165,6 +165,7 @@ generatedRubyCodeTests =
             ExampleApis.Api.endpoints
               ++ ExampleTypeChanges.Base.endpoints
               & Interop.service
+              & either (error . show) id
               & Interop.wai
       (exitCode, stdout, stderr) <-
         evalIO $

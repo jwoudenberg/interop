@@ -1,5 +1,6 @@
 module ExampleTypeChanges.Base where
 
+import Data.Function ((&))
 import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
@@ -24,7 +25,9 @@ data Record = Record
 instance Wire.Wire Record
 
 service :: Interop.Service IO
-service = Interop.service endpoints
+service =
+  Interop.service endpoints
+    & either (error . show) id
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =

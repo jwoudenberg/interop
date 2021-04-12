@@ -20,6 +20,7 @@ import Data.Function ((&))
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified GHC.Stack as Stack
 import Interop.Wire (Wire)
 import qualified Interop.Wire as Wire
 import qualified Network.Wai as Wai
@@ -35,12 +36,19 @@ convert nt (Service endpointMap) =
     & fmap (\(Endpoint name f) -> Endpoint name (nt . f))
     & Service
 
-service :: [Endpoint m] -> Service m
+data NamingCollision
+  = DuplicateType Wire.TypeDefinition Wire.TypeDefinition
+  | DuplicateConstructor Text Wire.TypeDefinition Wire.TypeDefinition
+  | DuplicateEndpointName Text (Maybe Stack.SrcLoc) (Maybe Stack.SrcLoc)
+  deriving (Show)
+
+service :: [Endpoint m] -> Either [NamingCollision] (Service m)
 service endpoints =
   endpoints
     & fmap (\endpoint -> (name endpoint, endpoint))
     & Map.fromList
     & Service
+    & Right
 
 data Error
   = ReceivedUnknownCmd Text

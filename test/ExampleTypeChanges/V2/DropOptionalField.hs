@@ -1,5 +1,6 @@
 module ExampleTypeChanges.V2.DropOptionalField where
 
+import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
@@ -10,6 +11,7 @@ service =
   Interop.service
     [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
     ]
+    & either (error . show) id
 
 data TestType
   = OneConstructor Record
