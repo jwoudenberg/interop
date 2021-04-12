@@ -57,12 +57,12 @@ compatible server client =
       )
 
 requestType :: Interop.Endpoint m -> Type
-requestType (Interop.Endpoint _ (_ :: req -> m res)) =
+requestType (Interop.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy req)
     & fromFieldType
 
 responseType :: Interop.Endpoint m -> Type
-responseType (Interop.Endpoint _ (_ :: req -> m res)) =
+responseType (Interop.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy res)
     & fromFieldType
 

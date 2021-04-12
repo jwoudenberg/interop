@@ -13,10 +13,10 @@ service =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.Endpoint
+  [ Interop.endpoint
       "get_person_by_id"
       (\id' -> pure (Map.lookup id' people)),
-    Interop.Endpoint
+    Interop.endpoint
       "get_all_people"
       (\() -> pure (Map.elems people))
   ]

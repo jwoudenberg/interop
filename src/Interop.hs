@@ -6,6 +6,7 @@ module Interop
   ( Wire,
     Service (..),
     Endpoint (..),
+    endpoint,
     service,
     convert,
     wai,
@@ -30,7 +31,31 @@ import qualified Interop.Wire.Flat as Flat
 import qualified Network.Wai as Wai
 
 data Endpoint m where
-  Endpoint :: (Wire req, Wire res) => {name :: Text, fn :: (req -> m res)} -> Endpoint m
+  Endpoint ::
+    (Wire req, Wire res) =>
+    { name :: Text,
+      srcLoc :: Maybe Stack.SrcLoc,
+      fn :: (req -> m res)
+    } ->
+    Endpoint m
+
+endpoint ::
+  (Stack.HasCallStack, Wire req, Wire res) =>
+  Text ->
+  (req -> m res) ->
+  Endpoint m
+endpoint name fn =
+  Endpoint
+    { name,
+      fn,
+      srcLoc = Stack.withFrozenCallStack stackFrame
+    }
+
+stackFrame :: Stack.HasCallStack => Maybe Stack.SrcLoc
+stackFrame =
+  case Stack.getCallStack Stack.callStack of
+    [] -> Nothing
+    (_, srcLoc') : _ -> Just srcLoc'
 
 data Service m = Service
   { endpoints :: Map.Map Text (Endpoint m),
@@ -42,7 +67,7 @@ convert nt service' =
   service'
     { endpoints =
         fmap
-          (\(Endpoint name f) -> Endpoint name (nt . f))
+          (\(Endpoint name srcLoc f) -> Endpoint name srcLoc (nt . f))
           (endpoints service')
     }
 
@@ -62,7 +87,7 @@ service endpoints' = do
     Service
       { endpoints =
           endpoints'
-            & fmap (\endpoint -> (name endpoint, endpoint))
+            & fmap (\endpoint' -> (name endpoint', endpoint'))
             & Map.fromList,
         customTypes
       }
@@ -81,7 +106,7 @@ findCustomTypes wireTypes =
           )
 
 endpointTypes :: Endpoint m -> [Wire.WireType]
-endpointTypes (Endpoint _ (_ :: req -> m res)) =
+endpointTypes Endpoint {fn = (_ :: req -> m res)} =
   [ Wire.type_ (Proxy :: Proxy req),
     Wire.type_ (Proxy :: Proxy res)
   ]
@@ -101,10 +126,10 @@ run service' reqBytes handleErr = do
       Right parsed -> pure parsed
   case Map.lookup cmd (endpoints service') of
     Nothing -> handleErr (ReceivedUnknownCmd cmd)
-    Just (Endpoint _ f) -> do
+    Just Endpoint {fn} -> do
       case Aeson.parseEither Wire.decode payload of
         Left parseErr -> handleErr (FailedToParseRequest (T.pack parseErr))
-        Right req -> Encoding.encodingToLazyByteString . Wire.encode <$> f req
+        Right req -> Encoding.encodingToLazyByteString . Wire.encode <$> fn req
 
 wai :: Service IO -> Wai.Application
 wai service' =

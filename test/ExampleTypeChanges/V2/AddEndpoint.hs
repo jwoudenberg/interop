@@ -9,8 +9,8 @@ import qualified Interop.Wire as Wire
 service :: Interop.Service Proxy
 service =
   Interop.service
-    [ Interop.Endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType)),
-      Interop.Endpoint "new-endpoint" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    [ Interop.endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType)),
+      Interop.endpoint "new-endpoint" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
     ]
     & either (error . show) id
 

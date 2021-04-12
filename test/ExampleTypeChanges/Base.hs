@@ -31,7 +31,7 @@ service =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.Endpoint
+  [ Interop.endpoint
       "echo"
       ( \req ->
           case req of

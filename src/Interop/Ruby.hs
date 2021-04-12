@@ -72,7 +72,7 @@ apiClass apiName service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    forRuby (Map.toList (endpoints service')) (uncurry endpoint)
+    forRuby (Map.toList (endpoints service')) (uncurry endpointMethod)
   "end"
 
 customTypeHead :: Text -> Flat.CustomType -> Ruby
@@ -224,8 +224,8 @@ decodeJson jsonVar type' =
     Flat.NestedCustomType varName ->
       fromText varName >< ".from_h(" >< fromText jsonVar >< ")"
 
-endpoint :: Text -> Endpoint m -> Ruby
-endpoint name (Endpoint _ (_ :: req -> m res)) = do
+endpointMethod :: Text -> Endpoint m -> Ruby
+endpointMethod name (Endpoint _ _ (_ :: req -> m res)) = do
   let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
   let requestType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req))
   ""
