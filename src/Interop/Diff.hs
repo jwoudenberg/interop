@@ -20,16 +20,20 @@ import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
 compatible :: Interop.Service m -> Interop.Service n -> Text
-compatible (Interop.Service server) (Interop.Service client) =
+compatible server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->
         let requestTypeWarnings =
-              diffType (requestType serverEndpoint) (requestType clientEndpoint)
+              diffType
+                (customTypeMap server, requestType serverEndpoint)
+                (customTypeMap client, requestType clientEndpoint)
                 & typeWarnings (InEndpoint endpointName)
                 & filter (\warning -> context warning == InRequest)
             responseTypeWarnings =
-              diffType (responseType serverEndpoint) (responseType clientEndpoint)
+              diffType
+                (customTypeMap server, responseType serverEndpoint)
+                (customTypeMap client, responseType clientEndpoint)
                 & typeWarnings (InEndpoint endpointName)
                 & filter (\warning -> context warning == InResponse)
          in requestTypeWarnings <> responseTypeWarnings <> acc
@@ -43,8 +47,8 @@ compatible (Interop.Service server) (Interop.Service client) =
           } :
         acc
     )
-    (Map.toList server)
-    (Map.toList client)
+    (Map.toList (Interop.endpoints server))
+    (Map.toList (Interop.endpoints client))
     []
     & fmap warningToText
     & ( \case
@@ -52,24 +56,21 @@ compatible (Interop.Service server) (Interop.Service client) =
           warnings -> Text.intercalate "\n\n" warnings
       )
 
-requestType :: Interop.Endpoint m -> (Map.Map Text CustomType, Type)
+requestType :: Interop.Endpoint m -> Type
 requestType (Interop.Endpoint _ (_ :: req -> m res)) =
-  getFlatType (Proxy :: Proxy req)
+  Wire.type_ (Proxy :: Proxy req)
+    & fromFieldType
 
-responseType :: Interop.Endpoint m -> (Map.Map Text CustomType, Type)
+responseType :: Interop.Endpoint m -> Type
 responseType (Interop.Endpoint _ (_ :: req -> m res)) =
-  getFlatType (Proxy :: Proxy res)
+  Wire.type_ (Proxy :: Proxy res)
+    & fromFieldType
 
-getFlatType :: Interop.Wire a => Proxy a -> (Map.Map Text CustomType, Type)
-getFlatType p =
-  let wireType = Wire.type_ p
-      flatTypes = either (error "FIXME: address duplicate typenames") id (customTypes [wireType])
-   in ( fmap
-          (\customType -> (typeName customType, customType))
-          flatTypes
-          & Map.fromList,
-        fromFieldType wireType
-      )
+customTypeMap :: Interop.Service m -> Map.Map Text CustomType
+customTypeMap service' =
+  Interop.customTypes service'
+    & fmap (\customType -> (typeName customType, customType))
+    & Map.fromList
 
 data TypeDiff
   = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)

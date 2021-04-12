@@ -23,14 +23,11 @@ import Prelude hiding (pure, (>>), (>>=))
 
 generate :: FilePath -> [Text] -> Service m -> IO ()
 generate path namespaces service' =
-  case types service' of
-    Left err -> fail (Text.unpack err)
-    Right types' ->
-      System.IO.withFile path System.IO.WriteMode $
-        \handle ->
-          toCode namespaces service' types'
-            & render
-            & Builder.hPutBuilder handle
+  System.IO.withFile path System.IO.WriteMode $
+    \handle ->
+      toCode namespaces service' (customTypes service')
+        & render
+        & Builder.hPutBuilder handle
 
 toCode :: [Text] -> Service m -> [Flat.CustomType] -> Ruby
 toCode namespaces service' types' = do
@@ -75,7 +72,7 @@ apiClass apiName service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    forRuby (Map.toList (unService service')) (uncurry endpoint)
+    forRuby (Map.toList (endpoints service')) (uncurry endpoint)
   "end"
 
 customTypeHead :: Text -> Flat.CustomType -> Ruby
@@ -351,15 +348,3 @@ toSnakeCase text =
     text
     & reverse
     & fromString
-
-types :: Service m -> Either Text [Flat.CustomType]
-types (Service service') =
-  Map.elems service'
-    & concatMap endpointTypes
-    & Flat.customTypes
-
-endpointTypes :: Endpoint m -> [Wire.WireType]
-endpointTypes (Endpoint _ (_ :: req -> m res)) =
-  [ Wire.type_ (Proxy :: Proxy req),
-    Wire.type_ (Proxy :: Proxy res)
-  ]

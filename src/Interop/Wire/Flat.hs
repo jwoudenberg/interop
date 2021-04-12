@@ -1,22 +1,20 @@
 -- | A flat, non-recursive version of the type defined in the Wire module.
 -- This is easier to work with for code generation.
 module Interop.Wire.Flat
-  ( customTypes,
-    fromFieldType,
+  ( fromFieldType,
     CustomType (..),
     Constructor (..),
     Field (..),
     Type (..),
     typeAsText,
+    customTypesByDef,
   )
 where
 
 import Data.Bifunctor (bimap)
-import Data.Function ((&))
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
-import GHC.Exts (groupWith)
 import qualified Interop.Wire as Wire
 
 -- | This type is like Interop.Wire.WireType, except it's not recursive.
@@ -59,19 +57,6 @@ typeAsText type_ =
     Optional subType -> "Maybe " <> typeAsText subType
     List subType -> "List " <> typeAsText subType
     NestedCustomType name -> name
-
-customTypes :: [Wire.WireType] -> Either Text [CustomType]
-customTypes wireTypes =
-  case withDuplicateNames of
-    [] -> Right (Map.elems typesByDef)
-    _ -> Left "Some types share the same name and I don't support that, <add more error detail>"
-  where
-    typesByDef = foldr customTypesByDef Map.empty wireTypes
-    withDuplicateNames =
-      typesByDef
-        & Map.toList
-        & groupWith (typeName . snd)
-        & filter ((>= 2) . length)
 
 customTypesByDef ::
   Wire.WireType ->
