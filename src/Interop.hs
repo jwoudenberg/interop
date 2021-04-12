@@ -18,6 +18,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import Data.ByteString.Lazy (ByteString)
+import Data.Foldable (traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty ((:|)), groupWith)
 import qualified Data.Map.Strict as Map
@@ -79,7 +80,7 @@ data NamingCollision
 
 service :: [Endpoint m] -> Either NamingCollision (Service m)
 service endpoints' = do
-  customTypes <-
+  customTypesAndDefs <-
     endpoints'
       & concatMap endpointTypes
       & findCustomTypes
@@ -98,9 +99,31 @@ service endpoints' = do
                 )
         )
       & fmap Map.fromList
-  Right Service {endpoints, customTypes}
+  customTypesAndDefs
+    & concatMap
+      ( \(typeDef, customType) ->
+          case Flat.subTypes customType of
+            Left _ -> []
+            Right constructors ->
+              fmap
+                (\constructor -> (constructor, typeDef))
+                constructors
+      )
+    & groupWith (Flat.constructorName . fst)
+    & traverse_
+      ( \case
+          _ :| [] -> Right ()
+          (constructor, def1) :| (_, def2) : _ ->
+            Left
+              ( DuplicateConstructor
+                  (Flat.constructorName constructor)
+                  def1
+                  def2
+              )
+      )
+  Right Service {endpoints, customTypes = fmap snd customTypesAndDefs}
 
-findCustomTypes :: [Wire.WireType] -> Either NamingCollision [Flat.CustomType]
+findCustomTypes :: [Wire.WireType] -> Either NamingCollision [(Wire.TypeDefinition, Flat.CustomType)]
 findCustomTypes wireTypes =
   let typesByDef = foldr Flat.customTypesByDef Map.empty wireTypes
    in typesByDef
@@ -108,7 +131,7 @@ findCustomTypes wireTypes =
         & groupWith (Flat.typeName . snd)
         & traverse
           ( \case
-              (_, customType) :| [] -> Right customType
+              customType :| [] -> Right customType
               (def1, _) :| (def2, _) : _ -> Left (DuplicateType def1 def2)
           )
 
