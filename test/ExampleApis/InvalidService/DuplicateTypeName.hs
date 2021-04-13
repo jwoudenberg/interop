@@ -19,8 +19,8 @@ instance Interop.Wire Hobby
 --
 -- The service uses two types with the same name:
 --
---   ExampleApis.Api.Hobby
---   ExampleApis.InvalidService.DuplicateTypeName.Hobby
+--   ExampleApis.Api (Hobby)
+--   ExampleApis.InvalidService.DuplicateTypeName (Hobby)
 --
 -- Try renaming one of the types.
 --

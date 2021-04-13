@@ -21,8 +21,8 @@ instance Interop.Wire Sport
 --
 -- The service uses two constructors with the same name:
 --
---   ExampleApis.Api.Hobby.Football
---   ExampleApis.InvalidService.DuplicateConstructorName.Sport.Football
+--   ExampleApis.Api (Hobby(Football))
+--   ExampleApis.InvalidService.DuplicateConstructorName (Sport(Football))
 --
 -- Try renaming one of the constructors.
 --

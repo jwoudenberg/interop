@@ -86,8 +86,8 @@ namingCollisionToText namingCollision =
       T.unlines
         [ "The service uses two types with the same name:",
           "",
-          "  " <> Wire.moduleName def1 <> "." <> Wire.typeName def1,
-          "  " <> Wire.moduleName def2 <> "." <> Wire.typeName def2,
+          "  " <> Wire.moduleName def1 <> " (" <> Wire.typeName def1 <> ")",
+          "  " <> Wire.moduleName def2 <> " (" <> Wire.typeName def2 <> ")",
           "",
           "Try renaming one of the types.",
           "",
@@ -101,8 +101,8 @@ namingCollisionToText namingCollision =
       T.unlines
         [ "The service uses two constructors with the same name:",
           "",
-          "  " <> Wire.moduleName def1 <> "." <> Wire.typeName def1 <> "." <> name,
-          "  " <> Wire.moduleName def2 <> "." <> Wire.typeName def2 <> "." <> name,
+          "  " <> Wire.moduleName def1 <> " (" <> Wire.typeName def1 <> "(" <> name <> "))",
+          "  " <> Wire.moduleName def2 <> " (" <> Wire.typeName def2 <> "(" <> name <> "))",
           "",
           "Try renaming one of the constructors.",
           "",
@@ -119,7 +119,7 @@ namingCollisionToText namingCollision =
           "  " <> name <> "   " <> maybe "" printSrcLoc loc1,
           "  " <> name <> "   " <> maybe "" printSrcLoc loc2,
           "",
-          "Try renaming one of the constructors.",
+          "Try renaming one of the endpoints.",
           "",
           "If two endpoints have the same name then when I receive a request",
           "I won't know which endpoint should handle it."
