@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 220208f0a42ffe83159050b45ee3a77285ae07f9f0ff8bff3c885b3a0477b65a
+-- hash: 311e5708fb85551cee30b1a36c1c8045a1506a59d8fc49dfd4e45a69efa78884
 
 name:           interop
 version:        0.1.0.0
@@ -62,6 +62,9 @@ test-suite tests
       Interop.Wire
       Interop.Wire.Flat
       ExampleApis.Api
+      ExampleApis.InvalidService.DuplicateConstructorName
+      ExampleApis.InvalidService.DuplicateEndpointName
+      ExampleApis.InvalidService.DuplicateTypeName
       ExampleTypeChanges.Base
       ExampleTypeChanges.V2.AddConstructor
       ExampleTypeChanges.V2.AddEndpoint

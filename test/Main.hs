@@ -21,6 +21,9 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
 import qualified ExampleApis.Api
+import qualified ExampleApis.InvalidService.DuplicateConstructorName
+import qualified ExampleApis.InvalidService.DuplicateEndpointName
+import qualified ExampleApis.InvalidService.DuplicateTypeName
 import qualified ExampleTypeChanges.Base
 import qualified ExampleTypeChanges.V2.AddConstructor
 import qualified ExampleTypeChanges.V2.AddEndpoint
@@ -69,7 +72,8 @@ main = do
       checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
       checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests),
       checkParallel (Group "ruby client generation" rubyClientGenerationTests),
-      checkParallel (Group "generated ruby code" generatedRubyCodeTests)
+      checkParallel (Group "generated ruby code" generatedRubyCodeTests),
+      checkParallel (Group "create service error" (createServiceErrorTest <$> exampleInvalidServices))
     ]
 
 encodeDecodeRoundtripTest :: ExampleType -> (PropertyName, Property)
@@ -221,6 +225,26 @@ compileErrorTest examplePath =
     fmap Text.pack errs
       & Text.intercalate "\n\n"
       & equalToCommentsInFile "Compilation error:" examplePath
+
+createServiceErrorTest :: (FilePath, [Interop.Endpoint m]) -> (PropertyName, Property)
+createServiceErrorTest (path, endpoints) =
+  test1 (fromString path) $
+    case Interop.service endpoints of
+      Right _ -> fail "Expected service creation to fail, but it did not."
+      Left err -> equalToCommentsInFile "Interop.service fails with:" path err
+
+exampleInvalidServices :: [(FilePath, [Interop.Endpoint IO])]
+exampleInvalidServices =
+  [ ( "test/ExampleApis/InvalidService/DuplicateEndpointName.hs",
+      ExampleApis.InvalidService.DuplicateEndpointName.endpoints
+    ),
+    ( "test/ExampleApis/InvalidService/DuplicateTypeName.hs",
+      ExampleApis.InvalidService.DuplicateTypeName.endpoints
+    ),
+    ( "test/ExampleApis/InvalidService/DuplicateConstructorName.hs",
+      ExampleApis.InvalidService.DuplicateConstructorName.endpoints
+    )
+  ]
 
 data ExampleType where
   ExampleType ::

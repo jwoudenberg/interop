@@ -16,6 +16,7 @@ import qualified Control.Exception
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
+import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
 import Data.Foldable (traverse_)
 import Data.Function ((&))
@@ -77,8 +78,60 @@ data NamingCollision
   | DuplicateEndpointName Text (Maybe Stack.SrcLoc) (Maybe Stack.SrcLoc)
   deriving (Show)
 
-service :: [Endpoint m] -> Either NamingCollision (Service m)
-service endpoints' = do
+namingCollisionToText :: NamingCollision -> Text
+namingCollisionToText namingCollision =
+  case namingCollision of
+    DuplicateType def1 def2 ->
+      T.unlines
+        [ "The service uses two types with the same name:",
+          "",
+          "  " <> Wire.moduleName def1 <> "." <> Wire.typeName def1,
+          "  " <> Wire.moduleName def2 <> "." <> Wire.typeName def2,
+          "",
+          "Try renaming one of the types.",
+          "",
+          "Unique names avoid potential naming conflicts in generated client",
+          "code. There's many tricks I could play to avoid conflicts in",
+          "generated code, such as adding suffixes to dupplicate names or",
+          "generating multiple files if necessary. All of these make it harder",
+          "to understand how I work though, so I'd prefer not to."
+        ]
+    DuplicateConstructor name def1 def2 ->
+      T.unlines
+        [ "The service uses two constructors with the same name:",
+          "",
+          "  " <> Wire.moduleName def1 <> "." <> Wire.typeName def1 <> "." <> name,
+          "  " <> Wire.moduleName def2 <> "." <> Wire.typeName def2 <> "." <> name,
+          "",
+          "Try renaming one of the constructors.",
+          "",
+          "Unique names avoid potential naming conflicts in generated client",
+          "code. There's many tricks I could play to avoid conflicts in",
+          "generated code, such as adding suffixes to dupplicate names or",
+          "generating multiple files if necessary. All of these make it harder",
+          "to understand how I work though, so I'd prefer not to."
+        ]
+    DuplicateEndpointName name loc1 loc2 ->
+      T.unlines
+        [ "This service contains two endpoints with the same name:",
+          "",
+          "  " <> name <> "   " <> maybe "" printSrcLoc loc1,
+          "  " <> name <> "   " <> maybe "" printSrcLoc loc2,
+          "",
+          "Try renaming one of the constructors.",
+          "",
+          "If two endpoints have the same name then when I receive a request",
+          "I won't know which endpoint should handle it."
+        ]
+
+printSrcLoc :: Stack.SrcLoc -> Text
+printSrcLoc srcLoc =
+  T.pack (Stack.srcLocFile srcLoc)
+    <> ":"
+    <> T.pack (show (Stack.srcLocStartLine srcLoc))
+
+service :: [Endpoint m] -> Either Text (Service m)
+service endpoints' = first namingCollisionToText $ do
   customTypesAndDefs <-
     endpoints'
       & concatMap endpointTypes
