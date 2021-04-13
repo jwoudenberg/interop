@@ -8,13 +8,12 @@ module Interop.Compatibility
 where
 
 import Data.Function ((&))
-import Data.List (sortOn)
+import Data.List (foldl', sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
-import qualified Data.Text as Text
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Builder as Builder
 import qualified Interop.Service as Service
@@ -38,11 +37,8 @@ checkServerClientCompatibility server client =
                 & responseWarnings (InEndpoint endpointName)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
-    ( \endpointName _ acc ->
-        ChangeWarning
-          { path = InEndpoint endpointName,
-            warning = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
-          } :
+    ( \_ _ acc ->
+        "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error." :
         acc
     )
     (Map.toList (Service.endpoints server))
@@ -50,9 +46,10 @@ checkServerClientCompatibility server client =
     []
     & ( \case
           [] -> Right ()
-          warnings ->
-            fmap warningToText warnings
-              & Text.intercalate "\n\n"
+          first : rest ->
+            foldl' (\acc entry -> acc <> "\n\n" <> entry) first rest
+              & Builder.toLazyText
+              & Data.Text.Lazy.toStrict
               & Left
       )
 
@@ -89,22 +86,15 @@ data FieldDiff
   | FieldRemoved Field
   | FieldChanged Field (NonEmpty TypeDiff)
 
-data ChangeWarning = ChangeWarning
-  { path :: Path,
-    warning :: Text
-  }
-
 data Path
   = InEndpoint Text
   | InType Text Path
   | InConstructor Text Path
   | InField Text Path
 
-warningToText :: ChangeWarning -> Text
-warningToText typeChangeWarning =
-  runBuilder (renderContext (path typeChangeWarning))
-    <> "\n\n"
-    <> warning typeChangeWarning
+warningToText :: Path -> Builder.Builder -> Builder.Builder
+warningToText path warning =
+  renderContext path <> "\n\n" <> warning
 
 renderContext :: Path -> Builder.Builder
 renderContext (InField fieldName rest) = renderContext rest <> " { " <> Builder.fromText fieldName <> " }"
@@ -112,77 +102,68 @@ renderContext (InConstructor constructorName rest) = renderContext rest <> " = "
 renderContext (InType typeName _) = "data " <> Builder.fromText typeName
 renderContext (InEndpoint _) = ""
 
-runBuilder :: Builder.Builder -> Text
-runBuilder builder = Data.Text.Lazy.toStrict (Builder.toLazyText builder)
-
-requestWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
+requestWarnings :: Path -> [TypeDiff] -> [Builder.Builder]
 requestWarnings path =
   concatMap $ \case
     TypeMadeOptional _ ->
       []
     TypeMadeNonOptional type_ ->
-      [ ChangeWarning
-          { path = InType (typeAsText type_) path,
-            warning = "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
-          }
+      [ warningToText
+          (InType (typeAsText type_) path)
+          "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
       ]
     TypeChanged type_ _ ->
-      [ ChangeWarning
-          { path = InType (typeAsText type_) path,
-            warning = "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-          }
+      [ warningToText
+          (InType (typeAsText type_) path)
+          "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
       ]
     CustomTypeChanged type_ constructorDiffs ->
       constructorRequestWarnings (InType (typeName type_) path) constructorDiffs
     FieldsChanged type_ fieldDiffs ->
       fieldRequestWarnings (InType (typeName type_) path) fieldDiffs
 
-responseWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
+responseWarnings :: Path -> [TypeDiff] -> [Builder.Builder]
 responseWarnings path =
   concatMap $ \case
     TypeMadeOptional type_ ->
-      [ ChangeWarning
-          { path = InType (typeAsText type_) path,
-            warning = "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
-          }
+      [ warningToText
+          (InType (typeAsText type_) path)
+          "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
       ]
     TypeMadeNonOptional _ ->
       []
     TypeChanged type_ _ ->
-      [ ChangeWarning
-          { path = InType (typeAsText type_) path,
-            warning = "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-          }
+      [ warningToText
+          (InType (typeAsText type_) path)
+          "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
       ]
     CustomTypeChanged type_ constructorDiffs ->
       constructorResponseWarnings (InType (typeName type_) path) constructorDiffs
     FieldsChanged type_ fieldDiffs ->
       fieldResponseWarnings (InType (typeName type_) path) fieldDiffs
 
-constructorRequestWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
+constructorRequestWarnings :: Path -> NonEmpty ConstructorDiff -> [Builder.Builder]
 constructorRequestWarnings path =
   concatMap $ \case
     ConstructorAdded _ ->
       []
     ConstructorRemoved constructor ->
-      [ ChangeWarning
-          { path = InConstructor (constructorName constructor) path,
-            warning = "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
-          }
+      [ warningToText
+          (InConstructor (constructorName constructor) path)
+          "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
       ]
     ConstructorChanged constructor fieldDiffs ->
       fieldRequestWarnings
         (InConstructor (constructorName constructor) path)
         fieldDiffs
 
-constructorResponseWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
+constructorResponseWarnings :: Path -> NonEmpty ConstructorDiff -> [Builder.Builder]
 constructorResponseWarnings path =
   concatMap $ \case
     ConstructorAdded constructor ->
-      [ ChangeWarning
-          { path = InConstructor (constructorName constructor) path,
-            warning = "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
-          }
+      [ warningToText
+          (InConstructor (constructorName constructor) path)
+          "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
       ]
     ConstructorRemoved _ ->
       []
@@ -191,7 +172,7 @@ constructorResponseWarnings path =
         (InConstructor (constructorName constructor) path)
         fieldDiffs
 
-fieldRequestWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
+fieldRequestWarnings :: Path -> NonEmpty FieldDiff -> [Builder.Builder]
 fieldRequestWarnings path =
   concatMap $ \case
     FieldAdded field ->
@@ -201,10 +182,9 @@ fieldRequestWarnings path =
         Optional _ ->
           []
         _ ->
-          [ ChangeWarning
-              { path = InField (fieldName field) path,
-                warning = "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
-              }
+          [ warningToText
+              (InField (fieldName field) path)
+              "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
           ]
     FieldRemoved _ ->
       []
@@ -213,7 +193,7 @@ fieldRequestWarnings path =
         (InField (fieldName field) path)
         (NonEmpty.toList typeDiffs)
 
-fieldResponseWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
+fieldResponseWarnings :: Path -> NonEmpty FieldDiff -> [Builder.Builder]
 fieldResponseWarnings path =
   concatMap $ \case
     FieldAdded _ ->
@@ -225,10 +205,9 @@ fieldResponseWarnings path =
         Optional _ ->
           []
         _ ->
-          [ ChangeWarning
-              { path = InField (fieldName field) path,
-                warning = "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
-              }
+          [ warningToText
+              (InField (fieldName field) path)
+              "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
           ]
     FieldChanged field typeDiffs ->
       responseWarnings
