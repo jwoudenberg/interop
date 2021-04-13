@@ -20,7 +20,8 @@ import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
 import Data.Foldable (traverse_)
 import Data.Function ((&))
-import Data.List.NonEmpty (NonEmpty ((:|)), groupWith)
+import qualified Data.List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
@@ -141,8 +142,8 @@ service endpoints' = first namingCollisionToText $ do
       & groupWith name
       & traverse
         ( \case
-            endpoint' :| [] -> Right (name endpoint', endpoint')
-            endpoint1 :| endpoint2 : _ ->
+            endpoint' NonEmpty.:| [] -> Right (name endpoint', endpoint')
+            endpoint1 NonEmpty.:| endpoint2 : _ ->
               Left
                 ( DuplicateEndpointName
                     (name endpoint1)
@@ -164,8 +165,8 @@ service endpoints' = first namingCollisionToText $ do
     & groupWith (Flat.constructorName . fst)
     & traverse_
       ( \case
-          _ :| [] -> Right ()
-          (constructor, def1) :| (_, def2) : _ ->
+          _ NonEmpty.:| [] -> Right ()
+          (constructor, def1) NonEmpty.:| (_, def2) : _ ->
             Left
               ( DuplicateConstructor
                   (Flat.constructorName constructor)
@@ -183,8 +184,8 @@ findCustomTypes wireTypes =
         & groupWith (Flat.typeName . snd)
         & traverse
           ( \case
-              customType :| [] -> Right customType
-              (def1, _) :| (def2, _) : _ -> Left (DuplicateType def1 def2)
+              customType NonEmpty.:| [] -> Right customType
+              (def1, _) NonEmpty.:| (def2, _) : _ -> Left (DuplicateType def1 def2)
           )
 
 endpointTypes :: Endpoint m -> [Wire.WireType]
@@ -192,6 +193,11 @@ endpointTypes Endpoint {fn = (_ :: req -> m res)} =
   [ Wire.type_ (Proxy :: Proxy req),
     Wire.type_ (Proxy :: Proxy res)
   ]
+
+groupWith :: Ord b => (a -> b) -> [a] -> [NonEmpty.NonEmpty a]
+groupWith select xs =
+  Data.List.sortOn select xs
+    & NonEmpty.groupWith select
 
 data Error
   = ReceivedUnknownCmd Text
