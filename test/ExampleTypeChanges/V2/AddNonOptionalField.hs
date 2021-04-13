@@ -32,6 +32,7 @@ instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
+-- A type used in requests has a mandatory field.
 -- data TestType = OneConstructor { newField }
 --
--- A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.
+-- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.

@@ -92,9 +92,9 @@ data Path
   | InConstructor Text Path
   | InField Text Path
 
-warningToText :: Path -> Builder.Builder -> Builder.Builder
-warningToText path warning =
-  renderContext path <> "\n\n" <> warning
+warningToText :: Builder.Builder -> Path -> Builder.Builder -> Builder.Builder
+warningToText problem path explanation =
+  problem <> "\n" <> renderContext path <> "\n\n" <> explanation
 
 renderContext :: Path -> Builder.Builder
 renderContext (InField fieldName rest) = renderContext rest <> " { " <> Builder.fromText fieldName <> " }"
@@ -109,13 +109,15 @@ requestWarnings path =
       []
     TypeMadeNonOptional type_ ->
       [ warningToText
+          "A type used in requests is no longer optional."
           (InType (typeAsText type_) path)
-          "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
+          "If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
       ]
     TypeChanged type_ _ ->
       [ warningToText
+          "A type used in requests has changed."
           (InType (typeAsText type_) path)
-          "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+          "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
       ]
     CustomTypeChanged type_ constructorDiffs ->
       constructorRequestWarnings (InType (typeName type_) path) constructorDiffs
@@ -127,15 +129,17 @@ responseWarnings path =
   concatMap $ \case
     TypeMadeOptional type_ ->
       [ warningToText
+          "A type used responses has been made optional."
           (InType (typeAsText type_) path)
-          "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
+          "Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
       ]
     TypeMadeNonOptional _ ->
       []
     TypeChanged type_ _ ->
       [ warningToText
+          "A type used in responses has changed."
           (InType (typeAsText type_) path)
-          "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+          "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
       ]
     CustomTypeChanged type_ constructorDiffs ->
       constructorResponseWarnings (InType (typeName type_) path) constructorDiffs
@@ -149,8 +153,9 @@ constructorRequestWarnings path =
       []
     ConstructorRemoved constructor ->
       [ warningToText
+          "A constructor was removed from a type used in requests."
           (InConstructor (constructorName constructor) path)
-          "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
+          "Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
       ]
     ConstructorChanged constructor fieldDiffs ->
       fieldRequestWarnings
@@ -162,8 +167,9 @@ constructorResponseWarnings path =
   concatMap $ \case
     ConstructorAdded constructor ->
       [ warningToText
+          "A constructor was added to a type used in responses."
           (InConstructor (constructorName constructor) path)
-          "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
+          "Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
       ]
     ConstructorRemoved _ ->
       []
@@ -183,8 +189,9 @@ fieldRequestWarnings path =
           []
         _ ->
           [ warningToText
+              "A type used in requests has a mandatory field."
               (InField (fieldName field) path)
-              "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
+              "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
           ]
     FieldRemoved _ ->
       []
@@ -206,8 +213,9 @@ fieldResponseWarnings path =
           []
         _ ->
           [ warningToText
+              "A type used in responses has lost a mandatory field."
               (InField (fieldName field) path)
-              "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
+              "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
           ]
     FieldChanged field typeDiffs ->
       responseWarnings
