@@ -30,20 +30,17 @@ checkServerClientCompatibility server client =
               diffType
                 (customTypeMap server, requestType serverEndpoint)
                 (customTypeMap client, requestType clientEndpoint)
-                & typeWarnings (InEndpoint endpointName)
-                & filter (\warning -> context warning == InRequest)
+                & requestWarnings (InEndpoint endpointName)
             responseTypeWarnings =
               diffType
                 (customTypeMap server, responseType serverEndpoint)
                 (customTypeMap client, responseType clientEndpoint)
-                & typeWarnings (InEndpoint endpointName)
-                & filter (\warning -> context warning == InResponse)
+                & responseWarnings (InEndpoint endpointName)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
     ( \endpointName _ acc ->
         ChangeWarning
           { path = InEndpoint endpointName,
-            context = InRequest,
             warning = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
           } :
         acc
@@ -94,7 +91,6 @@ data FieldDiff
 
 data ChangeWarning = ChangeWarning
   { path :: Path,
-    context :: Context,
     warning :: Text
   }
 
@@ -103,9 +99,6 @@ data Path
   | InType Text Path
   | InConstructor Text Path
   | InField Text Path
-
-data Context = InRequest | InResponse
-  deriving (Eq)
 
 warningToText :: ChangeWarning -> Text
 warningToText typeChangeWarning =
@@ -122,64 +115,84 @@ renderContext (InEndpoint _) = ""
 runBuilder :: Builder.Builder -> Text
 runBuilder builder = Data.Text.Lazy.toStrict (Builder.toLazyText builder)
 
-typeWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
-typeWarnings path =
+requestWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
+requestWarnings path =
   concatMap $ \case
-    TypeMadeOptional type_ ->
-      [ ChangeWarning
-          { path = InType (typeAsText type_) path,
-            context = InResponse,
-            warning = "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
-          }
-      ]
+    TypeMadeOptional _ ->
+      []
     TypeMadeNonOptional type_ ->
       [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            context = InRequest,
             warning = "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
           }
       ]
     TypeChanged type_ _ ->
       [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            context = InRequest,
             warning = "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-          },
-        ChangeWarning
+          }
+      ]
+    CustomTypeChanged type_ constructorDiffs ->
+      constructorRequestWarnings (InType (typeName type_) path) constructorDiffs
+    FieldsChanged type_ fieldDiffs ->
+      fieldRequestWarnings (InType (typeName type_) path) fieldDiffs
+
+responseWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
+responseWarnings path =
+  concatMap $ \case
+    TypeMadeOptional type_ ->
+      [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            context = InResponse,
+            warning = "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
+          }
+      ]
+    TypeMadeNonOptional _ ->
+      []
+    TypeChanged type_ _ ->
+      [ ChangeWarning
+          { path = InType (typeAsText type_) path,
             warning = "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           }
       ]
     CustomTypeChanged type_ constructorDiffs ->
-      constructorWarnings (InType (typeName type_) path) constructorDiffs
+      constructorResponseWarnings (InType (typeName type_) path) constructorDiffs
     FieldsChanged type_ fieldDiffs ->
-      fieldWarnings (InType (typeName type_) path) fieldDiffs
+      fieldResponseWarnings (InType (typeName type_) path) fieldDiffs
 
-constructorWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
-constructorWarnings path =
+constructorRequestWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
+constructorRequestWarnings path =
   concatMap $ \case
-    ConstructorAdded constructor ->
-      [ ChangeWarning
-          { path = InConstructor (constructorName constructor) path,
-            context = InResponse,
-            warning = "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
-          }
-      ]
+    ConstructorAdded _ ->
+      []
     ConstructorRemoved constructor ->
       [ ChangeWarning
           { path = InConstructor (constructorName constructor) path,
-            context = InRequest,
             warning = "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
           }
       ]
     ConstructorChanged constructor fieldDiffs ->
-      fieldWarnings
+      fieldRequestWarnings
         (InConstructor (constructorName constructor) path)
         fieldDiffs
 
-fieldWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
-fieldWarnings path =
+constructorResponseWarnings :: Path -> NonEmpty ConstructorDiff -> [ChangeWarning]
+constructorResponseWarnings path =
+  concatMap $ \case
+    ConstructorAdded constructor ->
+      [ ChangeWarning
+          { path = InConstructor (constructorName constructor) path,
+            warning = "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
+          }
+      ]
+    ConstructorRemoved _ ->
+      []
+    ConstructorChanged constructor fieldDiffs ->
+      fieldResponseWarnings
+        (InConstructor (constructorName constructor) path)
+        fieldDiffs
+
+fieldRequestWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
+fieldRequestWarnings path =
   concatMap $ \case
     FieldAdded field ->
       case fieldType field of
@@ -190,10 +203,21 @@ fieldWarnings path =
         _ ->
           [ ChangeWarning
               { path = InField (fieldName field) path,
-                context = InRequest,
                 warning = "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
               }
           ]
+    FieldRemoved _ ->
+      []
+    FieldChanged field typeDiffs ->
+      requestWarnings
+        (InField (fieldName field) path)
+        (NonEmpty.toList typeDiffs)
+
+fieldResponseWarnings :: Path -> NonEmpty FieldDiff -> [ChangeWarning]
+fieldResponseWarnings path =
+  concatMap $ \case
+    FieldAdded _ ->
+      []
     FieldRemoved field ->
       case fieldType field of
         List _ ->
@@ -203,12 +227,11 @@ fieldWarnings path =
         _ ->
           [ ChangeWarning
               { path = InField (fieldName field) path,
-                context = InResponse,
                 warning = "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
               }
           ]
     FieldChanged field typeDiffs ->
-      typeWarnings
+      responseWarnings
         (InField (fieldName field) path)
         (NonEmpty.toList typeDiffs)
 
