@@ -31,6 +31,7 @@ import qualified ExampleTypeChanges.V2.AddFirstField
 import qualified ExampleTypeChanges.V2.AddListField
 import qualified ExampleTypeChanges.V2.AddNonOptionalField
 import qualified ExampleTypeChanges.V2.AddOptionalField
+import qualified ExampleTypeChanges.V2.DropAllFields
 import qualified ExampleTypeChanges.V2.DropListField
 import qualified ExampleTypeChanges.V2.DropNonOptionalField
 import qualified ExampleTypeChanges.V2.DropOptionalField
@@ -136,6 +137,11 @@ backwardsCompatibleDecodingTests =
       oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
       (_ :: ExampleTypeChanges.V2.DropListField.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server which dropped all fields can still decode old types" $ do
+      oldType <- forAll ExampleTypeChanges.Base.gen
+      let encoded = encode oldType
+      (_ :: ExampleTypeChanges.V2.DropAllFields.TestType) <- evalEither (decode encoded)
       pure ()
   ]
 
@@ -304,6 +310,9 @@ changeExampleTypes =
     ChangeExample
       "DropListField"
       ExampleTypeChanges.V2.DropListField.service,
+    ChangeExample
+      "DropAllFields"
+      ExampleTypeChanges.V2.DropAllFields.service,
     ChangeExample
       "ModifyListToOptionalField"
       ExampleTypeChanges.V2.ModifyListToOptionalField.service,

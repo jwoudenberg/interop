@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 05512fd0cb0b52336ab8e2544cce81b2961793d11a80f0ed0ee9da5fbca3363d
+-- hash: 168e180e78e82195741e3c06dc9494c12180cece4f53033b1ba1268c8a420a2a
 
 name:           interop
 version:        0.1.0.0
@@ -72,6 +72,7 @@ test-suite tests
       ExampleTypeChanges.V2.AddListField
       ExampleTypeChanges.V2.AddNonOptionalField
       ExampleTypeChanges.V2.AddOptionalField
+      ExampleTypeChanges.V2.DropAllFields
       ExampleTypeChanges.V2.DropListField
       ExampleTypeChanges.V2.DropNonOptionalField
       ExampleTypeChanges.V2.DropOptionalField
