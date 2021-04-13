@@ -2,7 +2,7 @@
 
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.
-module Interop.Diff
+module Interop.Compatibility
   ( check,
   )
 where

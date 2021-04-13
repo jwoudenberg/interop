@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7c9b10df7d45fbe9d54bad1f4467e20d49b553998826661b160e3edb0c28dd0d
+-- hash: 220208f0a42ffe83159050b45ee3a77285ae07f9f0ff8bff3c885b3a0477b65a
 
 name:           interop
 version:        0.1.0.0
@@ -30,9 +30,10 @@ source-repository head
 library
   exposed-modules:
       Interop
-      Interop.Ruby
   other-modules:
-      Interop.Diff
+      Interop.Compatibility
+      Interop.Ruby
+      Interop.Service
       Interop.Wire
       Interop.Wire.Flat
       Paths_interop
@@ -55,13 +56,16 @@ test-suite tests
   main-is: Main.hs
   other-modules:
       Interop
-      Interop.Diff
+      Interop.Compatibility
       Interop.Ruby
+      Interop.Service
       Interop.Wire
       Interop.Wire.Flat
       ExampleApis.Api
       ExampleTypeChanges.Base
       ExampleTypeChanges.V2.AddConstructor
+      ExampleTypeChanges.V2.AddEndpoint
+      ExampleTypeChanges.V2.AddFirstField
       ExampleTypeChanges.V2.AddListField
       ExampleTypeChanges.V2.AddNonOptionalField
       ExampleTypeChanges.V2.AddOptionalField
@@ -103,5 +107,5 @@ test-suite tests
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
     , wai >=3.2.0 && <3.3
-    , warp
+    , warp >=3.3.0 && <3.4
   default-language: Haskell2010

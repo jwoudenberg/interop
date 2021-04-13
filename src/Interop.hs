@@ -23,7 +23,7 @@ module Interop
 where
 
 import Data.Text (Text)
-import qualified Interop.Diff
+import qualified Interop.Compatibility
 import qualified Interop.Ruby
 import qualified Interop.Service
 import qualified Interop.Wire
@@ -32,4 +32,4 @@ generateRubyClient :: FilePath -> [Text] -> Interop.Service.Service m -> IO ()
 generateRubyClient = Interop.Ruby.generate
 
 checkServerClientCompatibility :: Interop.Service.Service m -> Interop.Service.Service n -> Text
-checkServerClientCompatibility = Interop.Diff.check
+checkServerClientCompatibility = Interop.Compatibility.check
