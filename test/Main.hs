@@ -94,12 +94,14 @@ encodingTest (ExampleType path example _) =
 diffTest :: ChangeExample -> (PropertyName, Property)
 diffTest (ChangeExample name changedService) =
   let path = "test/ExampleTypeChanges/V2/" <> name <> ".hs"
-   in test1 (fromString path) $ do
-        let warnings =
-              Interop.checkServerClientCompatibility
-                ExampleTypeChanges.Base.service
-                changedService
-        equalToCommentsInFile "Warnings for this change from Base type:" path warnings
+   in test1 (fromString path) $
+        do
+          let warnings =
+                Interop.checkServerClientCompatibility
+                  ExampleTypeChanges.Base.service
+                  changedService
+          either id (\_ -> "No warnings.") warnings
+          & equalToCommentsInFile "Warnings for this change from Base type:" path
 
 backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
 backwardsCompatibleDecodingTests =

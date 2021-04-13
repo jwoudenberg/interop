@@ -19,7 +19,7 @@ import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
-checkServerClientCompatibility :: Service.Service m -> Service.Service n -> Text
+checkServerClientCompatibility :: Service.Service m -> Service.Service n -> Either Text ()
 checkServerClientCompatibility server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
@@ -50,10 +50,12 @@ checkServerClientCompatibility server client =
     (Map.toList (Service.endpoints server))
     (Map.toList (Service.endpoints client))
     []
-    & fmap warningToText
     & ( \case
-          [] -> "No warnings."
-          warnings -> Text.intercalate "\n\n" warnings
+          [] -> Right ()
+          warnings ->
+            fmap warningToText warnings
+              & Text.intercalate "\n\n"
+              & Left
       )
 
 requestType :: Service.Endpoint m -> Type
