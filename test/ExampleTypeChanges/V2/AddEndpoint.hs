@@ -32,5 +32,4 @@ instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- In endpoint: new-endpoint
 -- Warning: The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error.

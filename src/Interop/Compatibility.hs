@@ -15,6 +15,8 @@ import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as Text
+import qualified Data.Text.Lazy
+import qualified Data.Text.Lazy.Builder as Builder
 import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
@@ -111,8 +113,8 @@ data Context = InRequest | InResponse
 
 warningToText :: ChangeWarning -> Text
 warningToText typeChangeWarning =
-  pathToText (path typeChangeWarning)
-    <> "\n"
+  runBuilder (renderContext (path typeChangeWarning))
+    <> "\n\n"
     <> severityToText (severity typeChangeWarning)
     <> ": "
     <> warning typeChangeWarning
@@ -121,11 +123,14 @@ severityToText :: Severity -> Text
 severityToText Warning = "Warning"
 severityToText Error = "Error"
 
-pathToText :: Path -> Text
-pathToText (InEndpoint endpointName) = "In endpoint: " <> endpointName
-pathToText (InType typeName rest) = pathToText rest <> ", in type: " <> typeName
-pathToText (InConstructor constructorName rest) = pathToText rest <> ", in constructor: " <> constructorName
-pathToText (InField fieldName rest) = pathToText rest <> ", in field: " <> fieldName
+renderContext :: Path -> Builder.Builder
+renderContext (InField fieldName rest) = renderContext rest <> " { " <> Builder.fromText fieldName <> " }"
+renderContext (InConstructor constructorName rest) = renderContext rest <> " = " <> Builder.fromText constructorName
+renderContext (InType typeName _) = "data " <> Builder.fromText typeName
+renderContext (InEndpoint _) = ""
+
+runBuilder :: Builder.Builder -> Text
+runBuilder builder = Data.Text.Lazy.toStrict (Builder.toLazyText builder)
 
 typeWarnings :: Path -> [TypeDiff] -> [ChangeWarning]
 typeWarnings path =
