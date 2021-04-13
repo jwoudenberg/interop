@@ -51,8 +51,9 @@ ghc-options:
 - -Wredundant-constraints
 - -Wincomplete-uni-patterns
 default-extensions:
+- DeriveGeneric
 - GeneralizedNewtypeDeriving
 - NamedFieldPuns
 - OverloadedStrings
 - ScopedTypeVariables
-- DeriveGeneric
+- StrictData

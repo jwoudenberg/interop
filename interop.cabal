@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 311e5708fb85551cee30b1a36c1c8045a1506a59d8fc49dfd4e45a69efa78884
+-- hash: 05512fd0cb0b52336ab8e2544cce81b2961793d11a80f0ed0ee9da5fbca3363d
 
 name:           interop
 version:        0.1.0.0
@@ -39,7 +39,7 @@ library
       Paths_interop
   hs-source-dirs:
       src
-  default-extensions: GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables DeriveGeneric
+  default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns
   build-depends:
       aeson >=1.2.4.0 && <1.6
@@ -93,7 +93,7 @@ test-suite tests
   hs-source-dirs:
       src
       test
-  default-extensions: GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables DeriveGeneric
+  default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns -threaded -rtsopts "-with-rtsopts=-N -T"
   build-depends:
       aeson >=1.2.4.0 && <1.6
