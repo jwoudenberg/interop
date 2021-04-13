@@ -34,4 +34,4 @@ instance Wire.Wire Record
 --
 -- data TestType = NewConstructor
 --
--- Warning: A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!
+-- A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!

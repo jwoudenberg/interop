@@ -43,7 +43,6 @@ checkServerClientCompatibility server client =
     ( \endpointName _ acc ->
         ChangeWarning
           { path = InEndpoint endpointName,
-            severity = Warning,
             context = InRequest,
             warning = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
           } :
@@ -95,7 +94,6 @@ data FieldDiff
 
 data ChangeWarning = ChangeWarning
   { path :: Path,
-    severity :: Severity,
     context :: Context,
     warning :: Text
   }
@@ -106,8 +104,6 @@ data Path
   | InConstructor Text Path
   | InField Text Path
 
-data Severity = Warning | Error
-
 data Context = InRequest | InResponse
   deriving (Eq)
 
@@ -115,13 +111,7 @@ warningToText :: ChangeWarning -> Text
 warningToText typeChangeWarning =
   runBuilder (renderContext (path typeChangeWarning))
     <> "\n\n"
-    <> severityToText (severity typeChangeWarning)
-    <> ": "
     <> warning typeChangeWarning
-
-severityToText :: Severity -> Text
-severityToText Warning = "Warning"
-severityToText Error = "Error"
 
 renderContext :: Path -> Builder.Builder
 renderContext (InField fieldName rest) = renderContext rest <> " { " <> Builder.fromText fieldName <> " }"
@@ -138,7 +128,6 @@ typeWarnings path =
     TypeMadeOptional type_ ->
       [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            severity = Warning,
             context = InResponse,
             warning = "A response type has been made optional. Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
           }
@@ -146,7 +135,6 @@ typeWarnings path =
     TypeMadeNonOptional type_ ->
       [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            severity = Warning,
             context = InRequest,
             warning = "A request type was optional before but no longer is. If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
           }
@@ -154,13 +142,11 @@ typeWarnings path =
     TypeChanged type_ _ ->
       [ ChangeWarning
           { path = InType (typeAsText type_) path,
-            severity = Error,
             context = InRequest,
             warning = "We're expecting an entirely different request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           },
         ChangeWarning
           { path = InType (typeAsText type_) path,
-            severity = Error,
             context = InResponse,
             warning = "We're returning an entirely different response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
           }
@@ -176,7 +162,6 @@ constructorWarnings path =
     ConstructorAdded constructor ->
       [ ChangeWarning
           { path = InConstructor (constructorName constructor) path,
-            severity = Warning,
             context = InResponse,
             warning = "A constructor was added to a response type. Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
           }
@@ -184,7 +169,6 @@ constructorWarnings path =
     ConstructorRemoved constructor ->
       [ ChangeWarning
           { path = InConstructor (constructorName constructor) path,
-            severity = Warning,
             context = InRequest,
             warning = "A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
           }
@@ -206,7 +190,6 @@ fieldWarnings path =
         _ ->
           [ ChangeWarning
               { path = InField (fieldName field) path,
-                severity = Error,
                 context = InRequest,
                 warning = "A non-optional field was added to a request type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
               }
@@ -220,7 +203,6 @@ fieldWarnings path =
         _ ->
           [ ChangeWarning
               { path = InField (fieldName field) path,
-                severity = Error,
                 context = InResponse,
                 warning = "A non-optional field was removed from a response type. This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
               }

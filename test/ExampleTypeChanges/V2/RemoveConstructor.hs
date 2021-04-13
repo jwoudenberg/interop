@@ -32,4 +32,4 @@ instance Wire.Wire Record
 --
 -- data TestType = OtherConstructor
 --
--- Warning: A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!
+-- A constructor was removed from a request type. Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!
