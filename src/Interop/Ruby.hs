@@ -3,7 +3,7 @@
 
 -- | Generation of ruby client code for talking to Haskell backends defined
 -- using this library.
-module Interop.Ruby (generate) where
+module Interop.Ruby (generateRubyClient) where
 
 import qualified Data.ByteString.Builder as Builder
 import Data.Char as Char
@@ -21,8 +21,8 @@ import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
 
-generate :: FilePath -> [Text] -> Service.Service m -> IO ()
-generate path namespaces service =
+generateRubyClient :: FilePath -> [Text] -> Service.Service m -> IO ()
+generateRubyClient path namespaces service =
   System.IO.withFile path System.IO.WriteMode $
     \handle ->
       toCode namespaces service (Service.customTypes service)

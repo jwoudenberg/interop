@@ -3,7 +3,7 @@
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.
 module Interop.Compatibility
-  ( check,
+  ( checkServerClientCompatibility,
   )
 where
 
@@ -19,8 +19,8 @@ import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
-check :: Service.Service m -> Service.Service n -> Text
-check server client =
+checkServerClientCompatibility :: Service.Service m -> Service.Service n -> Text
+checkServerClientCompatibility server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->
