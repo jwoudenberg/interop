@@ -3,7 +3,7 @@
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.
 module Interop.Diff
-  ( compatible,
+  ( check,
   )
 where
 
@@ -15,12 +15,12 @@ import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Interop
+import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
-compatible :: Interop.Service m -> Interop.Service n -> Text
-compatible server client =
+check :: Service.Service m -> Service.Service n -> Text
+check server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->
@@ -47,8 +47,8 @@ compatible server client =
           } :
         acc
     )
-    (Map.toList (Interop.endpoints server))
-    (Map.toList (Interop.endpoints client))
+    (Map.toList (Service.endpoints server))
+    (Map.toList (Service.endpoints client))
     []
     & fmap warningToText
     & ( \case
@@ -56,19 +56,19 @@ compatible server client =
           warnings -> Text.intercalate "\n\n" warnings
       )
 
-requestType :: Interop.Endpoint m -> Type
-requestType (Interop.Endpoint _ _ (_ :: req -> m res)) =
+requestType :: Service.Endpoint m -> Type
+requestType (Service.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy req)
     & fromFieldType
 
-responseType :: Interop.Endpoint m -> Type
-responseType (Interop.Endpoint _ _ (_ :: req -> m res)) =
+responseType :: Service.Endpoint m -> Type
+responseType (Service.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy res)
     & fromFieldType
 
-customTypeMap :: Interop.Service m -> Map.Map Text CustomType
+customTypeMap :: Service.Service m -> Map.Map Text CustomType
 customTypeMap service' =
-  Interop.customTypes service'
+  Service.customTypes service'
     & fmap (\customType -> (typeName customType, customType))
     & Map.fromList
 

@@ -50,9 +50,7 @@ import qualified GHC.Paths
 import Hedgehog hiding (test)
 import qualified Hedgehog.Main
 import qualified Interop
-import qualified Interop.Diff
-import qualified Interop.Ruby
-import qualified Interop.Wire as Wire
+import qualified Interop.Wire
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Outputable
 import qualified System.Directory as Directory
@@ -92,10 +90,10 @@ diffTest :: ChangeExample -> (PropertyName, Property)
 diffTest (ChangeExample name changedService) =
   let path = "test/ExampleTypeChanges/V2/" <> name <> ".hs"
    in test1 (fromString path) $ do
-        warnings <-
-          typeChangeWarnings
-            ExampleTypeChanges.Base.service
-            changedService
+        let warnings =
+              Interop.checkServerClientCompatibility
+                ExampleTypeChanges.Base.service
+                changedService
         equalToCommentsInFile "Warnings for this change from Base type:" path warnings
 
 backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
@@ -142,7 +140,7 @@ rubyClientGenerationTests =
   [ test1 "ExampleApi" $ do
       (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
       evalIO $ System.IO.hClose h
-      evalIO $ Interop.Ruby.generate path ["Apis", "ExampleApi"] ExampleApis.Api.service
+      evalIO $ Interop.generateRubyClient path ["Apis", "ExampleApi"] ExampleApis.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
       equalToContentsOfFile "test/ruby-tests/apis/example_api.rb" generated
   ]
@@ -152,7 +150,7 @@ rubyClientGenerationTests =
                  test1 (fromString name) $ do
                    (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
                    evalIO $ System.IO.hClose h
-                   evalIO $ Interop.Ruby.generate path ["Apis", "V2", Text.pack name] service
+                   evalIO $ Interop.generateRubyClient path ["Apis", "V2", Text.pack name] service
                    generated <- evalIO $ Data.Text.IO.readFile path
                    equalToContentsOfFile ("test/ruby-tests/apis/v2/" <> toSnakeCase name <> ".rb") generated
              )
@@ -226,7 +224,7 @@ compileErrorTest examplePath =
 
 data ExampleType where
   ExampleType ::
-    (Wire.Wire a, Show a, Eq a) =>
+    (Interop.Wire a, Show a, Eq a) =>
     { path :: FilePath,
       example :: a,
       gen :: Hedgehog.Gen a
@@ -301,18 +299,11 @@ getCompileErrorExamples =
   let dir = "test/example-compile-errors/"
    in fmap (dir <>) <$> Directory.listDirectory dir
 
-typeChangeWarnings :: Interop.Service a -> Interop.Service b -> PropertyT IO Text
-typeChangeWarnings server client =
-  Interop.Diff.compatible
-    server
-    client
-    & pure
+encode :: Interop.Wire a => a -> ByteString
+encode = Encoding.encodingToLazyByteString . Interop.Wire.encode
 
-encode :: Wire.Wire a => a -> ByteString
-encode = Encoding.encodingToLazyByteString . Wire.encode
-
-decode :: Wire.Wire a => ByteString -> Either String a
-decode = Aeson.parseEither Wire.decode <=< Aeson.eitherDecode
+decode :: Interop.Wire a => ByteString -> Either String a
+decode = Aeson.parseEither Interop.Wire.decode <=< Aeson.eitherDecode
 
 test :: PropertyName -> PropertyT IO () -> (PropertyName, Property)
 test description prop = (description, property prop)
@@ -320,7 +311,7 @@ test description prop = (description, property prop)
 test1 :: PropertyName -> PropertyT IO () -> (PropertyName, Property)
 test1 description prop = (description, withTests 1 (property prop))
 
-encodePretty :: Wire.Wire a => a -> ByteString
+encodePretty :: Interop.Wire a => a -> ByteString
 encodePretty val =
   let compactEncoded = encode val
    in case Aeson.decode compactEncoded of

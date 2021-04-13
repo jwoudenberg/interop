@@ -15,7 +15,6 @@ extra-doc-files:
 library:
   exposed-modules:
   - Interop
-  - Interop.Ruby
   source-dirs: src
 tests:
   tests:

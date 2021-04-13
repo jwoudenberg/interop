@@ -15,22 +15,22 @@ import Data.Semigroup (stimesMonoid)
 import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text
-import Interop
+import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
 import Prelude hiding (pure, (>>), (>>=))
 
-generate :: FilePath -> [Text] -> Service m -> IO ()
-generate path namespaces service' =
+generate :: FilePath -> [Text] -> Service.Service m -> IO ()
+generate path namespaces service =
   System.IO.withFile path System.IO.WriteMode $
     \handle ->
-      toCode namespaces service' (customTypes service')
+      toCode namespaces service (Service.customTypes service)
         & render
         & Builder.hPutBuilder handle
 
-toCode :: [Text] -> Service m -> [Flat.CustomType] -> Ruby
-toCode namespaces service' types' = do
+toCode :: [Text] -> Service.Service m -> [Flat.CustomType] -> Ruby
+toCode namespaces service types' = do
   let (moduleNames, apiName) =
         case reverse namespaces of
           [] -> ([], "Api")
@@ -42,7 +42,7 @@ toCode namespaces service' types' = do
   ""
   foldl'
     inNamespace
-    (apiClass apiName service' types')
+    (apiClass apiName service types')
     moduleNames
 
 inNamespace :: Ruby -> Text -> Ruby
@@ -51,8 +51,8 @@ inNamespace ruby namespace = do
     ruby
   "end"
 
-apiClass :: Text -> Service m -> [Flat.CustomType] -> Ruby
-apiClass apiName service' types' = do
+apiClass :: Text -> Service.Service m -> [Flat.CustomType] -> Ruby
+apiClass apiName service types' = do
   "class " >< fromText apiName >| do
     ""
     "extend T::Sig"
@@ -72,7 +72,7 @@ apiClass apiName service' types' = do
       "end"
       "@http.use_ssl = @origin.scheme == 'https'"
     "end"
-    forRuby (Map.toList (endpoints service')) (uncurry endpointMethod)
+    forRuby (Map.toList (Service.endpoints service)) (uncurry endpointMethod)
   "end"
 
 customTypeHead :: Text -> Flat.CustomType -> Ruby
@@ -224,8 +224,8 @@ decodeJson jsonVar type' =
     Flat.NestedCustomType varName ->
       fromText varName >< ".from_h(" >< fromText jsonVar >< ")"
 
-endpointMethod :: Text -> Endpoint m -> Ruby
-endpointMethod name (Endpoint _ _ (_ :: req -> m res)) = do
+endpointMethod :: Text -> Service.Endpoint m -> Ruby
+endpointMethod name (Service.Endpoint _ _ (_ :: req -> m res)) = do
   let responseType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy res))
   let requestType = Flat.fromFieldType (Wire.type_ (Proxy :: Proxy req))
   ""
