@@ -9,6 +9,7 @@ module Interop.Compatibility
   )
 where
 
+import qualified Data.Aeson as Aeson
 import Data.Function ((&))
 import Data.List (foldl', sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
@@ -18,6 +19,7 @@ import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Builder as Builder
+import GHC.Generics (Generic)
 import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
@@ -59,11 +61,21 @@ data ServiceSpec = ServiceSpec
   { customTypes :: Map.Map Text CustomType,
     endpoints :: Map.Map Text EndpointSpec
   }
+  deriving (Generic)
+
+instance Aeson.ToJSON ServiceSpec
+
+instance Aeson.FromJSON ServiceSpec
 
 data EndpointSpec = EndpointSpec
   { requestType :: Type,
     responseType :: Type
   }
+  deriving (Generic)
+
+instance Aeson.ToJSON EndpointSpec
+
+instance Aeson.FromJSON EndpointSpec
 
 spec :: Service.Service m -> ServiceSpec
 spec service =

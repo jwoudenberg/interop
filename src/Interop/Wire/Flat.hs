@@ -11,10 +11,12 @@ module Interop.Wire.Flat
   )
 where
 
+import qualified Data.Aeson as Aeson
 import Data.Bifunctor (bimap)
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import qualified Interop.Wire as Wire
 
 -- | This type is like Interop.Wire.WireType, except it's not recursive.
@@ -25,16 +27,31 @@ data CustomType = CustomType
   { typeName :: Text,
     subTypes :: Either [Field] [Constructor]
   }
+  deriving (Generic)
+
+instance Aeson.ToJSON CustomType
+
+instance Aeson.FromJSON CustomType
 
 data Constructor = Constructor
   { constructorName :: Text,
     fields :: [Field]
   }
+  deriving (Generic)
+
+instance Aeson.ToJSON Constructor
+
+instance Aeson.FromJSON Constructor
 
 data Field = Field
   { fieldName :: Text,
     fieldType :: Type
   }
+  deriving (Generic)
+
+instance Aeson.ToJSON Field
+
+instance Aeson.FromJSON Field
 
 data Type
   = Optional Type
@@ -46,6 +63,11 @@ data Type
   | Bool
   | Unit
   | NestedCustomType Text
+  deriving (Generic)
+
+instance Aeson.ToJSON Type
+
+instance Aeson.FromJSON Type
 
 typeAsText :: Type -> Text
 typeAsText type_ =
