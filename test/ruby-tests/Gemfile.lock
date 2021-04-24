@@ -1,12 +1,14 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    minitest (5.14.4)
     sorbet-runtime (0.5.6362)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  minitest
   sorbet-runtime
 
 RUBY VERSION

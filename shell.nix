@@ -11,14 +11,15 @@ let
 in pkgs.haskellPackages.shellFor {
   packages = p: [ (import ./default.nix) ];
   buildInputs = [
-    pkgs.bundix
+    # Haskell
     pkgs.cabal-install
     pkgs.haskellPackages.ghcid
     pkgs.haskellPackages.hpack
     pkgs.ormolu
 
     # Ruby
-    pkgs.ruby
     gems
+    gems.wrappedRuby
+    pkgs.bundix
   ];
 }
