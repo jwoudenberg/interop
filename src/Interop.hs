@@ -18,7 +18,7 @@ module Interop
     Interop.Ruby.generateRubyClient,
 
     -- * Check compatibility between services
-    Interop.Compatibility.spec,
+    Interop.Spec.spec,
     Interop.Compatibility.checkServerClientCompatibility,
   )
 where
@@ -26,4 +26,5 @@ where
 import qualified Interop.Compatibility
 import qualified Interop.Ruby
 import qualified Interop.Service
+import qualified Interop.Spec
 import qualified Interop.Wire

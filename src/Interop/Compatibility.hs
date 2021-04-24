@@ -4,40 +4,34 @@
 -- compatible or not.
 module Interop.Compatibility
   ( checkServerClientCompatibility,
-    ServiceSpec,
-    spec,
   )
 where
 
-import qualified Data.Aeson as Aeson
 import Data.Function ((&))
 import Data.List (foldl', sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
-import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Builder as Builder
-import GHC.Generics (Generic)
-import qualified Interop.Service as Service
-import qualified Interop.Wire as Wire
+import qualified Interop.Spec as Spec
 import Interop.Wire.Flat
 
-checkServerClientCompatibility :: ServiceSpec -> ServiceSpec -> Either Text ()
+checkServerClientCompatibility :: Spec.Service -> Spec.Service -> Either Text ()
 checkServerClientCompatibility server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->
         let requestTypeWarnings =
               diffType
-                (customTypes server, requestType serverEndpoint)
-                (customTypes client, requestType clientEndpoint)
+                (Spec.customTypes server, Spec.requestType serverEndpoint)
+                (Spec.customTypes client, Spec.requestType clientEndpoint)
                 & requestWarnings (InEndpoint endpointName)
             responseTypeWarnings =
               diffType
-                (customTypes server, responseType serverEndpoint)
-                (customTypes client, responseType clientEndpoint)
+                (Spec.customTypes server, Spec.responseType serverEndpoint)
+                (Spec.customTypes client, Spec.responseType clientEndpoint)
                 & responseWarnings (InEndpoint endpointName)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
@@ -45,8 +39,8 @@ checkServerClientCompatibility server client =
         "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error." :
         acc
     )
-    (Map.toList (endpoints server))
-    (Map.toList (endpoints client))
+    (Map.toList (Spec.endpoints server))
+    (Map.toList (Spec.endpoints client))
     []
     & ( \case
           [] -> Right ()
@@ -56,56 +50,6 @@ checkServerClientCompatibility server client =
               & Data.Text.Lazy.toStrict
               & Left
       )
-
-data ServiceSpec = ServiceSpec
-  { customTypes :: Map.Map Text CustomType,
-    endpoints :: Map.Map Text EndpointSpec
-  }
-  deriving (Generic)
-
-instance Aeson.ToJSON ServiceSpec
-
-instance Aeson.FromJSON ServiceSpec
-
-data EndpointSpec = EndpointSpec
-  { requestType :: Type,
-    responseType :: Type
-  }
-  deriving (Generic)
-
-instance Aeson.ToJSON EndpointSpec
-
-instance Aeson.FromJSON EndpointSpec
-
-spec :: Service.Service m -> ServiceSpec
-spec service =
-  ServiceSpec
-    { customTypes = customTypeMap service,
-      endpoints =
-        fmap
-          ( \endpoint ->
-              EndpointSpec
-                (requestTypeForEndpoint endpoint)
-                (responseTypeForEndpoint endpoint)
-          )
-          (Service.endpoints service)
-    }
-
-requestTypeForEndpoint :: Service.Endpoint m -> Type
-requestTypeForEndpoint (Service.Endpoint _ _ (_ :: req -> m res)) =
-  Wire.type_ (Proxy :: Proxy req)
-    & fromFieldType
-
-responseTypeForEndpoint :: Service.Endpoint m -> Type
-responseTypeForEndpoint (Service.Endpoint _ _ (_ :: req -> m res)) =
-  Wire.type_ (Proxy :: Proxy res)
-    & fromFieldType
-
-customTypeMap :: Service.Service m -> Map.Map Text CustomType
-customTypeMap service' =
-  Service.customTypes service'
-    & fmap (\customType -> (typeName customType, customType))
-    & Map.fromList
 
 data TypeDiff
   = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)
