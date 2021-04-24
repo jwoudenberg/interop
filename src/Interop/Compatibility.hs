@@ -4,6 +4,8 @@
 -- compatible or not.
 module Interop.Compatibility
   ( checkServerClientCompatibility,
+    ServiceSpec,
+    spec,
   )
 where
 
@@ -20,20 +22,20 @@ import qualified Interop.Service as Service
 import qualified Interop.Wire as Wire
 import Interop.Wire.Flat
 
-checkServerClientCompatibility :: Service.Service m -> Service.Service n -> Either Text ()
+checkServerClientCompatibility :: ServiceSpec -> ServiceSpec -> Either Text ()
 checkServerClientCompatibility server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->
         let requestTypeWarnings =
               diffType
-                (customTypeMap server, requestType serverEndpoint)
-                (customTypeMap client, requestType clientEndpoint)
+                (customTypes server, requestType serverEndpoint)
+                (customTypes client, requestType clientEndpoint)
                 & requestWarnings (InEndpoint endpointName)
             responseTypeWarnings =
               diffType
-                (customTypeMap server, responseType serverEndpoint)
-                (customTypeMap client, responseType clientEndpoint)
+                (customTypes server, responseType serverEndpoint)
+                (customTypes client, responseType clientEndpoint)
                 & responseWarnings (InEndpoint endpointName)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
@@ -41,8 +43,8 @@ checkServerClientCompatibility server client =
         "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error." :
         acc
     )
-    (Map.toList (Service.endpoints server))
-    (Map.toList (Service.endpoints client))
+    (Map.toList (endpoints server))
+    (Map.toList (endpoints client))
     []
     & ( \case
           [] -> Right ()
@@ -53,13 +55,37 @@ checkServerClientCompatibility server client =
               & Left
       )
 
-requestType :: Service.Endpoint m -> Type
-requestType (Service.Endpoint _ _ (_ :: req -> m res)) =
+data ServiceSpec = ServiceSpec
+  { customTypes :: Map.Map Text CustomType,
+    endpoints :: Map.Map Text EndpointSpec
+  }
+
+data EndpointSpec = EndpointSpec
+  { requestType :: Type,
+    responseType :: Type
+  }
+
+spec :: Service.Service m -> ServiceSpec
+spec service =
+  ServiceSpec
+    { customTypes = customTypeMap service,
+      endpoints =
+        fmap
+          ( \endpoint ->
+              EndpointSpec
+                (requestTypeForEndpoint endpoint)
+                (responseTypeForEndpoint endpoint)
+          )
+          (Service.endpoints service)
+    }
+
+requestTypeForEndpoint :: Service.Endpoint m -> Type
+requestTypeForEndpoint (Service.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy req)
     & fromFieldType
 
-responseType :: Service.Endpoint m -> Type
-responseType (Service.Endpoint _ _ (_ :: req -> m res)) =
+responseTypeForEndpoint :: Service.Endpoint m -> Type
+responseTypeForEndpoint (Service.Endpoint _ _ (_ :: req -> m res)) =
   Wire.type_ (Proxy :: Proxy res)
     & fromFieldType
 

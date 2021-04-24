@@ -98,8 +98,8 @@ diffTest (ChangeExample name changedService) =
         do
           let warnings =
                 Interop.checkServerClientCompatibility
-                  ExampleTypeChanges.Base.service
-                  changedService
+                  (Interop.spec ExampleTypeChanges.Base.service)
+                  (Interop.spec changedService)
           either id (\_ -> "No warnings.") warnings
           & equalToCommentsInFile "Warnings for this change from Base type:" path
 
