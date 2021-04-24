@@ -158,3 +158,4 @@ module Apis
     end
   end
 end
+# INTEROP-SPEC:{"endpoints":{"get_all_people":{"requestType":{"tag":"Unit"},"responseType":{"tag":"Dict","contents":[{"tag":"Int"},{"tag":"NestedCustomType","contents":"Person"}]}},"get_person_by_id":{"requestType":{"tag":"Int"},"responseType":{"tag":"Optional","contents":{"tag":"NestedCustomType","contents":"Person"}}}},"customTypes":{"Person":{"subTypes":{"Left":[{"fieldType":{"tag":"Text"},"fieldName":"firstName"},{"fieldType":{"tag":"Text"},"fieldName":"lastName"},{"fieldType":{"tag":"List","contents":{"tag":"NestedCustomType","contents":"Hobby"}},"fieldName":"hobbies"}]},"typeName":"Person"},"Hobby":{"subTypes":{"Right":[{"constructorName":"BoardGames","fields":[]},{"constructorName":"Piano","fields":[]},{"constructorName":"Football","fields":[]}]},"typeName":"Hobby"}}}

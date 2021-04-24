@@ -5,7 +5,9 @@
 -- using this library.
 module Interop.Ruby (generateRubyClient) where
 
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Lazy
 import Data.Char as Char
 import Data.Function ((&))
 import Data.List (foldl')
@@ -16,6 +18,7 @@ import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Interop.Service as Service
+import qualified Interop.Spec as Spec
 import qualified Interop.Wire as Wire
 import qualified Interop.Wire.Flat as Flat
 import qualified System.IO
@@ -44,6 +47,7 @@ toCode namespaces service types' = do
     inNamespace
     (apiClass apiName service types')
     moduleNames
+  "# INTEROP-SPEC:" >< fromByteString (Aeson.encode (Spec.spec service))
 
 inNamespace :: Ruby -> Text -> Ruby
 inNamespace ruby namespace = do
@@ -306,6 +310,9 @@ render (Ruby f) = f 0
 
 fromText :: Text -> Ruby
 fromText = fromString . Text.unpack
+
+fromByteString :: Data.ByteString.Lazy.ByteString -> Ruby
+fromByteString bytestring = Ruby (\_ -> Builder.lazyByteString bytestring)
 
 toSnakeCase :: Text -> Ruby
 toSnakeCase text =

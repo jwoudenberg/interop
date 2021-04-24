@@ -105,3 +105,4 @@ module Apis
     end
   end
 end
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"otherListField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
