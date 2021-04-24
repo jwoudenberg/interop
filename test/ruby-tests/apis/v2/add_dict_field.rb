@@ -5,7 +5,7 @@ require "sorbet-runtime"
 
 module Apis
   module V2
-    class AddEndpoint
+    class AddDictField
       
       extend T::Sig
       extend T::Helpers
@@ -15,8 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include AddEndpoint::TestType; end
-        class OneConstructor < T::Struct; include AddEndpoint::TestType; end
+        class OtherConstructor < T::Struct; include AddDictField::TestType; end
+        class OneConstructor < T::Struct; include AddDictField::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -57,6 +57,7 @@ module Apis
         
         prop :optional_field, T.nilable(Integer)
         prop :list_field, T::Array[Integer]
+        prop :other_dict_field, T::Hash[Integer, Float]
         prop :field, Integer
         
         sig { returns(Hash) }
@@ -64,6 +65,7 @@ module Apis
           Hash["OneConstructor", {
             "optionalField": if optional_field.nil? then {} else optional_field end,
             "listField": list_field.map { |elem| elem },
+            "otherDictField": other_dict_field.map { |key, val| [key, val] },
             "field": field,
           }]
         end
@@ -73,6 +75,7 @@ module Apis
           new(
             optional_field: json["optionalField"] && json["optionalField"],
             list_field: (json["listField"] || []).map { |elem| elem },
+            other_dict_field: (json["otherDictField"] || []).map { |key, val| [key, val] }.to_h,
             field: json["field"],
           )
         end
@@ -87,17 +90,6 @@ module Apis
           @http.read_timeout = timeout
         end
         @http.use_ssl = @origin.scheme == 'https'
-      end
-      
-      sig { params(arg: TestType).returns(TestType) }
-      def new-endpoint(arg)
-        req = Net::HTTP::Post.new(@origin)
-        req["Content-Type"] = "application/json"
-        
-        body = ["new-endpoint", arg.to_h]
-        res = @http.request(req, body.to_json)
-        json = JSON.parse(res.body)
-        TestType.from_h(json)
       end
       
       sig { params(arg: TestType).returns(TestType) }

@@ -32,6 +32,7 @@ import qualified Data.Foldable as Foldable
 import Data.Function ((&))
 import qualified Data.Int
 import Data.Kind (Constraint, Type)
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
@@ -46,6 +47,7 @@ data WireType
   = Type TypeDefinition (Either [Field] [Constructor])
   | List WireType
   | Optional WireType
+  | Dict WireType WireType
   | Unit
   | Text
   | Int
@@ -314,6 +316,29 @@ instance Wire a => Wire [a] where
         decodeRec = Aeson.withArray "[]" (traverse decode . Foldable.toList)
       }
 
+instance (Ord k, Wire k, Wire v) => Wire (Map.Map k v) where
+  type HasKindOfType (Map.Map k v) = CustomType
+  rec _ =
+    WireRec
+      { typeRec = Dict (type_ (Proxy :: Proxy k)) (type_ (Proxy :: Proxy v)),
+        encodeRec = Encoding.list (\(k, v) -> Encoding.list id [encode k, encode v]) . Map.toList,
+        decodeRec =
+          Aeson.withArray
+            "[]"
+            ( fmap Map.fromList
+                . traverse
+                  ( Aeson.withArray
+                      "(k,v)"
+                      ( \tuple ->
+                          case Foldable.toList tuple of
+                            [k, v] -> (,) <$> decode k <*> decode v
+                            _ -> fail "Expected array to have exactly two elements."
+                      )
+                  )
+                . Foldable.toList
+            )
+      }
+
 instance Wire () where
   type HasKindOfType () = CustomType
   rec _ =
@@ -500,24 +525,38 @@ instance
 -- This type class and its supporting type family 'IsOptional' exist solely to
 -- pick the right Aeson helper function depending on whether the type of the
 -- field is a 'Maybe a' or not.
+--
+-- Addendum: this has been extended to cover not just 'Maybe a', but other types
+-- with an empty value like lists and dictionaries too. For these types, when a
+-- null value is passed we want to gracefully recover by letting decoding return
+-- an empty value.
 class ParseField (isMaybe :: Bool) a where
   type Unwrapped isMaybe a
+  type Unwrapped bool a = a
   parseField ::
     Proxy isMaybe ->
     (Aeson.Value -> Aeson.Parser (Unwrapped isMaybe a)) ->
     Aeson.Object ->
     Text ->
     Aeson.Parser a
+  default parseField ::
+    (Monoid a, Unwrapped isMaybe a ~ a) =>
+    Proxy isMaybe ->
+    (Aeson.Value -> Aeson.Parser (Unwrapped isMaybe a)) ->
+    Aeson.Object ->
+    Text ->
+    Aeson.Parser a
+  parseField _ parse object key =
+    Aeson.explicitParseFieldMaybe parse object key
+      & fmap (Data.Maybe.fromMaybe mempty)
 
 instance ParseField 'True (Maybe a) where
   type Unwrapped 'True (Maybe a) = a
   parseField _ = Aeson.explicitParseFieldMaybe
 
-instance ParseField 'True [a] where
-  type Unwrapped 'True [a] = [a]
-  parseField _ parse object key =
-    Aeson.explicitParseFieldMaybe parse object key
-      & fmap (Data.Maybe.fromMaybe [])
+instance ParseField 'True [a]
+
+instance Ord k => ParseField 'True (Map.Map k v)
 
 instance ParseField 'False a where
   type Unwrapped 'False a = a
@@ -526,6 +565,7 @@ instance ParseField 'False a where
 type family IsOptional a :: Bool where
   IsOptional (Maybe a) = 'True
   IsOptional [a] = 'True
+  IsOptional (Map.Map k v) = 'True
   IsOptional a = 'False
 
 -- | Depending on the kind of type we're dealing with (record, multiple

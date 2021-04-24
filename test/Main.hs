@@ -26,6 +26,7 @@ import qualified ExampleApis.InvalidService.DuplicateEndpointName
 import qualified ExampleApis.InvalidService.DuplicateTypeName
 import qualified ExampleTypeChanges.Base
 import qualified ExampleTypeChanges.V2.AddConstructor
+import qualified ExampleTypeChanges.V2.AddDictField
 import qualified ExampleTypeChanges.V2.AddEndpoint
 import qualified ExampleTypeChanges.V2.AddFirstField
 import qualified ExampleTypeChanges.V2.AddListField
@@ -124,6 +125,11 @@ backwardsCompatibleDecodingTests =
       oldType <- forAll ExampleTypeChanges.Base.gen
       let encoded = encode oldType
       (_ :: ExampleTypeChanges.V2.AddListField.TestType) <- evalEither (decode encoded)
+      pure (),
+    test "Server with new dict field can still decode old types" $ do
+      oldType <- forAll ExampleTypeChanges.Base.gen
+      let encoded = encode oldType
+      (_ :: ExampleTypeChanges.V2.AddDictField.TestType) <- evalEither (decode encoded)
       pure (),
     test "Server which dropped a non-optional field can still decode old types" $ do
       oldType <- forAll ExampleTypeChanges.Base.gen
@@ -303,6 +309,9 @@ changeExampleTypes =
     ChangeExample
       "AddListField"
       ExampleTypeChanges.V2.AddListField.service,
+    ChangeExample
+      "AddDictField"
+      ExampleTypeChanges.V2.AddDictField.service,
     ChangeExample
       "DropNonOptionalField"
       ExampleTypeChanges.V2.DropNonOptionalField.service,

@@ -86,7 +86,7 @@ module Apis
         sig { returns(Hash) }
         def to_h
           Hash["OneConstructor", {
-            "optionalField": optional_field && optional_field,
+            "optionalField": if optional_field.nil? then {} else optional_field end,
             "listField": list_field.map { |elem| elem },
             "field": field,
           }]

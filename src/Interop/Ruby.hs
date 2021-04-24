@@ -124,7 +124,7 @@ customType (Flat.CustomType typeName (Right constructors)) = do
             "\""
               >< fromText fieldName
               >< "\": "
-              >< encodeFieldType fieldName fieldType
+              >< encodeJson (toSnakeCase fieldName) fieldType
               >< ","
         "}]"
       "end"
@@ -135,7 +135,7 @@ customType (Flat.CustomType typeName (Right constructors)) = do
           forRuby fields $ \(Flat.Field fieldName fieldType) ->
             toSnakeCase fieldName
               >< ": "
-              >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
+              >< parseJson (fromText ("json[\"" <> fieldName <> "\"]")) fieldType
               >< ","
         ")"
       "end"
@@ -156,7 +156,7 @@ customType (Flat.CustomType typeName (Left fields)) = do
           "\""
             >< fromText fieldName
             >< "\": "
-            >< encodeFieldType fieldName fieldType
+            >< encodeJson (toSnakeCase fieldName) fieldType
             >< ","
       "}"
     "end"
@@ -167,62 +167,45 @@ customType (Flat.CustomType typeName (Left fields)) = do
         forRuby fields $ \(Flat.Field fieldName fieldType) ->
           toSnakeCase fieldName
             >< ": "
-            >< decodeJson ("json[\"" <> fieldName <> "\"]") fieldType
+            >< parseJson (fromText ("json[\"" <> fieldName <> "\"]")) fieldType
             >< ","
       ")"
     "end"
   "end"
 
-encodeFieldType :: Text -> Flat.Type -> Ruby
-encodeFieldType fieldName fieldType =
-  case fieldType of
-    Flat.Optional sub ->
-      toSnakeCase fieldName
-        >< " && "
-        >< encodeFieldType fieldName sub
-    Flat.List sub ->
-      toSnakeCase fieldName
-        >< ".map { |elem| "
-        >< encodeFieldType "elem" sub
-        >< " }"
-    Flat.Text ->
-      toSnakeCase fieldName
-    Flat.Int ->
-      toSnakeCase fieldName
-    Flat.Float ->
-      toSnakeCase fieldName
-    Flat.Bool ->
-      toSnakeCase fieldName
-    Flat.Unit ->
-      "[]"
-    Flat.NestedCustomType _ ->
-      toSnakeCase fieldName >< ".to_h"
-
-decodeJson :: Text -> Flat.Type -> Ruby
-decodeJson jsonVar type' =
+parseJson :: Ruby -> Flat.Type -> Ruby
+parseJson jsonVar type' =
   case type' of
     Flat.Optional sub ->
-      fromText jsonVar
+      jsonVar
         >< " && "
-        >< decodeJson jsonVar sub
+        >< parseJson jsonVar sub
     Flat.List sub ->
       "("
-        >< fromText jsonVar
+        >< jsonVar
         >< " || []).map { |elem| "
-        >< decodeJson "elem" sub
+        >< parseJson "elem" sub
         >< " }"
+    Flat.Dict key val ->
+      "("
+        >< jsonVar
+        >< " || []).map { |key, val| ["
+        >< parseJson "key" key
+        >< ", "
+        >< parseJson "val" val
+        >< "] }.to_h"
     Flat.Text ->
-      fromText jsonVar
+      jsonVar
     Flat.Int ->
-      fromText jsonVar
+      jsonVar
     Flat.Float ->
-      fromText jsonVar
+      jsonVar
     Flat.Bool ->
-      fromText jsonVar
+      jsonVar
     Flat.Unit ->
       "nil"
     Flat.NestedCustomType varName ->
-      fromText varName >< ".from_h(" >< fromText jsonVar >< ")"
+      fromText varName >< ".from_h(" >< jsonVar >< ")"
 
 endpointMethod :: Text -> Service.Endpoint m -> Ruby
 endpointMethod name (Service.Endpoint _ _ (_ :: req -> m res)) = do
@@ -249,6 +232,7 @@ type_ t =
   case t of
     Flat.Optional sub -> "T.nilable(" >< type_ sub >< ")"
     Flat.List sub -> "T::Array[" >< type_ sub >< "]"
+    Flat.Dict key val -> "T::Hash[" >< type_ key >< ", " >< type_ val >< "]"
     Flat.Text -> "String"
     Flat.Int -> "Integer"
     Flat.Float -> "Float"
@@ -256,45 +240,33 @@ type_ t =
     Flat.Unit -> "NilClass"
     Flat.NestedCustomType name -> fromText name
 
-encodeJson :: Text -> Flat.Type -> Ruby
+encodeJson :: Ruby -> Flat.Type -> Ruby
 encodeJson jsonVar t =
   case t of
     Flat.Optional sub ->
       "if "
-        >< fromText jsonVar
+        >< jsonVar
         >< ".nil? then {} else "
         >< encodeJson jsonVar sub
         >< " end"
     Flat.List sub ->
-      fromText jsonVar
+      jsonVar
         >< ".map { |elem| "
         >< encodeJson "elem" sub
         >< " }"
-    Flat.Text -> fromText jsonVar
-    Flat.Int -> fromText jsonVar
-    Flat.Float -> fromText jsonVar
-    Flat.Bool -> fromText jsonVar
-    Flat.Unit -> fromText jsonVar
-    Flat.NestedCustomType _ -> fromText jsonVar >< ".to_h"
-
-parseJson :: Text -> Flat.Type -> Ruby
-parseJson jsonVar t =
-  case t of
-    Flat.Optional sub ->
-      fromText jsonVar
-        >< " && "
-        >< parseJson jsonVar sub
-    Flat.List sub ->
-      fromText jsonVar
-        >< ".map { |elem| "
-        >< parseJson "elem" sub
-        >< " }"
-    Flat.Text -> fromText jsonVar
-    Flat.Int -> fromText jsonVar
-    Flat.Float -> fromText jsonVar
-    Flat.Bool -> fromText jsonVar
-    Flat.Unit -> fromText jsonVar
-    Flat.NestedCustomType name -> fromText name >< ".from_h(" >< fromText jsonVar >< ")"
+    Flat.Dict key val ->
+      jsonVar
+        >< ".map { |key, val| ["
+        >< encodeJson "key" key
+        >< ", "
+        >< encodeJson "val" val
+        >< "] }"
+    Flat.Text -> jsonVar
+    Flat.Int -> jsonVar
+    Flat.Float -> jsonVar
+    Flat.Bool -> jsonVar
+    Flat.Unit -> "[]"
+    Flat.NestedCustomType _ -> jsonVar >< ".to_h"
 
 -- DSL for generating ruby code from Haskell.
 

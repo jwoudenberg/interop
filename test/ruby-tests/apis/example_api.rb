@@ -146,15 +146,15 @@ module Apis
       json && Person.from_h(json)
     end
     
-    sig { params(arg: NilClass).returns(T::Array[Person]) }
+    sig { params(arg: NilClass).returns(T::Hash[Integer, Person]) }
     def get_all_people(arg)
       req = Net::HTTP::Post.new(@origin)
       req["Content-Type"] = "application/json"
       
-      body = ["get_all_people", arg]
+      body = ["get_all_people", []]
       res = @http.request(req, body.to_json)
       json = JSON.parse(res.body)
-      json.map { |elem| Person.from_h(elem) }
+      (json || []).map { |key, val| [key, Person.from_h(val)] }.to_h
     end
   end
 end

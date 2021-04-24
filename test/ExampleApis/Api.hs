@@ -18,7 +18,7 @@ endpoints =
       (\id' -> pure (Map.lookup id' people)),
     Interop.endpoint
       "get_all_people"
-      (\() -> pure (Map.elems people))
+      (\() -> pure people)
   ]
 
 people :: Map.Map Int Person

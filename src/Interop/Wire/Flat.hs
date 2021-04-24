@@ -39,6 +39,7 @@ data Field = Field
 data Type
   = Optional Type
   | List Type
+  | Dict Type Type
   | Text
   | Int
   | Float
@@ -56,6 +57,7 @@ typeAsText type_ =
     Unit -> "Unit"
     Optional subType -> "Maybe " <> typeAsText subType
     List subType -> "List " <> typeAsText subType
+    Dict keyType valType -> "Dict " <> typeAsText keyType <> " " <> typeAsText valType
     NestedCustomType name -> name
 
 customTypesByDef ::
@@ -66,6 +68,7 @@ customTypesByDef wireType acc =
   case wireType of
     Wire.List subType -> customTypesByDef subType acc
     Wire.Optional subType -> customTypesByDef subType acc
+    Wire.Dict keyType valType -> customTypesByDef valType (customTypesByDef keyType acc)
     Wire.Unit -> acc
     Wire.Text -> acc
     Wire.Int -> acc
@@ -124,6 +127,7 @@ fromFieldType fieldType =
     Wire.Type nestedDef _ -> NestedCustomType (Wire.typeName nestedDef)
     Wire.List subType -> List (fromFieldType subType)
     Wire.Optional subType -> Optional (fromFieldType subType)
+    Wire.Dict keyType valType -> Dict (fromFieldType keyType) (fromFieldType valType)
     Wire.Unit -> Unit
     Wire.Text -> Text
     Wire.Int -> Int

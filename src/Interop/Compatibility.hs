@@ -213,6 +213,8 @@ fieldRequestWarnings path =
           []
         Optional _ ->
           []
+        Dict _ _ ->
+          []
         _ ->
           [ warningToText
               "A type used in requests has a mandatory field."
@@ -236,6 +238,8 @@ fieldResponseWarnings path =
         List _ ->
           []
         Optional _ ->
+          []
+        Dict _ _ ->
           []
         _ ->
           [ warningToText
@@ -274,6 +278,11 @@ diffType (beforeTypes, before) (afterTypes, after) =
           [TypeChanged before after]
     (List subBefore, List subAfter) ->
       case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
+        [] -> []
+        _ -> [TypeChanged before after]
+    (Dict keyBefore valBefore, Dict keyAfter valAfter) ->
+      case diffType (beforeTypes, keyBefore) (afterTypes, keyAfter)
+        <> diffType (beforeTypes, valBefore) (afterTypes, valAfter) of
         [] -> []
         _ -> [TypeChanged before after]
     (Optional subBefore, Optional subAfter) ->

@@ -62,7 +62,7 @@ module Apis
         def to_h
           Hash["OneConstructor", {
             "listField": list_field.map { |elem| elem },
-            "optionalField": optional_field && optional_field,
+            "optionalField": if optional_field.nil? then {} else optional_field end,
           }]
         end
         

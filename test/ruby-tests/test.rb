@@ -21,6 +21,18 @@ class TestApi < MiniTest::Unit::TestCase
     assert_equal response.to_h, expected.to_h
   end
 
+  def test_dictionary_response
+    api = Apis::ExampleApi.new("http://localhost:#{ENV['PORT'].to_i}")
+    response = api.get_all_people(nil)
+    expected =
+      Apis::ExampleApi::Person.new(
+        first_name: "Jasper",
+        last_name: "Woudenberg",
+        hobbies: [Apis::ExampleApi::Hobby::BoardGames.new],
+      )
+    assert_equal response[42].to_h, expected.to_h
+  end
+
   def test_add_constructor
     api = Apis::V2::AddConstructor.new("http://localhost:#{ENV['PORT'].to_i}")
     request = Apis::V2::AddConstructor::TestType::OtherConstructor.new
