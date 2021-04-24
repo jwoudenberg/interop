@@ -17,6 +17,7 @@ import Data.Semigroup (stimesMonoid)
 import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding
 import qualified Interop.Service as Service
 import qualified Interop.Spec as Spec
 import qualified Interop.Wire as Wire
@@ -309,7 +310,7 @@ render :: Ruby -> Builder.Builder
 render (Ruby f) = f 0
 
 fromText :: Text -> Ruby
-fromText = fromString . Text.unpack
+fromText text = Ruby (\_ -> Builder.byteString (Data.Text.Encoding.encodeUtf8 text))
 
 fromByteString :: Data.ByteString.Lazy.ByteString -> Ruby
 fromByteString bytestring = Ruby (\_ -> Builder.lazyByteString bytestring)
