@@ -4,22 +4,53 @@
 -- compatible or not.
 module Interop.Compatibility
   ( checkServerClientCompatibility,
+    check,
   )
 where
 
+import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as ByteString
 import Data.Function ((&))
 import Data.List (foldl', sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Builder as Builder
 import qualified Interop.Spec as Spec
 import Interop.Wire.Flat
 
-checkServerClientCompatibility :: Spec.Service -> Spec.Service -> Either Text ()
-checkServerClientCompatibility server client =
+checkServerClientCompatibility :: FilePath -> FilePath -> IO (Either Text ())
+checkServerClientCompatibility serverPath clientPath = do
+  serverResult <- readSpec serverPath
+  clientResult <- readSpec clientPath
+  pure $ do
+    server <- serverResult
+    client <- clientResult
+    check server client
+
+readSpec :: FilePath -> IO (Either Text Spec.Service)
+readSpec path = do
+  contents <- ByteString.readFile path
+  let lines' = ByteString.split 10 {- \n -} contents
+  let maybeSpec = do
+        json <- findSpecInLine (ByteString.tails (last lines'))
+        Aeson.decode json
+  case maybeSpec of
+    Nothing -> pure (Left ("Not an interop spec file: " <> Text.pack path))
+    Just spec -> pure (Right spec)
+
+findSpecInLine :: [ByteString.ByteString] -> Maybe ByteString.ByteString
+findSpecInLine [] = Nothing
+findSpecInLine (first : rest) =
+  case ByteString.stripPrefix "INTEROP-SPEC:" first of
+    Nothing -> findSpecInLine rest
+    Just json -> Just json
+
+check :: Spec.Service -> Spec.Service -> Either Text ()
+check server client =
   merge
     (\_ _ acc -> acc) -- server-only endpoints are fine
     ( \endpointName serverEndpoint clientEndpoint acc ->

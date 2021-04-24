@@ -16,6 +16,12 @@ library:
   exposed-modules:
   - Interop
   source-dirs: src
+executables:
+  interop-compatible:
+    dependencies:
+    - interop
+    main: Main.hs
+    source-dirs: interop-compatible
 tests:
   tests:
     dependencies:

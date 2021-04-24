@@ -55,6 +55,8 @@ import qualified GHC.Paths
 import Hedgehog hiding (test)
 import qualified Hedgehog.Main
 import qualified Interop
+import qualified Interop.Compatibility
+import qualified Interop.Spec
 import qualified Interop.Wire
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Outputable
@@ -98,9 +100,9 @@ diffTest (ChangeExample name changedService) =
    in test1 (fromString path) $
         do
           let warnings =
-                Interop.checkServerClientCompatibility
-                  (Interop.spec ExampleTypeChanges.Base.service)
-                  (Interop.spec changedService)
+                Interop.Compatibility.check
+                  (Interop.Spec.spec ExampleTypeChanges.Base.service)
+                  (Interop.Spec.spec changedService)
           either id (\_ -> "No warnings.") warnings
           & equalToCommentsInFile "Warnings for this change from Base type:" path
 
