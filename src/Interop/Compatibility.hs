@@ -264,26 +264,20 @@ diffType (beforeTypes, before) (afterTypes, after) =
         (_, _) ->
           [TypeChanged before after]
     (List subBefore, List subAfter) ->
-      case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
-        [] -> []
-        _ -> [TypeChanged before after]
+      diffType (beforeTypes, subBefore) (afterTypes, subAfter)
     (Dict keyBefore valBefore, Dict keyAfter valAfter) ->
-      case diffType (beforeTypes, keyBefore) (afterTypes, keyAfter)
-        <> diffType (beforeTypes, valBefore) (afterTypes, valAfter) of
-        [] -> []
-        _ -> [TypeChanged before after]
+      diffType (beforeTypes, keyBefore) (afterTypes, keyAfter)
+        <> diffType (beforeTypes, valBefore) (afterTypes, valAfter)
     (Optional subBefore, Optional subAfter) ->
-      case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
-        [] -> []
-        _ -> [TypeChanged before after]
+      diffType (beforeTypes, subBefore) (afterTypes, subAfter)
     (Optional subBefore, subAfter) ->
       case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
         [] -> [TypeMadeNonOptional after]
-        _ -> [TypeChanged before after]
+        changes -> changes
     (subBefore, Optional subAfter) ->
       case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
         [] -> [TypeMadeOptional before]
-        _ -> [TypeChanged before after]
+        changes -> changes
     (Unit, Unit) -> []
     (Text, Text) -> []
     (Int, Int) -> []
