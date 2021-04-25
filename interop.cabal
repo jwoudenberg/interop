@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 374201df5882e6303a19d18a1d14745b4a330dcfc43a24d48ea8bdc0e087f87e
+-- hash: 5f81ed84bae984fd61768a0b970addda059b158cc3d2488f667031b352f02115
 
 name:           interop
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
   exposed-modules:
       Interop
   other-modules:
+      Demo
       Interop.Compatibility
       Interop.Ruby
       Interop.Service
@@ -75,6 +76,7 @@ test-suite tests
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Demo
       Interop
       Interop.Compatibility
       Interop.Ruby
