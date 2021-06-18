@@ -21,36 +21,36 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
-import qualified ExampleApiChanges.AddConstructor.V1
-import qualified ExampleApiChanges.AddConstructor.V2
-import qualified ExampleApiChanges.AddDictField.V1
-import qualified ExampleApiChanges.AddDictField.V2
-import qualified ExampleApiChanges.AddEndpoint.V1
-import qualified ExampleApiChanges.AddEndpoint.V2
-import qualified ExampleApiChanges.AddFirstField.V1
-import qualified ExampleApiChanges.AddFirstField.V2
-import qualified ExampleApiChanges.AddListField.V1
-import qualified ExampleApiChanges.AddListField.V2
-import qualified ExampleApiChanges.AddNonOptionalField.V1
-import qualified ExampleApiChanges.AddNonOptionalField.V2
-import qualified ExampleApiChanges.AddOptionalField.V1
-import qualified ExampleApiChanges.AddOptionalField.V2
-import qualified ExampleApiChanges.DropAllFields.V1
-import qualified ExampleApiChanges.DropAllFields.V2
-import qualified ExampleApiChanges.DropListField.V1
-import qualified ExampleApiChanges.DropListField.V2
-import qualified ExampleApiChanges.DropNonOptionalField.V1
-import qualified ExampleApiChanges.DropNonOptionalField.V2
-import qualified ExampleApiChanges.DropOptionalField.V1
-import qualified ExampleApiChanges.DropOptionalField.V2
-import qualified ExampleApiChanges.ModifyFieldType.V1
-import qualified ExampleApiChanges.ModifyFieldType.V2
-import qualified ExampleApiChanges.ModifyListToOptionalField.V1
-import qualified ExampleApiChanges.ModifyListToOptionalField.V2
-import qualified ExampleApiChanges.ModifyOptionalToListField.V1
-import qualified ExampleApiChanges.ModifyOptionalToListField.V2
-import qualified ExampleApiChanges.RemoveConstructor.V1
-import qualified ExampleApiChanges.RemoveConstructor.V2
+import qualified ExampleApis.AddConstructor.V1
+import qualified ExampleApis.AddConstructor.V2
+import qualified ExampleApis.AddDictField.V1
+import qualified ExampleApis.AddDictField.V2
+import qualified ExampleApis.AddEndpoint.V1
+import qualified ExampleApis.AddEndpoint.V2
+import qualified ExampleApis.AddFirstField.V1
+import qualified ExampleApis.AddFirstField.V2
+import qualified ExampleApis.AddListField.V1
+import qualified ExampleApis.AddListField.V2
+import qualified ExampleApis.AddNonOptionalField.V1
+import qualified ExampleApis.AddNonOptionalField.V2
+import qualified ExampleApis.AddOptionalField.V1
+import qualified ExampleApis.AddOptionalField.V2
+import qualified ExampleApis.DropAllFields.V1
+import qualified ExampleApis.DropAllFields.V2
+import qualified ExampleApis.DropListField.V1
+import qualified ExampleApis.DropListField.V2
+import qualified ExampleApis.DropNonOptionalField.V1
+import qualified ExampleApis.DropNonOptionalField.V2
+import qualified ExampleApis.DropOptionalField.V1
+import qualified ExampleApis.DropOptionalField.V2
+import qualified ExampleApis.ModifyFieldType.V1
+import qualified ExampleApis.ModifyFieldType.V2
+import qualified ExampleApis.ModifyListToOptionalField.V1
+import qualified ExampleApis.ModifyListToOptionalField.V2
+import qualified ExampleApis.ModifyOptionalToListField.V1
+import qualified ExampleApis.ModifyOptionalToListField.V2
+import qualified ExampleApis.RemoveConstructor.V1
+import qualified ExampleApis.RemoveConstructor.V2
 import qualified ExampleApis.Api
 import qualified ExampleApis.InvalidService.DuplicateConstructorName
 import qualified ExampleApis.InvalidService.DuplicateEndpointName
@@ -111,7 +111,7 @@ encodingTest (ExampleType path example _) =
 
 diffTest :: ChangeApiExample -> (PropertyName, Property)
 diffTest (ChangeApiExample name v1Api v2Api) =
-  let path = "test/ExampleApiChanges/" <> name <> "/V2.hs"
+  let path = "test/ExampleApis/" <> name <> "/V2.hs"
    in test1 (fromString path) $
         do
           let warnings =
@@ -146,7 +146,7 @@ rubyClientGenerationTests =
                    evalIO $ System.IO.hClose h
                    evalIO $ Interop.generateRubyClient path ["Apis", Text.pack name, "V2"] v2Api
                    generated <- evalIO $ Data.Text.IO.readFile path
-                   equalToContentsOfFile ("test/ExampleApiChanges/" <> name <> "/v2.rb") generated
+                   equalToContentsOfFile ("test/ExampleApis/" <> name <> "/v2.rb") generated
              )
        )
 
@@ -155,7 +155,7 @@ generatedRubyCodeTests =
   [ test1 "Generated ruby code" $ do
       let app =
             ExampleApis.Api.endpoints
-              ++ ExampleApiChanges.AddConstructor.V1.endpoints
+              ++ ExampleApis.AddConstructor.V1.endpoints
               & Interop.service
               & either (error . show) id
               & Interop.wai
@@ -270,64 +270,64 @@ changeApiExamples :: [ChangeApiExample]
 changeApiExamples =
   [ ChangeApiExample
       "AddConstructor"
-      ExampleApiChanges.AddConstructor.V1.service
-      ExampleApiChanges.AddConstructor.V2.service,
+      ExampleApis.AddConstructor.V1.service
+      ExampleApis.AddConstructor.V2.service,
     ChangeApiExample
       "AddEndpoint"
-      ExampleApiChanges.AddEndpoint.V1.service
-      ExampleApiChanges.AddEndpoint.V2.service,
+      ExampleApis.AddEndpoint.V1.service
+      ExampleApis.AddEndpoint.V2.service,
     ChangeApiExample
       "AddFirstField"
-      ExampleApiChanges.AddFirstField.V1.service
-      ExampleApiChanges.AddFirstField.V2.service,
+      ExampleApis.AddFirstField.V1.service
+      ExampleApis.AddFirstField.V2.service,
     ChangeApiExample
       "AddNonOptionalField"
-      ExampleApiChanges.AddNonOptionalField.V1.service
-      ExampleApiChanges.AddNonOptionalField.V2.service,
+      ExampleApis.AddNonOptionalField.V1.service
+      ExampleApis.AddNonOptionalField.V2.service,
     ChangeApiExample
       "AddOptionalField"
-      ExampleApiChanges.AddOptionalField.V1.service
-      ExampleApiChanges.AddOptionalField.V2.service,
+      ExampleApis.AddOptionalField.V1.service
+      ExampleApis.AddOptionalField.V2.service,
     ChangeApiExample
       "AddListField"
-      ExampleApiChanges.AddListField.V1.service
-      ExampleApiChanges.AddListField.V2.service,
+      ExampleApis.AddListField.V1.service
+      ExampleApis.AddListField.V2.service,
     ChangeApiExample
       "AddDictField"
-      ExampleApiChanges.AddDictField.V1.service
-      ExampleApiChanges.AddDictField.V2.service,
+      ExampleApis.AddDictField.V1.service
+      ExampleApis.AddDictField.V2.service,
     ChangeApiExample
       "DropNonOptionalField"
-      ExampleApiChanges.DropNonOptionalField.V1.service
-      ExampleApiChanges.DropNonOptionalField.V2.service,
+      ExampleApis.DropNonOptionalField.V1.service
+      ExampleApis.DropNonOptionalField.V2.service,
     ChangeApiExample
       "DropOptionalField"
-      ExampleApiChanges.DropOptionalField.V1.service
-      ExampleApiChanges.DropOptionalField.V2.service,
+      ExampleApis.DropOptionalField.V1.service
+      ExampleApis.DropOptionalField.V2.service,
     ChangeApiExample
       "DropListField"
-      ExampleApiChanges.DropListField.V1.service
-      ExampleApiChanges.DropListField.V2.service,
+      ExampleApis.DropListField.V1.service
+      ExampleApis.DropListField.V2.service,
     ChangeApiExample
       "DropAllFields"
-      ExampleApiChanges.DropAllFields.V1.service
-      ExampleApiChanges.DropAllFields.V2.service,
+      ExampleApis.DropAllFields.V1.service
+      ExampleApis.DropAllFields.V2.service,
     ChangeApiExample
       "ModifyListToOptionalField"
-      ExampleApiChanges.ModifyListToOptionalField.V1.service
-      ExampleApiChanges.ModifyListToOptionalField.V2.service,
+      ExampleApis.ModifyListToOptionalField.V1.service
+      ExampleApis.ModifyListToOptionalField.V2.service,
     ChangeApiExample
       "ModifyOptionalToListField"
-      ExampleApiChanges.ModifyOptionalToListField.V1.service
-      ExampleApiChanges.ModifyOptionalToListField.V2.service,
+      ExampleApis.ModifyOptionalToListField.V1.service
+      ExampleApis.ModifyOptionalToListField.V2.service,
     ChangeApiExample
       "ModifyFieldType"
-      ExampleApiChanges.ModifyFieldType.V1.service
-      ExampleApiChanges.ModifyFieldType.V2.service,
+      ExampleApis.ModifyFieldType.V1.service
+      ExampleApis.ModifyFieldType.V2.service,
     ChangeApiExample
       "RemoveConstructor"
-      ExampleApiChanges.RemoveConstructor.V1.service
-      ExampleApiChanges.RemoveConstructor.V2.service
+      ExampleApis.RemoveConstructor.V1.service
+      ExampleApis.RemoveConstructor.V2.service
   ]
 
 data ChangeTypeExample where
@@ -342,36 +342,36 @@ changeTypeExamples :: [ChangeTypeExample]
 changeTypeExamples =
   [ ChangeTypeExample
       "AddFirstField"
-      ExampleApiChanges.AddFirstField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.AddFirstField.V2.TestType),
+      ExampleApis.AddFirstField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddFirstField.V2.TestType),
     ChangeTypeExample
       "AddOptionalField"
-      ExampleApiChanges.AddOptionalField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.AddOptionalField.V2.TestType),
+      ExampleApis.AddOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddOptionalField.V2.TestType),
     ChangeTypeExample
       "AddListField"
-      ExampleApiChanges.AddListField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.AddListField.V2.TestType),
+      ExampleApis.AddListField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddListField.V2.TestType),
     ChangeTypeExample
       "AddDictField"
-      ExampleApiChanges.AddDictField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.AddDictField.V2.TestType),
+      ExampleApis.AddDictField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddDictField.V2.TestType),
     ChangeTypeExample
       "DropNonOptionalField"
-      ExampleApiChanges.DropNonOptionalField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.DropNonOptionalField.V2.TestType),
+      ExampleApis.DropNonOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApis.DropNonOptionalField.V2.TestType),
     ChangeTypeExample
       "DropOptionalField"
-      ExampleApiChanges.DropOptionalField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.DropOptionalField.V2.TestType),
+      ExampleApis.DropOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApis.DropOptionalField.V2.TestType),
     ChangeTypeExample
       "DropListField"
-      ExampleApiChanges.DropListField.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.DropListField.V2.TestType),
+      ExampleApis.DropListField.V1.gen
+      (Proxy :: Proxy ExampleApis.DropListField.V2.TestType),
     ChangeTypeExample
       "DropAllFields"
-      ExampleApiChanges.DropAllFields.V1.gen
-      (Proxy :: Proxy ExampleApiChanges.DropAllFields.V2.TestType)
+      ExampleApis.DropAllFields.V1.gen
+      (Proxy :: Proxy ExampleApis.DropAllFields.V2.TestType)
   ]
 
 getCompileErrorExamples :: IO [FilePath]

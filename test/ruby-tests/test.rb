@@ -1,12 +1,12 @@
 require 'minitest/autorun'
 load 'apis/example_api.rb'
-load '../ExampleApiChanges/AddConstructor/v2.rb'
-load '../ExampleApiChanges/AddFirstField/v2.rb'
-load '../ExampleApiChanges/AddListField/v2.rb'
-load '../ExampleApiChanges/AddOptionalField/v2.rb'
-load '../ExampleApiChanges/DropListField/v2.rb'
-load '../ExampleApiChanges/DropOptionalField/v2.rb'
-load '../ExampleApiChanges/RemoveConstructor/v2.rb'
+load '../ExampleApis/AddConstructor/v2.rb'
+load '../ExampleApis/AddFirstField/v2.rb'
+load '../ExampleApis/AddListField/v2.rb'
+load '../ExampleApis/AddOptionalField/v2.rb'
+load '../ExampleApis/DropListField/v2.rb'
+load '../ExampleApis/DropOptionalField/v2.rb'
+load '../ExampleApis/RemoveConstructor/v2.rb'
 
 class TestApi < MiniTest::Unit::TestCase
   def test_api

@@ -82,36 +82,36 @@ test-suite tests
       Interop.Spec
       Interop.Wire
       Interop.Wire.Flat
-      ExampleApiChanges.AddConstructor.V1
-      ExampleApiChanges.AddConstructor.V2
-      ExampleApiChanges.AddDictField.V1
-      ExampleApiChanges.AddDictField.V2
-      ExampleApiChanges.AddEndpoint.V1
-      ExampleApiChanges.AddEndpoint.V2
-      ExampleApiChanges.AddFirstField.V1
-      ExampleApiChanges.AddFirstField.V2
-      ExampleApiChanges.AddListField.V1
-      ExampleApiChanges.AddListField.V2
-      ExampleApiChanges.AddNonOptionalField.V1
-      ExampleApiChanges.AddNonOptionalField.V2
-      ExampleApiChanges.AddOptionalField.V1
-      ExampleApiChanges.AddOptionalField.V2
-      ExampleApiChanges.DropAllFields.V1
-      ExampleApiChanges.DropAllFields.V2
-      ExampleApiChanges.DropListField.V1
-      ExampleApiChanges.DropListField.V2
-      ExampleApiChanges.DropNonOptionalField.V1
-      ExampleApiChanges.DropNonOptionalField.V2
-      ExampleApiChanges.DropOptionalField.V1
-      ExampleApiChanges.DropOptionalField.V2
-      ExampleApiChanges.ModifyFieldType.V1
-      ExampleApiChanges.ModifyFieldType.V2
-      ExampleApiChanges.ModifyListToOptionalField.V1
-      ExampleApiChanges.ModifyListToOptionalField.V2
-      ExampleApiChanges.ModifyOptionalToListField.V1
-      ExampleApiChanges.ModifyOptionalToListField.V2
-      ExampleApiChanges.RemoveConstructor.V1
-      ExampleApiChanges.RemoveConstructor.V2
+      ExampleApis.AddConstructor.V1
+      ExampleApis.AddConstructor.V2
+      ExampleApis.AddDictField.V1
+      ExampleApis.AddDictField.V2
+      ExampleApis.AddEndpoint.V1
+      ExampleApis.AddEndpoint.V2
+      ExampleApis.AddFirstField.V1
+      ExampleApis.AddFirstField.V2
+      ExampleApis.AddListField.V1
+      ExampleApis.AddListField.V2
+      ExampleApis.AddNonOptionalField.V1
+      ExampleApis.AddNonOptionalField.V2
+      ExampleApis.AddOptionalField.V1
+      ExampleApis.AddOptionalField.V2
+      ExampleApis.DropAllFields.V1
+      ExampleApis.DropAllFields.V2
+      ExampleApis.DropListField.V1
+      ExampleApis.DropListField.V2
+      ExampleApis.DropNonOptionalField.V1
+      ExampleApis.DropNonOptionalField.V2
+      ExampleApis.DropOptionalField.V1
+      ExampleApis.DropOptionalField.V2
+      ExampleApis.ModifyFieldType.V1
+      ExampleApis.ModifyFieldType.V2
+      ExampleApis.ModifyListToOptionalField.V1
+      ExampleApis.ModifyListToOptionalField.V2
+      ExampleApis.ModifyOptionalToListField.V1
+      ExampleApis.ModifyOptionalToListField.V2
+      ExampleApis.RemoveConstructor.V1
+      ExampleApis.RemoveConstructor.V2
       ExampleApis.Api
       ExampleApis.InvalidService.DuplicateConstructorName
       ExampleApis.InvalidService.DuplicateEndpointName
