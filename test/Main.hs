@@ -15,31 +15,46 @@ import qualified Data.Char as Char
 import Data.Function ((&))
 import qualified Data.IORef as IORef
 import Data.List (foldl')
+import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.IO
+import qualified ExampleApiChanges.AddConstructor.V1
+import qualified ExampleApiChanges.AddConstructor.V2
+import qualified ExampleApiChanges.AddDictField.V1
+import qualified ExampleApiChanges.AddDictField.V2
+import qualified ExampleApiChanges.AddEndpoint.V1
+import qualified ExampleApiChanges.AddEndpoint.V2
+import qualified ExampleApiChanges.AddFirstField.V1
+import qualified ExampleApiChanges.AddFirstField.V2
+import qualified ExampleApiChanges.AddListField.V1
+import qualified ExampleApiChanges.AddListField.V2
+import qualified ExampleApiChanges.AddNonOptionalField.V1
+import qualified ExampleApiChanges.AddNonOptionalField.V2
+import qualified ExampleApiChanges.AddOptionalField.V1
+import qualified ExampleApiChanges.AddOptionalField.V2
+import qualified ExampleApiChanges.DropAllFields.V1
+import qualified ExampleApiChanges.DropAllFields.V2
+import qualified ExampleApiChanges.DropListField.V1
+import qualified ExampleApiChanges.DropListField.V2
+import qualified ExampleApiChanges.DropNonOptionalField.V1
+import qualified ExampleApiChanges.DropNonOptionalField.V2
+import qualified ExampleApiChanges.DropOptionalField.V1
+import qualified ExampleApiChanges.DropOptionalField.V2
+import qualified ExampleApiChanges.ModifyFieldType.V1
+import qualified ExampleApiChanges.ModifyFieldType.V2
+import qualified ExampleApiChanges.ModifyListToOptionalField.V1
+import qualified ExampleApiChanges.ModifyListToOptionalField.V2
+import qualified ExampleApiChanges.ModifyOptionalToListField.V1
+import qualified ExampleApiChanges.ModifyOptionalToListField.V2
+import qualified ExampleApiChanges.RemoveConstructor.V1
+import qualified ExampleApiChanges.RemoveConstructor.V2
 import qualified ExampleApis.Api
 import qualified ExampleApis.InvalidService.DuplicateConstructorName
 import qualified ExampleApis.InvalidService.DuplicateEndpointName
 import qualified ExampleApis.InvalidService.DuplicateTypeName
-import qualified ExampleTypeChanges.Base
-import qualified ExampleTypeChanges.V2.AddConstructor
-import qualified ExampleTypeChanges.V2.AddDictField
-import qualified ExampleTypeChanges.V2.AddEndpoint
-import qualified ExampleTypeChanges.V2.AddFirstField
-import qualified ExampleTypeChanges.V2.AddListField
-import qualified ExampleTypeChanges.V2.AddNonOptionalField
-import qualified ExampleTypeChanges.V2.AddOptionalField
-import qualified ExampleTypeChanges.V2.DropAllFields
-import qualified ExampleTypeChanges.V2.DropListField
-import qualified ExampleTypeChanges.V2.DropNonOptionalField
-import qualified ExampleTypeChanges.V2.DropOptionalField
-import qualified ExampleTypeChanges.V2.ModifyFieldType
-import qualified ExampleTypeChanges.V2.ModifyListToOptionalField
-import qualified ExampleTypeChanges.V2.ModifyOptionalToListField
-import qualified ExampleTypeChanges.V2.RemoveConstructor
 import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
 import qualified ExampleTypes.Int
@@ -72,9 +87,9 @@ main = do
   Hedgehog.Main.defaultMain
     [ checkParallel (Group "encode-decode roundtrip" (encodeDecodeRoundtripTest <$> exampleTypes)),
       checkParallel (Group "encoding" (encodingTest <$> exampleTypes)),
-      checkParallel (Group "diff" (diffTest <$> changeExampleTypes)),
+      checkParallel (Group "diff" (diffTest <$> changeApiExamples)),
       checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
-      checkParallel (Group "backwards-compatible decoding" backwardsCompatibleDecodingTests),
+      checkParallel (Group "backwards-compatible decoding" (backwardsCompatibleDecodingTest <$> changeTypeExamples)),
       checkParallel (Group "ruby client generation" rubyClientGenerationTests),
       checkParallel (Group "generated ruby code" generatedRubyCodeTests),
       checkParallel (Group "create service error" (createServiceErrorTest <$> exampleInvalidServices))
@@ -94,66 +109,25 @@ encodingTest (ExampleType path example _) =
       & Data.Text.Encoding.decodeUtf8
       & equalToCommentsInFile "JSON encoding of example value:" path
 
-diffTest :: ChangeExample -> (PropertyName, Property)
-diffTest (ChangeExample name changedService) =
-  let path = "test/ExampleTypeChanges/V2/" <> name <> ".hs"
+diffTest :: ChangeApiExample -> (PropertyName, Property)
+diffTest (ChangeApiExample name v1Api v2Api) =
+  let path = "test/ExampleApiChanges/" <> name <> "/V2.hs"
    in test1 (fromString path) $
         do
           let warnings =
                 Interop.Compatibility.check
-                  (Interop.Spec.spec ExampleTypeChanges.Base.service)
-                  (Interop.Spec.spec changedService)
+                  (Interop.Spec.spec v1Api)
+                  (Interop.Spec.spec v2Api)
           either id (\_ -> "No warnings.") warnings
           & equalToCommentsInFile "Warnings for this change from Base type:" path
 
-backwardsCompatibleDecodingTests :: [(PropertyName, Property)]
-backwardsCompatibleDecodingTests =
-  [ test "Server with new constructor can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.AddConstructor.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server with new first field can still serve old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.AddFirstField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server with new optional field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.AddOptionalField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server with new list field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.AddListField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server with new dict field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.AddDictField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server which dropped a non-optional field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.DropNonOptionalField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server which dropped an optional field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.DropOptionalField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server which dropped a list field can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.DropListField.TestType) <- evalEither (decode encoded)
-      pure (),
-    test "Server which dropped all fields can still decode old types" $ do
-      oldType <- forAll ExampleTypeChanges.Base.gen
-      let encoded = encode oldType
-      (_ :: ExampleTypeChanges.V2.DropAllFields.TestType) <- evalEither (decode encoded)
-      pure ()
-  ]
+backwardsCompatibleDecodingTest :: ChangeTypeExample -> (PropertyName, Property)
+backwardsCompatibleDecodingTest (ChangeTypeExample name gen (_ :: proxy type_)) =
+  test (fromString ("Can still decode type after change: " <> name)) $ do
+    oldType <- forAll gen
+    let encoded = encode oldType
+    (_ :: type_) <- evalEither (decode encoded)
+    pure ()
 
 rubyClientGenerationTests :: [(PropertyName, Property)]
 rubyClientGenerationTests =
@@ -164,13 +138,13 @@ rubyClientGenerationTests =
       generated <- evalIO $ Data.Text.IO.readFile path
       equalToContentsOfFile "test/ruby-tests/apis/example_api.rb" generated
   ]
-    <> ( changeExampleTypes
+    <> ( changeApiExamples
            & fmap
-             ( \(ChangeExample name service) ->
+             ( \(ChangeApiExample name _ v2Api) ->
                  test1 (fromString name) $ do
                    (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
                    evalIO $ System.IO.hClose h
-                   evalIO $ Interop.generateRubyClient path ["Apis", "V2", Text.pack name] service
+                   evalIO $ Interop.generateRubyClient path ["Apis", "V2", Text.pack name] v2Api
                    generated <- evalIO $ Data.Text.IO.readFile path
                    equalToContentsOfFile ("test/ruby-tests/apis/v2/" <> toSnakeCase name <> ".rb") generated
              )
@@ -181,7 +155,7 @@ generatedRubyCodeTests =
   [ test1 "Generated ruby code" $ do
       let app =
             ExampleApis.Api.endpoints
-              ++ ExampleTypeChanges.Base.endpoints
+              ++ ExampleApiChanges.AddConstructor.V1.endpoints
               & Interop.service
               & either (error . show) id
               & Interop.wai
@@ -285,59 +259,119 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen)
   ]
 
-data ChangeExample where
-  ChangeExample ::
+data ChangeApiExample where
+  ChangeApiExample ::
     FilePath ->
     Interop.Service a ->
-    ChangeExample
+    Interop.Service b ->
+    ChangeApiExample
 
-changeExampleTypes :: [ChangeExample]
-changeExampleTypes =
-  [ ChangeExample
+changeApiExamples :: [ChangeApiExample]
+changeApiExamples =
+  [ ChangeApiExample
       "AddConstructor"
-      ExampleTypeChanges.V2.AddConstructor.service,
-    ChangeExample
+      ExampleApiChanges.AddConstructor.V1.service
+      ExampleApiChanges.AddConstructor.V2.service,
+    ChangeApiExample
       "AddEndpoint"
-      ExampleTypeChanges.V2.AddEndpoint.service,
-    ChangeExample
+      ExampleApiChanges.AddEndpoint.V1.service
+      ExampleApiChanges.AddEndpoint.V2.service,
+    ChangeApiExample
       "AddFirstField"
-      ExampleTypeChanges.V2.AddFirstField.service,
-    ChangeExample
+      ExampleApiChanges.AddFirstField.V1.service
+      ExampleApiChanges.AddFirstField.V2.service,
+    ChangeApiExample
       "AddNonOptionalField"
-      ExampleTypeChanges.V2.AddNonOptionalField.service,
-    ChangeExample
+      ExampleApiChanges.AddNonOptionalField.V1.service
+      ExampleApiChanges.AddNonOptionalField.V2.service,
+    ChangeApiExample
       "AddOptionalField"
-      ExampleTypeChanges.V2.AddOptionalField.service,
-    ChangeExample
+      ExampleApiChanges.AddOptionalField.V1.service
+      ExampleApiChanges.AddOptionalField.V2.service,
+    ChangeApiExample
       "AddListField"
-      ExampleTypeChanges.V2.AddListField.service,
-    ChangeExample
+      ExampleApiChanges.AddListField.V1.service
+      ExampleApiChanges.AddListField.V2.service,
+    ChangeApiExample
       "AddDictField"
-      ExampleTypeChanges.V2.AddDictField.service,
-    ChangeExample
+      ExampleApiChanges.AddDictField.V1.service
+      ExampleApiChanges.AddDictField.V2.service,
+    ChangeApiExample
       "DropNonOptionalField"
-      ExampleTypeChanges.V2.DropNonOptionalField.service,
-    ChangeExample
+      ExampleApiChanges.DropNonOptionalField.V1.service
+      ExampleApiChanges.DropNonOptionalField.V2.service,
+    ChangeApiExample
       "DropOptionalField"
-      ExampleTypeChanges.V2.DropOptionalField.service,
-    ChangeExample
+      ExampleApiChanges.DropOptionalField.V1.service
+      ExampleApiChanges.DropOptionalField.V2.service,
+    ChangeApiExample
       "DropListField"
-      ExampleTypeChanges.V2.DropListField.service,
-    ChangeExample
+      ExampleApiChanges.DropListField.V1.service
+      ExampleApiChanges.DropListField.V2.service,
+    ChangeApiExample
       "DropAllFields"
-      ExampleTypeChanges.V2.DropAllFields.service,
-    ChangeExample
+      ExampleApiChanges.DropAllFields.V1.service
+      ExampleApiChanges.DropAllFields.V2.service,
+    ChangeApiExample
       "ModifyListToOptionalField"
-      ExampleTypeChanges.V2.ModifyListToOptionalField.service,
-    ChangeExample
+      ExampleApiChanges.ModifyListToOptionalField.V1.service
+      ExampleApiChanges.ModifyListToOptionalField.V2.service,
+    ChangeApiExample
       "ModifyOptionalToListField"
-      ExampleTypeChanges.V2.ModifyOptionalToListField.service,
-    ChangeExample
+      ExampleApiChanges.ModifyOptionalToListField.V1.service
+      ExampleApiChanges.ModifyOptionalToListField.V2.service,
+    ChangeApiExample
       "ModifyFieldType"
-      ExampleTypeChanges.V2.ModifyFieldType.service,
-    ChangeExample
+      ExampleApiChanges.ModifyFieldType.V1.service
+      ExampleApiChanges.ModifyFieldType.V2.service,
+    ChangeApiExample
       "RemoveConstructor"
-      ExampleTypeChanges.V2.RemoveConstructor.service
+      ExampleApiChanges.RemoveConstructor.V1.service
+      ExampleApiChanges.RemoveConstructor.V2.service
+  ]
+
+data ChangeTypeExample where
+  ChangeTypeExample ::
+    (Show v1, Interop.Wire v1, Interop.Wire v2) =>
+    FilePath ->
+    Hedgehog.Gen v1 ->
+    proxy v2 ->
+    ChangeTypeExample
+
+changeTypeExamples :: [ChangeTypeExample]
+changeTypeExamples =
+  [ ChangeTypeExample
+      "AddFirstField"
+      ExampleApiChanges.AddFirstField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.AddFirstField.V2.TestType),
+    ChangeTypeExample
+      "AddOptionalField"
+      ExampleApiChanges.AddOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.AddOptionalField.V2.TestType),
+    ChangeTypeExample
+      "AddListField"
+      ExampleApiChanges.AddListField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.AddListField.V2.TestType),
+    ChangeTypeExample
+      "AddDictField"
+      ExampleApiChanges.AddDictField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.AddDictField.V2.TestType),
+    ChangeTypeExample
+      "DropNonOptionalField"
+      ExampleApiChanges.DropNonOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.DropNonOptionalField.V2.TestType),
+    ChangeTypeExample
+      "DropOptionalField"
+      ExampleApiChanges.DropOptionalField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.DropOptionalField.V2.TestType),
+    ChangeTypeExample
+      "DropListField"
+      ExampleApiChanges.DropListField.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.DropListField.V2.TestType),
+    ChangeTypeExample
+      "DropAllFields"
+      ExampleApiChanges.DropAllFields.V1.gen
+      (Proxy :: Proxy ExampleApiChanges.DropAllFields.V2.TestType)
   ]
 
 getCompileErrorExamples :: IO [FilePath]

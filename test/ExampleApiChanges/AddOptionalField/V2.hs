@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.AddFirstField where
+module ExampleApiChanges.AddOptionalField.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -15,7 +15,7 @@ service =
 
 data TestType
   = OneConstructor Record
-  | OtherConstructor NewRecord
+  | OtherConstructor
   deriving (Generic)
 
 instance Wire.Wire TestType
@@ -23,18 +23,12 @@ instance Wire.Wire TestType
 data Record = Record
   { field :: Int,
     optionalField :: Maybe Int,
-    listField :: [Int]
+    listField :: [Int],
+    newOptionalField :: Maybe Int
   }
   deriving (Generic)
 
 instance Wire.Wire Record
-
-data NewRecord = NewRecord
-  { newField :: Maybe Int
-  }
-  deriving (Generic)
-
-instance Wire.Wire NewRecord
 
 -- Warnings for this change from Base type:
 --

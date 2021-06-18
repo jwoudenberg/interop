@@ -1,7 +1,8 @@
-module ExampleTypeChanges.V2.ModifyOptionalToListField where
+module ExampleApiChanges.ModifyFieldType.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
+import Data.Text (Text)
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
@@ -16,16 +17,16 @@ service =
 data TestType
   = OneConstructor Record
   | OtherConstructor
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire TestType
 
 data Record = Record
-  { field :: Int,
-    optionalField :: [Int],
+  { field :: Text,
+    optionalField :: Maybe Int,
     listField :: [Int]
   }
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire Record
 

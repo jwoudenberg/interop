@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.RemoveConstructor where
+module ExampleApiChanges.AddNonOptionalField.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -15,6 +15,7 @@ service =
 
 data TestType
   = OneConstructor Record
+  | OtherConstructor
   deriving (Generic)
 
 instance Wire.Wire TestType
@@ -22,7 +23,8 @@ instance Wire.Wire TestType
 data Record = Record
   { field :: Int,
     optionalField :: Maybe Int,
-    listField :: [Int]
+    listField :: [Int],
+    newField :: Int
   }
   deriving (Generic)
 
@@ -30,7 +32,7 @@ instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- A constructor was removed from a type used in requests.
--- data TestType = OtherConstructor
+-- A type used in requests has a mandatory field.
+-- data TestType = OneConstructor { newField }
 --
--- Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!
+-- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional.

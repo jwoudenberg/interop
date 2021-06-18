@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.AddConstructor where
+module ExampleApiChanges.DropListField.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -16,23 +16,18 @@ service =
 data TestType
   = OneConstructor Record
   | OtherConstructor
-  | NewConstructor
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: [Int]
+    optionalField :: Maybe Int
   }
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- A constructor was added to a type used in responses.
--- data TestType = NewConstructor
---
--- Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!
+-- No warnings.

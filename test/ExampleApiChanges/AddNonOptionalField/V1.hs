@@ -1,4 +1,4 @@
-module ExampleTypeChanges.Base where
+module ExampleApiChanges.AddNonOptionalField.V1 where
 
 import Data.Function ((&))
 import GHC.Generics (Generic)

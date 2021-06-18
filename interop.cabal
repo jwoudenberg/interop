@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 374201df5882e6303a19d18a1d14745b4a330dcfc43a24d48ea8bdc0e087f87e
+-- hash: cec30ae99dc6616e3d585800a419d17664234414c31a0b247f45f796cb9a56b7
 
 name:           interop
 version:        0.1.0.0
@@ -82,26 +82,40 @@ test-suite tests
       Interop.Spec
       Interop.Wire
       Interop.Wire.Flat
+      ExampleApiChanges.AddConstructor.V1
+      ExampleApiChanges.AddConstructor.V2
+      ExampleApiChanges.AddDictField.V1
+      ExampleApiChanges.AddDictField.V2
+      ExampleApiChanges.AddEndpoint.V1
+      ExampleApiChanges.AddEndpoint.V2
+      ExampleApiChanges.AddFirstField.V1
+      ExampleApiChanges.AddFirstField.V2
+      ExampleApiChanges.AddListField.V1
+      ExampleApiChanges.AddListField.V2
+      ExampleApiChanges.AddNonOptionalField.V1
+      ExampleApiChanges.AddNonOptionalField.V2
+      ExampleApiChanges.AddOptionalField.V1
+      ExampleApiChanges.AddOptionalField.V2
+      ExampleApiChanges.DropAllFields.V1
+      ExampleApiChanges.DropAllFields.V2
+      ExampleApiChanges.DropListField.V1
+      ExampleApiChanges.DropListField.V2
+      ExampleApiChanges.DropNonOptionalField.V1
+      ExampleApiChanges.DropNonOptionalField.V2
+      ExampleApiChanges.DropOptionalField.V1
+      ExampleApiChanges.DropOptionalField.V2
+      ExampleApiChanges.ModifyFieldType.V1
+      ExampleApiChanges.ModifyFieldType.V2
+      ExampleApiChanges.ModifyListToOptionalField.V1
+      ExampleApiChanges.ModifyListToOptionalField.V2
+      ExampleApiChanges.ModifyOptionalToListField.V1
+      ExampleApiChanges.ModifyOptionalToListField.V2
+      ExampleApiChanges.RemoveConstructor.V1
+      ExampleApiChanges.RemoveConstructor.V2
       ExampleApis.Api
       ExampleApis.InvalidService.DuplicateConstructorName
       ExampleApis.InvalidService.DuplicateEndpointName
       ExampleApis.InvalidService.DuplicateTypeName
-      ExampleTypeChanges.Base
-      ExampleTypeChanges.V2.AddConstructor
-      ExampleTypeChanges.V2.AddDictField
-      ExampleTypeChanges.V2.AddEndpoint
-      ExampleTypeChanges.V2.AddFirstField
-      ExampleTypeChanges.V2.AddListField
-      ExampleTypeChanges.V2.AddNonOptionalField
-      ExampleTypeChanges.V2.AddOptionalField
-      ExampleTypeChanges.V2.DropAllFields
-      ExampleTypeChanges.V2.DropListField
-      ExampleTypeChanges.V2.DropNonOptionalField
-      ExampleTypeChanges.V2.DropOptionalField
-      ExampleTypeChanges.V2.ModifyFieldType
-      ExampleTypeChanges.V2.ModifyListToOptionalField
-      ExampleTypeChanges.V2.ModifyOptionalToListField
-      ExampleTypeChanges.V2.RemoveConstructor
       ExampleTypes.EnumType
       ExampleTypes.Float
       ExampleTypes.Int

@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.DropListField where
+module ExampleApiChanges.RemoveConstructor.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -15,19 +15,22 @@ service =
 
 data TestType
   = OneConstructor Record
-  | OtherConstructor
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int
+    optionalField :: Maybe Int,
+    listField :: [Int]
   }
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- No warnings.
+-- A constructor was removed from a type used in requests.
+-- data TestType = OtherConstructor
+--
+-- Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!

@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.ModifyListToOptionalField where
+module ExampleApiChanges.ModifyOptionalToListField.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -22,8 +22,8 @@ instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: Maybe Int
+    optionalField :: [Int],
+    listField :: [Int]
   }
   deriving (Generic, Eq, Show)
 
@@ -32,11 +32,11 @@ instance Wire.Wire Record
 -- Warnings for this change from Base type:
 --
 -- A type used in requests has changed.
--- data List Int
+-- data Int
 --
 -- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used.
 --
 -- A type used in responses has changed.
--- data List Int
+-- data Int
 --
 -- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used.

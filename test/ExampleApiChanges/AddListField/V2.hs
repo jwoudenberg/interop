@@ -1,4 +1,4 @@
-module ExampleTypeChanges.V2.DropNonOptionalField where
+module ExampleApiChanges.AddListField.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
@@ -16,21 +16,20 @@ service =
 data TestType
   = OneConstructor Record
   | OtherConstructor
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire TestType
 
 data Record = Record
-  { optionalField :: Maybe Int,
-    listField :: [Int]
+  { field :: Int,
+    optionalField :: Maybe Int,
+    listField :: [Int],
+    otherListField :: [Int]
   }
-  deriving (Generic)
+  deriving (Generic, Eq, Show)
 
 instance Wire.Wire Record
 
 -- Warnings for this change from Base type:
 --
--- A type used in responses has lost a mandatory field.
--- data TestType = OneConstructor { field }
---
--- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field.
+-- No warnings.

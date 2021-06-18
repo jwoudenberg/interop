@@ -1,7 +1,6 @@
-module ExampleTypeChanges.V2.AddDictField where
+module ExampleApiChanges.DropOptionalField.V2 where
 
 import Data.Function ((&))
-import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
@@ -17,17 +16,15 @@ service =
 data TestType
   = OneConstructor Record
   | OtherConstructor
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire TestType
 
 data Record = Record
   { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: [Int],
-    otherDictField :: Map.Map Int Float
+    listField :: [Int]
   }
-  deriving (Generic, Eq, Show)
+  deriving (Generic)
 
 instance Wire.Wire Record
 
