@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class DropOptionalField
+  module ModifyListToOptionalField
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,8 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include DropOptionalField::TestType; end
-        class OneConstructor < T::Struct; include DropOptionalField::TestType; end
+        class OtherConstructor < T::Struct; include V2::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -55,13 +55,15 @@ module Apis
         extend T::Sig
         extend T::Helpers
         
-        prop :list_field, T::Array[Integer]
+        prop :optional_field, T.nilable(Integer)
+        prop :list_field, T.nilable(Integer)
         prop :field, Integer
         
         sig { returns(Hash) }
         def to_h
           Hash["OneConstructor", {
-            "listField": list_field.map { |elem| elem },
+            "optionalField": if optional_field.nil? then {} else optional_field end,
+            "listField": if list_field.nil? then {} else list_field end,
             "field": field,
           }]
         end
@@ -69,7 +71,8 @@ module Apis
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            list_field: (json["listField"] || []).map { |elem| elem },
+            optional_field: json["optionalField"] && json["optionalField"],
+            list_field: json["listField"] && json["listField"],
             field: json["field"],
           )
         end
@@ -99,4 +102,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}

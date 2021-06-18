@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class AddFirstField
+  module ModifyOptionalToListField
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,8 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include AddFirstField::TestType; end
-        class OneConstructor < T::Struct; include AddFirstField::TestType; end
+        class OtherConstructor < T::Struct; include V2::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -34,19 +34,19 @@ module Apis
         extend T::Sig
         extend T::Helpers
         
-        prop :new_field, T.nilable(Integer)
+        
         
         sig { returns(Hash) }
         def to_h
           Hash["OtherConstructor", {
-            "newField": if new_field.nil? then {} else new_field end,
+            
           }]
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            new_field: json["newField"] && json["newField"],
+            
           )
         end
       end
@@ -55,14 +55,14 @@ module Apis
         extend T::Sig
         extend T::Helpers
         
-        prop :optional_field, T.nilable(Integer)
+        prop :optional_field, T::Array[Integer]
         prop :list_field, T::Array[Integer]
         prop :field, Integer
         
         sig { returns(Hash) }
         def to_h
           Hash["OneConstructor", {
-            "optionalField": if optional_field.nil? then {} else optional_field end,
+            "optionalField": optional_field.map { |elem| elem },
             "listField": list_field.map { |elem| elem },
             "field": field,
           }]
@@ -71,7 +71,7 @@ module Apis
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            optional_field: json["optionalField"] && json["optionalField"],
+            optional_field: (json["optionalField"] || []).map { |elem| elem },
             list_field: (json["listField"] || []).map { |elem| elem },
             field: json["field"],
           )
@@ -102,4 +102,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"newField"}]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}

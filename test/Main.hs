@@ -144,9 +144,9 @@ rubyClientGenerationTests =
                  test1 (fromString name) $ do
                    (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
                    evalIO $ System.IO.hClose h
-                   evalIO $ Interop.generateRubyClient path ["Apis", "V2", Text.pack name] v2Api
+                   evalIO $ Interop.generateRubyClient path ["Apis", Text.pack name, "V2"] v2Api
                    generated <- evalIO $ Data.Text.IO.readFile path
-                   equalToContentsOfFile ("test/ruby-tests/apis/v2/" <> toSnakeCase name <> ".rb") generated
+                   equalToContentsOfFile ("test/ExampleApiChanges/" <> name <> "/v2.rb") generated
              )
        )
 

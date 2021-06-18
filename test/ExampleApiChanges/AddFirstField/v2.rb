@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class AddConstructor
+  module AddFirstField
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,9 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include AddConstructor::TestType; end
-        class NewConstructor < T::Struct; include AddConstructor::TestType; end
-        class OneConstructor < T::Struct; include AddConstructor::TestType; end
+        class OtherConstructor < T::Struct; include V2::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -25,8 +24,6 @@ module Apis
           case ctor_name
             when "OtherConstructor"
               OtherConstructor.from_h(ctor_json)
-            when "NewConstructor"
-              NewConstructor.from_h(ctor_json)
             when "OneConstructor"
               OneConstructor.from_h(ctor_json)
           end
@@ -37,40 +34,19 @@ module Apis
         extend T::Sig
         extend T::Helpers
         
-        
+        prop :new_field, T.nilable(Integer)
         
         sig { returns(Hash) }
         def to_h
           Hash["OtherConstructor", {
-            
+            "newField": if new_field.nil? then {} else new_field end,
           }]
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            
-          )
-        end
-      end
-      
-      class TestType::NewConstructor
-        extend T::Sig
-        extend T::Helpers
-        
-        
-        
-        sig { returns(Hash) }
-        def to_h
-          Hash["NewConstructor", {
-            
-          }]
-        end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          new(
-            
+            new_field: json["newField"] && json["newField"],
           )
         end
       end
@@ -126,4 +102,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]},{"constructorName":"NewConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"newField"}]}]},"typeName":"TestType"}}}

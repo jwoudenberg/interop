@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class ModifyFieldType
+  module RemoveConstructor
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,39 +15,15 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include ModifyFieldType::TestType; end
-        class OneConstructor < T::Struct; include ModifyFieldType::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           ctor_name, ctor_json = json.first
           case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
             when "OneConstructor"
               OneConstructor.from_h(ctor_json)
           end
-        end
-      end
-      
-      class TestType::OtherConstructor
-        extend T::Sig
-        extend T::Helpers
-        
-        
-        
-        sig { returns(Hash) }
-        def to_h
-          Hash["OtherConstructor", {
-            
-          }]
-        end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          new(
-            
-          )
         end
       end
       
@@ -57,7 +33,7 @@ module Apis
         
         prop :optional_field, T.nilable(Integer)
         prop :list_field, T::Array[Integer]
-        prop :field, String
+        prop :field, Integer
         
         sig { returns(Hash) }
         def to_h
@@ -102,4 +78,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Text"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]}]},"typeName":"TestType"}}}

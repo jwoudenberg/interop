@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class AddNonOptionalField
+  module AddEndpoint
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,8 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include AddNonOptionalField::TestType; end
-        class OneConstructor < T::Struct; include AddNonOptionalField::TestType; end
+        class OtherConstructor < T::Struct; include V2::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -57,7 +57,6 @@ module Apis
         
         prop :optional_field, T.nilable(Integer)
         prop :list_field, T::Array[Integer]
-        prop :new_field, Integer
         prop :field, Integer
         
         sig { returns(Hash) }
@@ -65,7 +64,6 @@ module Apis
           Hash["OneConstructor", {
             "optionalField": if optional_field.nil? then {} else optional_field end,
             "listField": list_field.map { |elem| elem },
-            "newField": new_field,
             "field": field,
           }]
         end
@@ -75,7 +73,6 @@ module Apis
           new(
             optional_field: json["optionalField"] && json["optionalField"],
             list_field: (json["listField"] || []).map { |elem| elem },
-            new_field: json["newField"],
             field: json["field"],
           )
         end
@@ -93,6 +90,17 @@ module Apis
       end
       
       sig { params(arg: TestType).returns(TestType) }
+      def new-endpoint(arg)
+        req = Net::HTTP::Post.new(@origin)
+        req["Content-Type"] = "application/json"
+        
+        body = ["new-endpoint", arg.to_h]
+        res = @http.request(req, body.to_json)
+        json = JSON.parse(res.body)
+        TestType.from_h(json)
+      end
+      
+      sig { params(arg: TestType).returns(TestType) }
       def echo(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
@@ -105,4 +113,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"},{"fieldType":{"tag":"Int"},"fieldName":"newField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"new-endpoint":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}},"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}

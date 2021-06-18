@@ -4,8 +4,8 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module V2
-    class AddOptionalField
+  module AddDictField
+    class V2
       
       extend T::Sig
       extend T::Helpers
@@ -15,8 +15,8 @@ module Apis
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include AddOptionalField::TestType; end
-        class OneConstructor < T::Struct; include AddOptionalField::TestType; end
+        class OtherConstructor < T::Struct; include V2::TestType; end
+        class OneConstructor < T::Struct; include V2::TestType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
@@ -57,7 +57,7 @@ module Apis
         
         prop :optional_field, T.nilable(Integer)
         prop :list_field, T::Array[Integer]
-        prop :new_optional_field, T.nilable(Integer)
+        prop :other_dict_field, T::Hash[Integer, Float]
         prop :field, Integer
         
         sig { returns(Hash) }
@@ -65,7 +65,7 @@ module Apis
           Hash["OneConstructor", {
             "optionalField": if optional_field.nil? then {} else optional_field end,
             "listField": list_field.map { |elem| elem },
-            "newOptionalField": if new_optional_field.nil? then {} else new_optional_field end,
+            "otherDictField": other_dict_field.map { |key, val| [key, val] },
             "field": field,
           }]
         end
@@ -75,7 +75,7 @@ module Apis
           new(
             optional_field: json["optionalField"] && json["optionalField"],
             list_field: (json["listField"] || []).map { |elem| elem },
-            new_optional_field: json["newOptionalField"] && json["newOptionalField"],
+            other_dict_field: (json["otherDictField"] || []).map { |key, val| [key, val] }.to_h,
             field: json["field"],
           )
         end
@@ -105,4 +105,4 @@ module Apis
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"newOptionalField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"},{"fieldType":{"tag":"Dict","contents":[{"tag":"Int"},{"tag":"Float"}]},"fieldName":"otherDictField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}

@@ -1,12 +1,12 @@
 require 'minitest/autorun'
 load 'apis/example_api.rb'
-load 'apis/v2/add_constructor.rb'
-load 'apis/v2/add_first_field.rb'
-load 'apis/v2/add_list_field.rb'
-load 'apis/v2/add_optional_field.rb'
-load 'apis/v2/drop_list_field.rb'
-load 'apis/v2/drop_optional_field.rb'
-load 'apis/v2/remove_constructor.rb'
+load '../ExampleApiChanges/AddConstructor/v2.rb'
+load '../ExampleApiChanges/AddFirstField/v2.rb'
+load '../ExampleApiChanges/AddListField/v2.rb'
+load '../ExampleApiChanges/AddOptionalField/v2.rb'
+load '../ExampleApiChanges/DropListField/v2.rb'
+load '../ExampleApiChanges/DropOptionalField/v2.rb'
+load '../ExampleApiChanges/RemoveConstructor/v2.rb'
 
 class TestApi < MiniTest::Unit::TestCase
   def test_api
@@ -34,16 +34,16 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_add_constructor
-    api = Apis::V2::AddConstructor.new("http://localhost:#{ENV['PORT'].to_i}")
-    request = Apis::V2::AddConstructor::TestType::OtherConstructor.new
+    api = Apis::AddConstructor::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = Apis::AddConstructor::V2::TestType::OtherConstructor.new
     response = api.echo(request)
     assert_equal response.to_h, request.to_h
   end
 
   def test_add_list_field
-    api = Apis::V2::AddListField.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::AddListField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::AddListField::TestType::OneConstructor.new(
+      Apis::AddListField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
@@ -51,7 +51,7 @@ class TestApi < MiniTest::Unit::TestCase
       )
     response = api.echo(request)
     expected =
-      Apis::V2::AddListField::TestType::OneConstructor.new(
+      Apis::AddListField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
@@ -61,9 +61,9 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_add_optional_field
-    api = Apis::V2::AddOptionalField.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::AddOptionalField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::AddOptionalField::TestType::OneConstructor.new(
+      Apis::AddOptionalField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
@@ -71,7 +71,7 @@ class TestApi < MiniTest::Unit::TestCase
       )
     response = api.echo(request)
     expected =
-      Apis::V2::AddOptionalField::TestType::OneConstructor.new(
+      Apis::AddOptionalField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
@@ -81,29 +81,29 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_add_first_field
-    api = Apis::V2::AddFirstField.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::AddFirstField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::AddFirstField::TestType::OtherConstructor.new(
+      Apis::AddFirstField::V2::TestType::OtherConstructor.new(
         new_field: 1,
       )
     response = api.echo(request)
     expected =
-      Apis::V2::AddFirstField::TestType::OtherConstructor.new(
+      Apis::AddFirstField::V2::TestType::OtherConstructor.new(
         new_field: nil,
       )
     assert_equal response.to_h, expected.to_h
   end
 
   def test_drop_list_field
-    api = Apis::V2::DropListField.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::DropListField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::DropListField::TestType::OneConstructor.new(
+      Apis::DropListField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
       )
     response = api.echo(request)
     expected =
-      Apis::V2::DropListField::TestType::OneConstructor.new(
+      Apis::DropListField::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
       )
@@ -111,15 +111,15 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_drop_optional_field
-    api = Apis::V2::DropOptionalField.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::DropOptionalField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::DropOptionalField::TestType::OneConstructor.new(
+      Apis::DropOptionalField::V2::TestType::OneConstructor.new(
         field: 1,
         list_field: [1,2,3],
       )
     response = api.echo(request)
     expected =
-      Apis::V2::DropOptionalField::TestType::OneConstructor.new(
+      Apis::DropOptionalField::V2::TestType::OneConstructor.new(
         field: 1,
         list_field: [1,2,3],
       )
@@ -127,16 +127,16 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_remove_constructor
-    api = Apis::V2::RemoveConstructor.new("http://localhost:#{ENV['PORT'].to_i}")
+    api = Apis::RemoveConstructor::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::V2::RemoveConstructor::TestType::OneConstructor.new(
+      Apis::RemoveConstructor::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
       )
     response = api.echo(request)
     expected =
-      Apis::V2::RemoveConstructor::TestType::OneConstructor.new(
+      Apis::RemoveConstructor::V2::TestType::OneConstructor.new(
         field: 1,
         optional_field: 2,
         list_field: [1,2,3],
