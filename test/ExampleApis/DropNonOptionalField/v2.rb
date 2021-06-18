@@ -10,67 +10,25 @@ module Apis
       extend T::Sig
       extend T::Helpers
       
-      module TestType
-        extend T::Sig
-        extend T::Helpers
-        sealed!
-        
-        class OtherConstructor < T::Struct; include V2::TestType; end
-        class OneConstructor < T::Struct; include V2::TestType; end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          ctor_name, ctor_json = json.first
-          case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
-            when "OneConstructor"
-              OneConstructor.from_h(ctor_json)
-          end
-        end
-      end
+      class DropNonOptionalFieldType < T::Struct; end
       
-      class TestType::OtherConstructor
+      class DropNonOptionalFieldType
         extend T::Sig
         extend T::Helpers
         
-        
+        prop :field1, Integer
         
         sig { returns(Hash) }
         def to_h
-          Hash["OtherConstructor", {
-            
-          }]
+          {
+            "field1": field1,
+          }
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            
-          )
-        end
-      end
-      
-      class TestType::OneConstructor
-        extend T::Sig
-        extend T::Helpers
-        
-        prop :list_field, T::Array[Integer]
-        prop :optional_field, T.nilable(Integer)
-        
-        sig { returns(Hash) }
-        def to_h
-          Hash["OneConstructor", {
-            "listField": list_field.map { |elem| elem },
-            "optionalField": if optional_field.nil? then {} else optional_field end,
-          }]
-        end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          new(
-            list_field: (json["listField"] || []).map { |elem| elem },
-            optional_field: json["optionalField"] && json["optionalField"],
+            field1: json["field1"],
           )
         end
       end
@@ -86,17 +44,17 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: TestType).returns(TestType) }
-      def echo(arg)
+      sig { params(arg: DropNonOptionalFieldType).returns(DropNonOptionalFieldType) }
+      def drop_non_optional_field(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
         
-        body = ["echo", arg.to_h]
+        body = ["DropNonOptionalField", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
-        TestType.from_h(json)
+        DropNonOptionalFieldType.from_h(json)
       end
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"DropNonOptionalField":{"requestType":{"tag":"NestedCustomType","contents":"DropNonOptionalFieldType"},"responseType":{"tag":"NestedCustomType","contents":"DropNonOptionalFieldType"}}},"customTypes":{"DropNonOptionalFieldType":{"subTypes":{"Left":[{"fieldType":{"tag":"Int"},"fieldName":"field1"}]},"typeName":"DropNonOptionalFieldType"}}}

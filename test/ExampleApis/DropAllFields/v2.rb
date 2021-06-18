@@ -10,27 +10,27 @@ module Apis
       extend T::Sig
       extend T::Helpers
       
-      module TestType
+      module DropAllFieldsType
         extend T::Sig
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include V2::TestType; end
-        class OneConstructor < T::Struct; include V2::TestType; end
+        class DropAllFieldsSecondConstructor < T::Struct; include V2::DropAllFieldsType; end
+        class DropAllFieldsFirstConstructor < T::Struct; include V2::DropAllFieldsType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           ctor_name, ctor_json = json.first
           case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
-            when "OneConstructor"
-              OneConstructor.from_h(ctor_json)
+            when "DropAllFieldsSecondConstructor"
+              DropAllFieldsSecondConstructor.from_h(ctor_json)
+            when "DropAllFieldsFirstConstructor"
+              DropAllFieldsFirstConstructor.from_h(ctor_json)
           end
         end
       end
       
-      class TestType::OtherConstructor
+      class DropAllFieldsType::DropAllFieldsSecondConstructor
         extend T::Sig
         extend T::Helpers
         
@@ -38,7 +38,7 @@ module Apis
         
         sig { returns(Hash) }
         def to_h
-          Hash["OtherConstructor", {
+          Hash["DropAllFieldsSecondConstructor", {
             
           }]
         end
@@ -51,7 +51,7 @@ module Apis
         end
       end
       
-      class TestType::OneConstructor
+      class DropAllFieldsType::DropAllFieldsFirstConstructor
         extend T::Sig
         extend T::Helpers
         
@@ -59,7 +59,7 @@ module Apis
         
         sig { returns(Hash) }
         def to_h
-          Hash["OneConstructor", {
+          Hash["DropAllFieldsFirstConstructor", {
             
           }]
         end
@@ -83,17 +83,17 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: TestType).returns(TestType) }
-      def echo(arg)
+      sig { params(arg: DropAllFieldsType).returns(DropAllFieldsType) }
+      def drop_all_fields(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
         
-        body = ["echo", arg.to_h]
+        body = ["DropAllFields", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
-        TestType.from_h(json)
+        DropAllFieldsType.from_h(json)
       end
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"DropAllFields":{"requestType":{"tag":"NestedCustomType","contents":"DropAllFieldsType"},"responseType":{"tag":"NestedCustomType","contents":"DropAllFieldsType"}}},"customTypes":{"DropAllFieldsType":{"subTypes":{"Right":[{"constructorName":"DropAllFieldsFirstConstructor","fields":[]},{"constructorName":"DropAllFieldsSecondConstructor","fields":[]}]},"typeName":"DropAllFieldsType"}}}

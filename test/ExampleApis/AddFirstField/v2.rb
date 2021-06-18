@@ -10,27 +10,27 @@ module Apis
       extend T::Sig
       extend T::Helpers
       
-      module TestType
+      module AddFirstFieldType
         extend T::Sig
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include V2::TestType; end
-        class OneConstructor < T::Struct; include V2::TestType; end
+        class AddFirstFieldSecondConstructor < T::Struct; include V2::AddFirstFieldType; end
+        class AddFirstFieldFirstConstructor < T::Struct; include V2::AddFirstFieldType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           ctor_name, ctor_json = json.first
           case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
-            when "OneConstructor"
-              OneConstructor.from_h(ctor_json)
+            when "AddFirstFieldSecondConstructor"
+              AddFirstFieldSecondConstructor.from_h(ctor_json)
+            when "AddFirstFieldFirstConstructor"
+              AddFirstFieldFirstConstructor.from_h(ctor_json)
           end
         end
       end
       
-      class TestType::OtherConstructor
+      class AddFirstFieldType::AddFirstFieldSecondConstructor
         extend T::Sig
         extend T::Helpers
         
@@ -38,7 +38,7 @@ module Apis
         
         sig { returns(Hash) }
         def to_h
-          Hash["OtherConstructor", {
+          Hash["AddFirstFieldSecondConstructor", {
             "newField": if new_field.nil? then {} else new_field end,
           }]
         end
@@ -51,29 +51,23 @@ module Apis
         end
       end
       
-      class TestType::OneConstructor
+      class AddFirstFieldType::AddFirstFieldFirstConstructor
         extend T::Sig
         extend T::Helpers
         
-        prop :optional_field, T.nilable(Integer)
-        prop :list_field, T::Array[Integer]
-        prop :field, Integer
+        
         
         sig { returns(Hash) }
         def to_h
-          Hash["OneConstructor", {
-            "optionalField": if optional_field.nil? then {} else optional_field end,
-            "listField": list_field.map { |elem| elem },
-            "field": field,
+          Hash["AddFirstFieldFirstConstructor", {
+            
           }]
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            optional_field: json["optionalField"] && json["optionalField"],
-            list_field: (json["listField"] || []).map { |elem| elem },
-            field: json["field"],
+            
           )
         end
       end
@@ -89,17 +83,17 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: TestType).returns(TestType) }
-      def echo(arg)
+      sig { params(arg: AddFirstFieldType).returns(AddFirstFieldType) }
+      def add_first_field(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
         
-        body = ["echo", arg.to_h]
+        body = ["AddFirstField", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
-        TestType.from_h(json)
+        AddFirstFieldType.from_h(json)
       end
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"newField"}]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"AddFirstField":{"requestType":{"tag":"NestedCustomType","contents":"AddFirstFieldType"},"responseType":{"tag":"NestedCustomType","contents":"AddFirstFieldType"}}},"customTypes":{"AddFirstFieldType":{"subTypes":{"Right":[{"constructorName":"AddFirstFieldFirstConstructor","fields":[]},{"constructorName":"AddFirstFieldSecondConstructor","fields":[{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"newField"}]}]},"typeName":"AddFirstFieldType"}}}

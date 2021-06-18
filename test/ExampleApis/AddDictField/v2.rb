@@ -10,71 +10,26 @@ module Apis
       extend T::Sig
       extend T::Helpers
       
-      module TestType
-        extend T::Sig
-        extend T::Helpers
-        sealed!
-        
-        class OtherConstructor < T::Struct; include V2::TestType; end
-        class OneConstructor < T::Struct; include V2::TestType; end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          ctor_name, ctor_json = json.first
-          case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
-            when "OneConstructor"
-              OneConstructor.from_h(ctor_json)
-          end
-        end
-      end
+      class AddDictFieldType < T::Struct; end
       
-      class TestType::OtherConstructor
+      class AddDictFieldType
         extend T::Sig
         extend T::Helpers
         
-        
-        
-        sig { returns(Hash) }
-        def to_h
-          Hash["OtherConstructor", {
-            
-          }]
-        end
-        
-        sig { params(json: Hash).returns(T.self_type) }
-        def self.from_h(json)
-          new(
-            
-          )
-        end
-      end
-      
-      class TestType::OneConstructor
-        extend T::Sig
-        extend T::Helpers
-        
-        prop :optional_field, T.nilable(Integer)
-        prop :list_field, T::Array[Integer]
         prop :other_dict_field, T::Hash[Integer, Float]
         prop :field, Integer
         
         sig { returns(Hash) }
         def to_h
-          Hash["OneConstructor", {
-            "optionalField": if optional_field.nil? then {} else optional_field end,
-            "listField": list_field.map { |elem| elem },
+          {
             "otherDictField": other_dict_field.map { |key, val| [key, val] },
             "field": field,
-          }]
+          }
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            optional_field: json["optionalField"] && json["optionalField"],
-            list_field: (json["listField"] || []).map { |elem| elem },
             other_dict_field: (json["otherDictField"] || []).map { |key, val| [key, val] }.to_h,
             field: json["field"],
           )
@@ -92,17 +47,17 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: TestType).returns(TestType) }
-      def echo(arg)
+      sig { params(arg: AddDictFieldType).returns(AddDictFieldType) }
+      def add_dict_field(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
         
-        body = ["echo", arg.to_h]
+        body = ["AddDictField", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
-        TestType.from_h(json)
+        AddDictFieldType.from_h(json)
       end
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"},{"fieldType":{"tag":"Dict","contents":[{"tag":"Int"},{"tag":"Float"}]},"fieldName":"otherDictField"}]},{"constructorName":"OtherConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"AddDictField":{"requestType":{"tag":"NestedCustomType","contents":"AddDictFieldType"},"responseType":{"tag":"NestedCustomType","contents":"AddDictFieldType"}}},"customTypes":{"AddDictFieldType":{"subTypes":{"Left":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Dict","contents":[{"tag":"Int"},{"tag":"Float"}]},"fieldName":"otherDictField"}]},"typeName":"AddDictFieldType"}}}

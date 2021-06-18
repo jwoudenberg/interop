@@ -9,30 +9,21 @@ import qualified Interop.Wire as Wire
 service :: Interop.Service Proxy
 service =
   Interop.service
-    [ Interop.endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    [ Interop.endpoint "AddConstructor" (\(_ :: AddConstructorType) -> (Proxy :: Proxy AddConstructorType))
     ]
     & either (error . show) id
 
-data TestType
-  = OneConstructor Record
-  | OtherConstructor
-  | NewConstructor
-  deriving (Generic)
+data AddConstructorType
+  = FirstConstructor
+  | SecondConstructor
+  | ThirdConstructor
+  deriving (Generic, Eq, Show)
 
-instance Wire.Wire TestType
-
-data Record = Record
-  { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: [Int]
-  }
-  deriving (Generic)
-
-instance Wire.Wire Record
+instance Wire.Wire AddConstructorType
 
 -- Warnings for this change from Base type:
 --
 -- A constructor was added to a type used in responses.
--- data TestType = NewConstructor
+-- data AddConstructorType = ThirdConstructor
 --
 -- Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!

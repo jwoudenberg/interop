@@ -10,30 +10,30 @@ module Apis
       extend T::Sig
       extend T::Helpers
       
-      module TestType
+      module AddConstructorType
         extend T::Sig
         extend T::Helpers
         sealed!
         
-        class OtherConstructor < T::Struct; include V2::TestType; end
-        class NewConstructor < T::Struct; include V2::TestType; end
-        class OneConstructor < T::Struct; include V2::TestType; end
+        class SecondConstructor < T::Struct; include V2::AddConstructorType; end
+        class ThirdConstructor < T::Struct; include V2::AddConstructorType; end
+        class FirstConstructor < T::Struct; include V2::AddConstructorType; end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           ctor_name, ctor_json = json.first
           case ctor_name
-            when "OtherConstructor"
-              OtherConstructor.from_h(ctor_json)
-            when "NewConstructor"
-              NewConstructor.from_h(ctor_json)
-            when "OneConstructor"
-              OneConstructor.from_h(ctor_json)
+            when "SecondConstructor"
+              SecondConstructor.from_h(ctor_json)
+            when "ThirdConstructor"
+              ThirdConstructor.from_h(ctor_json)
+            when "FirstConstructor"
+              FirstConstructor.from_h(ctor_json)
           end
         end
       end
       
-      class TestType::OtherConstructor
+      class AddConstructorType::SecondConstructor
         extend T::Sig
         extend T::Helpers
         
@@ -41,7 +41,7 @@ module Apis
         
         sig { returns(Hash) }
         def to_h
-          Hash["OtherConstructor", {
+          Hash["SecondConstructor", {
             
           }]
         end
@@ -54,7 +54,7 @@ module Apis
         end
       end
       
-      class TestType::NewConstructor
+      class AddConstructorType::ThirdConstructor
         extend T::Sig
         extend T::Helpers
         
@@ -62,7 +62,7 @@ module Apis
         
         sig { returns(Hash) }
         def to_h
-          Hash["NewConstructor", {
+          Hash["ThirdConstructor", {
             
           }]
         end
@@ -75,29 +75,23 @@ module Apis
         end
       end
       
-      class TestType::OneConstructor
+      class AddConstructorType::FirstConstructor
         extend T::Sig
         extend T::Helpers
         
-        prop :optional_field, T.nilable(Integer)
-        prop :list_field, T::Array[Integer]
-        prop :field, Integer
+        
         
         sig { returns(Hash) }
         def to_h
-          Hash["OneConstructor", {
-            "optionalField": if optional_field.nil? then {} else optional_field end,
-            "listField": list_field.map { |elem| elem },
-            "field": field,
+          Hash["FirstConstructor", {
+            
           }]
         end
         
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-            optional_field: json["optionalField"] && json["optionalField"],
-            list_field: (json["listField"] || []).map { |elem| elem },
-            field: json["field"],
+            
           )
         end
       end
@@ -113,17 +107,17 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: TestType).returns(TestType) }
-      def echo(arg)
+      sig { params(arg: AddConstructorType).returns(AddConstructorType) }
+      def add_constructor(arg)
         req = Net::HTTP::Post.new(@origin)
         req["Content-Type"] = "application/json"
         
-        body = ["echo", arg.to_h]
+        body = ["AddConstructor", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
-        TestType.from_h(json)
+        AddConstructorType.from_h(json)
       end
     end
   end
 end
-# INTEROP-SPEC:{"endpoints":{"echo":{"requestType":{"tag":"NestedCustomType","contents":"TestType"},"responseType":{"tag":"NestedCustomType","contents":"TestType"}}},"customTypes":{"TestType":{"subTypes":{"Right":[{"constructorName":"OneConstructor","fields":[{"fieldType":{"tag":"Int"},"fieldName":"field"},{"fieldType":{"tag":"Optional","contents":{"tag":"Int"}},"fieldName":"optionalField"},{"fieldType":{"tag":"List","contents":{"tag":"Int"}},"fieldName":"listField"}]},{"constructorName":"OtherConstructor","fields":[]},{"constructorName":"NewConstructor","fields":[]}]},"typeName":"TestType"}}}
+# INTEROP-SPEC:{"endpoints":{"AddConstructor":{"requestType":{"tag":"NestedCustomType","contents":"AddConstructorType"},"responseType":{"tag":"NestedCustomType","contents":"AddConstructorType"}}},"customTypes":{"AddConstructorType":{"subTypes":{"Right":[{"constructorName":"FirstConstructor","fields":[]},{"constructorName":"SecondConstructor","fields":[]},{"constructorName":"ThirdConstructor","fields":[]}]},"typeName":"AddConstructorType"}}}

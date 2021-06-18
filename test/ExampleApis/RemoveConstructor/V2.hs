@@ -9,28 +9,20 @@ import qualified Interop.Wire as Wire
 service :: Interop.Service Proxy
 service =
   Interop.service
-    [ Interop.endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    [ Interop.endpoint "RemoveConstructor" (\(_ :: RemoveConstructorType) -> (Proxy :: Proxy RemoveConstructorType))
     ]
     & either (error . show) id
 
-data TestType
-  = OneConstructor Record
+data RemoveConstructorType
+  = KeepThisConstructor
+  | AlsoKeepThisConstructor
   deriving (Generic)
 
-instance Wire.Wire TestType
-
-data Record = Record
-  { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: [Int]
-  }
-  deriving (Generic)
-
-instance Wire.Wire Record
+instance Wire.Wire RemoveConstructorType
 
 -- Warnings for this change from Base type:
 --
 -- A constructor was removed from a type used in requests.
--- data TestType = OtherConstructor
+-- data RemoveConstructorType = RemoveThisConstructor
 --
 -- Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!

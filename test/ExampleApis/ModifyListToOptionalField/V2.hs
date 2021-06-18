@@ -9,25 +9,16 @@ import qualified Interop.Wire as Wire
 service :: Interop.Service Proxy
 service =
   Interop.service
-    [ Interop.endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    [ Interop.endpoint "ModifyListToOptionalField" (\(_ :: ModifyListToOptionalFieldType) -> (Proxy :: Proxy ModifyListToOptionalFieldType))
     ]
     & either (error . show) id
 
-data TestType
-  = OneConstructor Record
-  | OtherConstructor
-  deriving (Generic, Eq, Show)
-
-instance Wire.Wire TestType
-
-data Record = Record
-  { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: Maybe Int
+data ModifyListToOptionalFieldType = ModifyListToOptionalFieldType
+  { listField :: Maybe Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire Record
+instance Wire.Wire ModifyListToOptionalFieldType
 
 -- Warnings for this change from Base type:
 --

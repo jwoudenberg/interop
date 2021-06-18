@@ -9,25 +9,16 @@ import qualified Interop.Wire as Wire
 service :: Interop.Service Proxy
 service =
   Interop.service
-    [ Interop.endpoint "echo" (\(_ :: TestType) -> (Proxy :: Proxy TestType))
+    [ Interop.endpoint "AddFirstField" (\(_ :: AddFirstFieldType) -> (Proxy :: Proxy AddFirstFieldType))
     ]
     & either (error . show) id
 
-data TestType
-  = OneConstructor Record
-  | OtherConstructor NewRecord
+data AddFirstFieldType
+  = AddFirstFieldFirstConstructor
+  | AddFirstFieldSecondConstructor NewRecord
   deriving (Generic)
 
-instance Wire.Wire TestType
-
-data Record = Record
-  { field :: Int,
-    optionalField :: Maybe Int,
-    listField :: [Int]
-  }
-  deriving (Generic)
-
-instance Wire.Wire Record
+instance Wire.Wire AddFirstFieldType
 
 data NewRecord = NewRecord
   { newField :: Maybe Int
