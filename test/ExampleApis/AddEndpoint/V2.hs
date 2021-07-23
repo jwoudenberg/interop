@@ -1,16 +1,18 @@
 module ExampleApis.AddEndpoint.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import qualified Interop
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "FirstEndpoint" (\(req :: Int) -> pure req),
-      Interop.endpoint "SecondEndpoint" (\(_ :: Int) -> (Proxy :: Proxy Int))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "FirstEndpoint" (\(req :: Int) -> pure req),
+    Interop.endpoint "SecondEndpoint" (\(req :: Int) -> pure req)
+  ]
 
 -- Warnings for this change from Base type:
 --

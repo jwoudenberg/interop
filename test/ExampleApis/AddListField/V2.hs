@@ -1,17 +1,19 @@
 module ExampleApis.AddListField.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "AddListField" (\(_ :: AddListFieldType) -> (Proxy :: Proxy AddListFieldType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "AddListField" (\(req :: AddListFieldType) -> pure req)
+  ]
 
 data AddListFieldType = AddListFieldType
   { field :: Int,

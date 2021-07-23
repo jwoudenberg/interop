@@ -1,18 +1,20 @@
 module ExampleApis.ModifyFieldType.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "ModifyFieldType" (\(_ :: ModifyFieldTypeType) -> (Proxy :: Proxy ModifyFieldTypeType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "ModifyFieldType" (\(req :: ModifyFieldTypeType) -> pure req)
+  ]
 
 data ModifyFieldTypeType = ModifyFieldTypeType
   { field :: Text

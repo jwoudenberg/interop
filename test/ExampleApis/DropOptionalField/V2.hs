@@ -1,17 +1,19 @@
 module ExampleApis.DropOptionalField.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "DropOptionalField" (\(_ :: DropOptionalFieldType) -> (Proxy :: Proxy DropOptionalFieldType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "DropOptionalField" (\(req :: DropOptionalFieldType) -> pure req)
+  ]
 
 data DropOptionalFieldType = DropOptionalFieldType
   { field :: Int

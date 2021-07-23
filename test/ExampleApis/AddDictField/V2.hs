@@ -2,17 +2,19 @@ module ExampleApis.AddDictField.V2 where
 
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map
-import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "AddDictField" (\(_ :: AddDictFieldType) -> (Proxy :: Proxy AddDictFieldType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "AddDictField" (\(req :: AddDictFieldType) -> pure req)
+  ]
 
 data AddDictFieldType = AddDictFieldType
   { field :: Int,

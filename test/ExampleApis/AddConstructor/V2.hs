@@ -1,17 +1,19 @@
 module ExampleApis.AddConstructor.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "AddConstructor" (\(_ :: AddConstructorType) -> (Proxy :: Proxy AddConstructorType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "AddConstructor" (\(req :: AddConstructorType) -> pure req)
+  ]
 
 data AddConstructorType
   = FirstConstructor

@@ -1,17 +1,19 @@
 module ExampleApis.AddNonOptionalField.V2 where
 
 import Data.Function ((&))
-import Data.Proxy (Proxy (Proxy))
 import GHC.Generics (Generic)
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-service :: Interop.Service Proxy
+service :: Interop.Service IO
 service =
-  Interop.service
-    [ Interop.endpoint "AddNonOptionalField" (\(_ :: AddNonOptionalFieldType) -> (Proxy :: Proxy AddNonOptionalFieldType))
-    ]
+  Interop.service endpoints
     & either (error . show) id
+
+endpoints :: [Interop.Endpoint IO]
+endpoints =
+  [ Interop.endpoint "AddNonOptionalField" (\(req :: AddNonOptionalFieldType) -> pure req)
+  ]
 
 data AddNonOptionalFieldType = AddNonOptionalFieldType
   { field :: Int,
