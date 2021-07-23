@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e8ed7c9ce37db3e61a60a32f8eb3e9a79903d39d290ae2eb43dc3f32acaf283
+-- hash: 4696f28ce9f17da94f14b54aef316d5c940d49e50c34a9090e96204b89ec64d4
 
 name:           interop
 version:        0.1.0.0
@@ -19,6 +19,40 @@ copyright:      2020 Jasper Woudenberg
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+extra-source-files:
+    test/ExampleApis/AddConstructor/v2.rb
+    test/ExampleApis/AddDictField/v2.rb
+    test/ExampleApis/AddEndpoint/v2.rb
+    test/ExampleApis/AddFirstFieldToSecondConstructor/v2.rb
+    test/ExampleApis/AddListField/v2.rb
+    test/ExampleApis/AddNonOptionalField/v2.rb
+    test/ExampleApis/AddOptionalField/v2.rb
+    test/ExampleApis/DropAllFields/v2.rb
+    test/ExampleApis/DropListField/v2.rb
+    test/ExampleApis/DropNonOptionalField/v2.rb
+    test/ExampleApis/DropOptionalField/v2.rb
+    test/ExampleApis/ModifyFieldType/v2.rb
+    test/ExampleApis/ModifyListToOptionalField/v2.rb
+    test/ExampleApis/ModifyOptionalToListField/v2.rb
+    test/ExampleApis/RemoveConstructor/v2.rb
+    test/ruby-tests/apis/example_api.rb
+    test/ruby-tests/test.rb
+    test/example-compile-errors/LastConstructorHasTwoParams.hs
+    test/example-compile-errors/MiddleConstructorHasTwoParams.hs
+    test/example-compile-errors/NoConstructors.hs
+    test/example-compile-errors/NonWireParameter.hs
+    test/example-compile-errors/NotDerivingGeneric.hs
+    test/example-compile-errors/OneConstructorWithoutRecordOneParam.hs
+    test/example-compile-errors/OneConstructorWithoutRecordThreeParams.hs
+    test/example-compile-errors/OneConstructorWithoutRecordTwoParams.hs
+    test/example-compile-errors/RecordNotationInMultiConstructorType.hs
+    test/example-compile-errors/RecordWithFunction.hs
+    test/example-compile-errors/RecordWithNonWireCenterField.hs
+    test/example-compile-errors/RecordWithNonWireFirstField.hs
+    test/example-compile-errors/RecordWithNonWireLastField.hs
+    test/example-compile-errors/RecordWithNonWireSingleField.hs
+    test/example-compile-errors/RecordWithTuple.hs
+    test/example-compile-errors/TwoConstructorsWithoutRecordOneParam.hs
 extra-doc-files:
     README.md
     CHANGELOG.md

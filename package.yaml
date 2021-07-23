@@ -9,6 +9,9 @@ homepage: https://github.com/jwoudenberg/interop#readme
 license-file: LICENSE
 category: Web
 github: jwoudenberg/interop
+extra-source-files:
+- test/**/*.rb
+- test/example-compile-errors/*.hs
 extra-doc-files:
 - README.md
 - CHANGELOG.md

@@ -7,12 +7,12 @@ import qualified Hedgehog.Gen as Gen
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-data AddFirstFieldType
+data AddFirstFieldToSecondConstructorType
   = AddFirstFieldFirstConstructor
   | AddFirstFieldSecondConstructor
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddFirstFieldType
+instance Wire.Wire AddFirstFieldToSecondConstructorType
 
 service :: Interop.Service IO
 service =
@@ -21,8 +21,8 @@ service =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.endpoint "AddFirstField" (\(req :: AddFirstFieldType) -> pure req)
+  [ Interop.endpoint "AddFirstFieldToSecondConstructor" (\(req :: AddFirstFieldToSecondConstructorType) -> pure req)
   ]
 
-gen :: Hedgehog.Gen AddFirstFieldType
+gen :: Hedgehog.Gen AddFirstFieldToSecondConstructorType
 gen = Gen.element [AddFirstFieldFirstConstructor, AddFirstFieldSecondConstructor]

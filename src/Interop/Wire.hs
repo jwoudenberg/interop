@@ -422,7 +422,7 @@ instance
     RecordType
     ( D1
         ('MetaData typename modname packname isnewtype)
-        (C1 ('MetaCons ctorname fix 'True) fields)
+        (C1 ('MetaCons ctorname fix isrecord) fields)
     )
   where
   typeG _ _ =
@@ -515,6 +515,11 @@ instance
   typeFieldsG _ = typeFieldsG (Proxy :: Proxy left) <> typeFieldsG (Proxy :: Proxy right)
   encodeFieldsG (left :*: right) = encodeFieldsG left <> encodeFieldsG right
   decodeFieldsG obj = (:*:) <$> decodeFieldsG obj <*> decodeFieldsG obj
+
+instance FieldsG U1 where
+  typeFieldsG _ = []
+  encodeFieldsG _ = mempty
+  decodeFieldsG _ = pure U1
 
 -- Aeson provides two functions for using a custom parser to decode the field
 -- of an object: 'explicitParseField' and 'explicitParseFieldMaybe'. When the
