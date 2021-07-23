@@ -1,28 +1,29 @@
 module ExampleApis.InvalidService.DuplicateConstructorName (endpoints) where
 
-import qualified ExampleApis.EchoTypes.Api
+import qualified ExampleApis.InvalidService.ConflictingType as ConflictingType
 import GHC.Generics (Generic)
 import qualified Interop
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [Interop.endpoint "random_sport" (\() -> pure Football)]
-    <> ExampleApis.EchoTypes.Api.endpoints
+  [ Interop.endpoint "annoying_animal" (\() -> pure Fly),
+    Interop.endpoint "bad_for_environment" (\() -> pure ConflictingType.Fly)
+  ]
 
-data Sport
-  = Football
-  | Tennis
-  | Hockey
+data Animal
+  = Otter
+  | Elephant
+  | Fly
   deriving (Generic)
 
-instance Interop.Wire Sport
+instance Interop.Wire Animal
 
 -- Interop.service fails with:
 --
 -- The service uses two constructors with the same name:
 --
---   ExampleApis.EchoTypes.Api (Hobby(Football))
---   ExampleApis.InvalidService.DuplicateConstructorName (Sport(Football))
+--   ExampleApis.InvalidService.DuplicateConstructorName (Animal(Fly))
+--   ExampleApis.InvalidService.ConflictingType (Transportation(Fly))
 --
 -- Try renaming one of the constructors.
 --

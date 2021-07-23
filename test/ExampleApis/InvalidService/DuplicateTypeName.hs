@@ -1,26 +1,29 @@
 module ExampleApis.InvalidService.DuplicateTypeName (endpoints) where
 
-import Data.Text (Text)
-import qualified ExampleApis.EchoTypes.Api
+import qualified ExampleApis.InvalidService.ConflictingType as ConflictingType
 import GHC.Generics (Generic)
 import qualified Interop
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [Interop.endpoint "random_hobby" (\() -> pure (Hobby "Boardgames"))]
-    <> ExampleApis.EchoTypes.Api.endpoints
+  [ Interop.endpoint "public" (\() -> pure Train),
+    Interop.endpoint "private" (\() -> pure ConflictingType.Cycle)
+  ]
 
-newtype Hobby = Hobby {name :: Text}
+data Transportation
+  = Bus
+  | Tram
+  | Train
   deriving (Generic)
 
-instance Interop.Wire Hobby
+instance Interop.Wire Transportation
 
 -- Interop.service fails with:
 --
 -- The service uses two types with the same name:
 --
---   ExampleApis.EchoTypes.Api (Hobby)
---   ExampleApis.InvalidService.DuplicateTypeName (Hobby)
+--   ExampleApis.InvalidService.ConflictingType (Transportation)
+--   ExampleApis.InvalidService.DuplicateTypeName (Transportation)
 --
 -- Try renaming one of the types.
 --
