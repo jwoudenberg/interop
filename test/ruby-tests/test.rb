@@ -7,6 +7,7 @@ load '../ExampleApis/AddOptionalField/v2.rb'
 load '../ExampleApis/DropListField/v2.rb'
 load '../ExampleApis/DropOptionalField/v2.rb'
 load '../ExampleApis/RemoveConstructor/v2.rb'
+load '../ExampleApis/AddDictField/v2.rb'
 
 class TestApi < MiniTest::Unit::TestCase
   def test_api
@@ -52,6 +53,22 @@ class TestApi < MiniTest::Unit::TestCase
       Apis::AddListField::V2::AddListFieldType.new(
         field: 1,
         other_list_field: [],
+      )
+    assert_equal response.to_h, expected.to_h
+  end
+
+  def test_add_dict_field
+    api = Apis::AddDictField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+    request =
+      Apis::AddDictField::V2::AddDictFieldType.new(
+        field: 1,
+        other_dict_field: { 1 => 0.5, 5 => 0.33 },
+      )
+    response = api.add_dict_field(request)
+    expected =
+      Apis::AddDictField::V2::AddDictFieldType.new(
+        field: 1,
+        other_dict_field: {},
       )
     assert_equal response.to_h, expected.to_h
   end
