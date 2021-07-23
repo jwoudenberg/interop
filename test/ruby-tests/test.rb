@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 load 'apis/example_api.rb'
 load '../ExampleApis/AddConstructor/v2.rb'
+load '../ExampleApis/AddFirstField/v2.rb'
 load '../ExampleApis/AddFirstFieldToSecondConstructor/v2.rb'
 load '../ExampleApis/AddListField/v2.rb'
 load '../ExampleApis/AddOptionalField/v2.rb'
@@ -88,21 +89,21 @@ class TestApi < MiniTest::Unit::TestCase
     assert_equal response.to_h, expected.to_h
   end
 
-  def test_add_first_field
+  def add_first_field
     api = Apis::AddFirstField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::AddFirstField::V2::AddFirstFieldType::AddFirstField.new(
+      Apis::AddFirstField::V2::AddFirstFieldType.new(
         new_field: 1,
       )
     response = api.add_first_field_to_second_constructor(request)
     expected =
-      Apis::AddFirstField::V2::AddFirstFieldType::AddFirstField.new(
+      Apis::AddFirstField::V2::AddFirstFieldType.new(
         new_field: nil,
       )
     assert_equal response.to_h, expected.to_h
   end
 
-  def test_add_first_field
+  def test_add_first_field_to_second_constructor
     api = Apis::AddFirstFieldToSecondConstructor::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
       Apis::AddFirstFieldToSecondConstructor::V2::AddFirstFieldToSecondConstructorType::AddFirstFieldSecondConstructor.new(

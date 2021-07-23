@@ -159,7 +159,7 @@ generatedRubyCodeTests =
   [ test1 "Generated ruby code" $ do
       let app =
             ExampleApis.Api.endpoints
-              ++ concatMap (\ChangeApiExample {v1Endpoints} -> v1Endpoints) changeApiExamples
+              ++ concatMap (\ChangeApiExample {rubyTestEndpoints} -> rubyTestEndpoints) changeApiExamples
               & Interop.service
               & either (error . show) id
               & Interop.wai
@@ -268,7 +268,7 @@ exampleTypes =
 data ChangeApiExample where
   ChangeApiExample ::
     { apiPath :: FilePath,
-      v1Endpoints :: [Interop.Endpoint IO],
+      rubyTestEndpoints :: [Interop.Endpoint IO],
       v1Api :: Interop.Service IO,
       v2Api :: Interop.Service b
     } ->
