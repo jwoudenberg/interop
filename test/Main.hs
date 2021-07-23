@@ -57,6 +57,8 @@ import qualified ExampleApis.ModifyOptionalToListField.V1
 import qualified ExampleApis.ModifyOptionalToListField.V2
 import qualified ExampleApis.RemoveConstructor.V1
 import qualified ExampleApis.RemoveConstructor.V2
+import qualified ExampleTypes.Bool
+import qualified ExampleTypes.Dict
 import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
 import qualified ExampleTypes.Int
@@ -249,7 +251,9 @@ data ExampleType where
 
 exampleTypes :: [ExampleType]
 exampleTypes =
-  [ ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
+  [ ExampleType "test/ExampleTypes/Bool.hs" (ExampleTypes.Bool.example) (ExampleTypes.Bool.gen),
+    ExampleType "test/ExampleTypes/Dict.hs" (ExampleTypes.Dict.example) (ExampleTypes.Dict.gen),
+    ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
     ExampleType "test/ExampleTypes/Float.hs" (ExampleTypes.Float.example) (ExampleTypes.Float.gen),
     ExampleType "test/ExampleTypes/Int.hs" (ExampleTypes.Int.example) (ExampleTypes.Int.gen),
     ExampleType "test/ExampleTypes/List.hs" (ExampleTypes.List.example) (ExampleTypes.List.gen),
