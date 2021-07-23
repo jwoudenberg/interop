@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4696f28ce9f17da94f14b54aef316d5c940d49e50c34a9090e96204b89ec64d4
+-- hash: 70107fae13a518d1877386dd51c289ab2bcdfc0ae65dfdd6e1b3cd7454099ea5
 
 name:           interop
 version:        0.1.0.0
@@ -23,6 +23,7 @@ extra-source-files:
     test/ExampleApis/AddConstructor/v2.rb
     test/ExampleApis/AddDictField/v2.rb
     test/ExampleApis/AddEndpoint/v2.rb
+    test/ExampleApis/AddFirstField/v2.rb
     test/ExampleApis/AddFirstFieldToSecondConstructor/v2.rb
     test/ExampleApis/AddListField/v2.rb
     test/ExampleApis/AddNonOptionalField/v2.rb
@@ -35,7 +36,6 @@ extra-source-files:
     test/ExampleApis/ModifyListToOptionalField/v2.rb
     test/ExampleApis/ModifyOptionalToListField/v2.rb
     test/ExampleApis/RemoveConstructor/v2.rb
-    test/ruby-tests/apis/example_api.rb
     test/ruby-tests/test.rb
     test/example-compile-errors/LastConstructorHasTwoParams.hs
     test/example-compile-errors/MiddleConstructorHasTwoParams.hs
@@ -122,6 +122,8 @@ test-suite tests
       ExampleApis.AddDictField.V2
       ExampleApis.AddEndpoint.V1
       ExampleApis.AddEndpoint.V2
+      ExampleApis.AddFirstField.V1
+      ExampleApis.AddFirstField.V2
       ExampleApis.AddFirstFieldToSecondConstructor.V1
       ExampleApis.AddFirstFieldToSecondConstructor.V2
       ExampleApis.AddListField.V1
@@ -130,7 +132,6 @@ test-suite tests
       ExampleApis.AddNonOptionalField.V2
       ExampleApis.AddOptionalField.V1
       ExampleApis.AddOptionalField.V2
-      ExampleApis.Api
       ExampleApis.DropAllFields.V1
       ExampleApis.DropAllFields.V2
       ExampleApis.DropListField.V1
@@ -148,8 +149,11 @@ test-suite tests
       ExampleApis.ModifyListToOptionalField.V2
       ExampleApis.ModifyOptionalToListField.V1
       ExampleApis.ModifyOptionalToListField.V2
+      ExampleApis.RealishExample.Api
       ExampleApis.RemoveConstructor.V1
       ExampleApis.RemoveConstructor.V2
+      ExampleTypes.Bool
+      ExampleTypes.Dict
       ExampleTypes.EnumType
       ExampleTypes.Float
       ExampleTypes.Int

@@ -1,14 +1,14 @@
 module ExampleApis.InvalidService.DuplicateTypeName (endpoints) where
 
 import Data.Text (Text)
-import qualified ExampleApis.Api
+import qualified ExampleApis.RealishExample.Api
 import GHC.Generics (Generic)
 import qualified Interop
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
   [Interop.endpoint "random_hobby" (\() -> pure (Hobby "Boardgames"))]
-    <> ExampleApis.Api.endpoints
+    <> ExampleApis.RealishExample.Api.endpoints
 
 newtype Hobby = Hobby {name :: Text}
   deriving (Generic)
@@ -19,8 +19,8 @@ instance Interop.Wire Hobby
 --
 -- The service uses two types with the same name:
 --
---   ExampleApis.Api (Hobby)
 --   ExampleApis.InvalidService.DuplicateTypeName (Hobby)
+--   ExampleApis.RealishExample.Api (Hobby)
 --
 -- Try renaming one of the types.
 --

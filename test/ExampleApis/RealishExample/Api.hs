@@ -1,4 +1,4 @@
-module ExampleApis.Api (endpoints, service) where
+module ExampleApis.RealishExample.Api (endpoints, service) where
 
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map

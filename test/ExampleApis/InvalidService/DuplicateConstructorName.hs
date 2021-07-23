@@ -1,13 +1,13 @@
 module ExampleApis.InvalidService.DuplicateConstructorName (endpoints) where
 
-import qualified ExampleApis.Api
+import qualified ExampleApis.RealishExample.Api
 import GHC.Generics (Generic)
 import qualified Interop
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
   [Interop.endpoint "random_sport" (\() -> pure Football)]
-    <> ExampleApis.Api.endpoints
+    <> ExampleApis.RealishExample.Api.endpoints
 
 data Sport
   = Football
@@ -21,7 +21,7 @@ instance Interop.Wire Sport
 --
 -- The service uses two constructors with the same name:
 --
---   ExampleApis.Api (Hobby(Football))
+--   ExampleApis.RealishExample.Api (Hobby(Football))
 --   ExampleApis.InvalidService.DuplicateConstructorName (Sport(Football))
 --
 -- Try renaming one of the constructors.
