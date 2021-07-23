@@ -32,6 +32,7 @@ extra-source-files:
     test/ExampleApis/DropListField/v2.rb
     test/ExampleApis/DropNonOptionalField/v2.rb
     test/ExampleApis/DropOptionalField/v2.rb
+    test/ExampleApis/EchoTypes/api.rb
     test/ExampleApis/ModifyFieldType/v2.rb
     test/ExampleApis/ModifyListToOptionalField/v2.rb
     test/ExampleApis/ModifyOptionalToListField/v2.rb

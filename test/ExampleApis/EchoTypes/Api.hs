@@ -14,29 +14,48 @@ service =
 endpoints :: [Interop.Endpoint IO]
 endpoints =
   [ Interop.endpoint
-      "get_person_by_id"
-      (\id' -> pure (Map.lookup id' people)),
+      "echo_record"
+      (\(req :: Record) -> pure req),
     Interop.endpoint
-      "get_all_people"
-      (\() -> pure people)
+      "echo_custom_type"
+      (\(req :: CustomType) -> pure req),
+    Interop.endpoint
+      "echo_boolean"
+      (\(req :: Bool) -> pure req),
+    Interop.endpoint
+      "echo_int"
+      (\(req :: Int) -> pure req),
+    Interop.endpoint
+      "echo_float"
+      (\(req :: Float) -> pure req),
+    Interop.endpoint
+      "echo_text"
+      (\(req :: Text) -> pure req),
+    Interop.endpoint
+      "echo_maybe"
+      (\(req :: Maybe Int) -> pure req),
+    Interop.endpoint
+      "echo_unit"
+      (\(req :: ()) -> pure req),
+    Interop.endpoint
+      "echo_dict"
+      (\(req :: Map.Map Int Text) -> pure req),
+    Interop.endpoint
+      "echo_list"
+      (\(req :: [Int]) -> pure req)
   ]
 
-people :: Map.Map Int Person
-people = Map.singleton 42 (Person "Jasper" "Woudenberg" [BoardGames])
-
-data Person = Person
-  { firstName :: Text,
-    lastName :: Text,
-    hobbies :: [Hobby]
+data Record = Record
+  { text :: Text,
+    int :: Int
   }
   deriving (Generic)
 
-instance Interop.Wire Person
+instance Interop.Wire Record
 
-data Hobby
-  = BoardGames
-  | Piano
-  | Football
+data CustomType
+  = Constructor
+  | OtherConstructor
   deriving (Generic)
 
-instance Interop.Wire Hobby
+instance Interop.Wire CustomType

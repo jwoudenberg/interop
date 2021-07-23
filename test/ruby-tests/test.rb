@@ -11,28 +11,85 @@ load '../ExampleApis/RemoveConstructor/v2.rb'
 load '../ExampleApis/AddDictField/v2.rb'
 
 class TestApi < MiniTest::Unit::TestCase
-  def test_api
+  def test_echo_record
     api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
-    response = api.get_person_by_id(42)
-    expected =
-      Apis::EchoTypes::Api::Person.new(
-        first_name: "Jasper",
-        last_name: "Woudenberg",
-        hobbies: [Apis::EchoTypes::Api::Hobby::BoardGames.new],
+    request =
+      Apis::EchoTypes::Api::Record.new(
+        text: "Hi!",
+        int: 5,
       )
-    assert_equal response.to_h, expected.to_h
+    response = api.echo_record(request)
+    assert_equal response.to_h, request.to_h
   end
 
-  def test_dictionary_response
+  def test_echo_custom_type
     api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
-    response = api.get_all_people(nil)
-    expected =
-      Apis::EchoTypes::Api::Person.new(
-        first_name: "Jasper",
-        last_name: "Woudenberg",
-        hobbies: [Apis::EchoTypes::Api::Hobby::BoardGames.new],
-      )
-    assert_equal response[42].to_h, expected.to_h
+    request = Apis::EchoTypes::Api::CustomType::Constructor.new
+    response = api.echo_custom_type(request)
+    assert_equal response.to_h, request.to_h
+  end
+
+  def test_echo_boolean
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = true
+    response = api.echo_boolean(request)
+    assert_equal response, request
+  end
+
+  def test_echo_int
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = 9
+    response = api.echo_int(request)
+    assert_equal response, request
+  end
+
+  def test_echo_float
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = 2.5
+    response = api.echo_float(request)
+    assert_equal response, request
+  end
+
+  def test_echo_text
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = "Hi!"
+    response = api.echo_text(request)
+    assert_equal response, request
+  end
+
+  def test_echo_maybe_nothing
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = nil
+    response = api.echo_maybe(request)
+    assert_equal response, request
+  end
+
+  def test_echo_maybe_something
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = 5
+    response = api.echo_maybe(request)
+    assert_equal response, request
+  end
+
+  def test_echo_unit
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = nil
+    response = api.echo_unit(request)
+    assert_equal response, request
+  end
+
+  def test_echo_dict
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = { 5 => "Hi!", 7 => "Bye!" }
+    response = api.echo_dict(request)
+    assert_equal response, request
+  end
+
+  def test_echo_list
+    api = Apis::EchoTypes::Api.new("http://localhost:#{ENV['PORT'].to_i}")
+    request = [4, 5, 1]
+    response = api.echo_list(request)
+    assert_equal response, request
   end
 
   def test_add_constructor
