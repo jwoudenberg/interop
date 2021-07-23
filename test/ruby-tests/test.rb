@@ -72,6 +72,20 @@ class TestApi < MiniTest::Unit::TestCase
   end
 
   def test_add_first_field
+    api = Apis::AddFirstField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+    request =
+      Apis::AddFirstField::V2::AddFirstFieldType::AddFirstField.new(
+        new_field: 1,
+      )
+    response = api.add_first_field_to_second_constructor(request)
+    expected =
+      Apis::AddFirstField::V2::AddFirstFieldType::AddFirstField.new(
+        new_field: nil,
+      )
+    assert_equal response.to_h, expected.to_h
+  end
+
+  def test_add_first_field
     api = Apis::AddFirstFieldToSecondConstructor::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
       Apis::AddFirstFieldToSecondConstructor::V2::AddFirstFieldToSecondConstructorType::AddFirstFieldSecondConstructor.new(
