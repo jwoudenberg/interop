@@ -1,4 +1,4 @@
-module ExampleApis.AddFirstField.V2 where
+module ExampleApis.AddFirstFieldToSecondConstructor.V2 where
 
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))

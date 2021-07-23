@@ -4,7 +4,7 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module AddFirstField
+  module AddFirstFieldToSecondConstructor
     class V2
       
       extend T::Sig

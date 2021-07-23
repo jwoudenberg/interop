@@ -1,4 +1,4 @@
-module ExampleApis.AddFirstField.V1 where
+module ExampleApis.AddFirstFieldToSecondConstructor.V1 where
 
 import Data.Function ((&))
 import GHC.Generics (Generic)

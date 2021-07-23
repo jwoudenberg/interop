@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cec30ae99dc6616e3d585800a419d17664234414c31a0b247f45f796cb9a56b7
+-- hash: 3e8ed7c9ce37db3e61a60a32f8eb3e9a79903d39d290ae2eb43dc3f32acaf283
 
 name:           interop
 version:        0.1.0.0
@@ -88,14 +88,15 @@ test-suite tests
       ExampleApis.AddDictField.V2
       ExampleApis.AddEndpoint.V1
       ExampleApis.AddEndpoint.V2
-      ExampleApis.AddFirstField.V1
-      ExampleApis.AddFirstField.V2
+      ExampleApis.AddFirstFieldToSecondConstructor.V1
+      ExampleApis.AddFirstFieldToSecondConstructor.V2
       ExampleApis.AddListField.V1
       ExampleApis.AddListField.V2
       ExampleApis.AddNonOptionalField.V1
       ExampleApis.AddNonOptionalField.V2
       ExampleApis.AddOptionalField.V1
       ExampleApis.AddOptionalField.V2
+      ExampleApis.Api
       ExampleApis.DropAllFields.V1
       ExampleApis.DropAllFields.V2
       ExampleApis.DropListField.V1
@@ -104,6 +105,9 @@ test-suite tests
       ExampleApis.DropNonOptionalField.V2
       ExampleApis.DropOptionalField.V1
       ExampleApis.DropOptionalField.V2
+      ExampleApis.InvalidService.DuplicateConstructorName
+      ExampleApis.InvalidService.DuplicateEndpointName
+      ExampleApis.InvalidService.DuplicateTypeName
       ExampleApis.ModifyFieldType.V1
       ExampleApis.ModifyFieldType.V2
       ExampleApis.ModifyListToOptionalField.V1
@@ -112,10 +116,6 @@ test-suite tests
       ExampleApis.ModifyOptionalToListField.V2
       ExampleApis.RemoveConstructor.V1
       ExampleApis.RemoveConstructor.V2
-      ExampleApis.Api
-      ExampleApis.InvalidService.DuplicateConstructorName
-      ExampleApis.InvalidService.DuplicateEndpointName
-      ExampleApis.InvalidService.DuplicateTypeName
       ExampleTypes.EnumType
       ExampleTypes.Float
       ExampleTypes.Int

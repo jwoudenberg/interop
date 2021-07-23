@@ -27,8 +27,8 @@ import qualified ExampleApis.AddDictField.V1
 import qualified ExampleApis.AddDictField.V2
 import qualified ExampleApis.AddEndpoint.V1
 import qualified ExampleApis.AddEndpoint.V2
-import qualified ExampleApis.AddFirstField.V1
-import qualified ExampleApis.AddFirstField.V2
+import qualified ExampleApis.AddFirstFieldToSecondConstructor.V1
+import qualified ExampleApis.AddFirstFieldToSecondConstructor.V2
 import qualified ExampleApis.AddListField.V1
 import qualified ExampleApis.AddListField.V2
 import qualified ExampleApis.AddNonOptionalField.V1
@@ -281,10 +281,10 @@ changeApiExamples =
       ExampleApis.AddEndpoint.V1.service
       ExampleApis.AddEndpoint.V2.service,
     ChangeApiExample
-      "AddFirstField"
-      ExampleApis.AddFirstField.V1.endpoints
-      ExampleApis.AddFirstField.V1.service
-      ExampleApis.AddFirstField.V2.service,
+      "AddFirstFieldToSecondConstructor"
+      ExampleApis.AddFirstFieldToSecondConstructor.V1.endpoints
+      ExampleApis.AddFirstFieldToSecondConstructor.V1.service
+      ExampleApis.AddFirstFieldToSecondConstructor.V2.service,
     ChangeApiExample
       "AddNonOptionalField"
       ExampleApis.AddNonOptionalField.V1.endpoints
@@ -358,9 +358,9 @@ data ChangeTypeExample where
 changeTypeExamples :: [ChangeTypeExample]
 changeTypeExamples =
   [ ChangeTypeExample
-      "AddFirstField"
-      ExampleApis.AddFirstField.V1.gen
-      (Proxy :: Proxy ExampleApis.AddFirstField.V2.AddFirstFieldType),
+      "AddFirstFieldToSecondConstructor"
+      ExampleApis.AddFirstFieldToSecondConstructor.V1.gen
+      (Proxy :: Proxy ExampleApis.AddFirstFieldToSecondConstructor.V2.AddFirstFieldType),
     ChangeTypeExample
       "AddOptionalField"
       ExampleApis.AddOptionalField.V1.gen
