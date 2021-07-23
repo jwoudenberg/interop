@@ -54,7 +54,7 @@ import qualified ExampleApis.ModifyListToOptionalField.V1
 import qualified ExampleApis.ModifyListToOptionalField.V2
 import qualified ExampleApis.ModifyOptionalToListField.V1
 import qualified ExampleApis.ModifyOptionalToListField.V2
-import qualified ExampleApis.RealishExample.Api
+import qualified ExampleApis.EchoTypes.Api
 import qualified ExampleApis.RemoveConstructor.V1
 import qualified ExampleApis.RemoveConstructor.V2
 import qualified ExampleTypes.Bool
@@ -138,9 +138,9 @@ rubyClientGenerationTests =
   [ test1 "ExampleApi" $ do
       (path, h) <- evalIO $ System.IO.openTempFile "/tmp" "interop-tests-ruby-generation.rb"
       evalIO $ System.IO.hClose h
-      evalIO $ Interop.generateRubyClient path ["Apis", "RealishExample", "Api"] ExampleApis.RealishExample.Api.service
+      evalIO $ Interop.generateRubyClient path ["Apis", "EchoTypes", "Api"] ExampleApis.EchoTypes.Api.service
       generated <- evalIO $ Data.Text.IO.readFile path
-      equalToContentsOfFile "test/ExampleApis/RealishExample/api.rb" generated
+      equalToContentsOfFile "test/ExampleApis/EchoTypes/api.rb" generated
   ]
     <> ( changeApiExamples
            & fmap
@@ -158,7 +158,7 @@ generatedRubyCodeTests :: [(PropertyName, Property)]
 generatedRubyCodeTests =
   [ test1 "Generated ruby code" $ do
       let app =
-            ExampleApis.RealishExample.Api.endpoints
+            ExampleApis.EchoTypes.Api.endpoints
               ++ concatMap (\ChangeApiExample {rubyTestEndpoints} -> rubyTestEndpoints) changeApiExamples
               & Interop.service
               & either (error . show) id

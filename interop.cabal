@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 70107fae13a518d1877386dd51c289ab2bcdfc0ae65dfdd6e1b3cd7454099ea5
+-- hash: 2e2885b9d165ce3cac87b6cbf8fd0280c1ab819c09390627d76e3660946f8883
 
 name:           interop
 version:        0.1.0.0
@@ -140,6 +140,7 @@ test-suite tests
       ExampleApis.DropNonOptionalField.V2
       ExampleApis.DropOptionalField.V1
       ExampleApis.DropOptionalField.V2
+      ExampleApis.EchoTypes.Api
       ExampleApis.InvalidService.DuplicateConstructorName
       ExampleApis.InvalidService.DuplicateEndpointName
       ExampleApis.InvalidService.DuplicateTypeName
@@ -149,7 +150,6 @@ test-suite tests
       ExampleApis.ModifyListToOptionalField.V2
       ExampleApis.ModifyOptionalToListField.V1
       ExampleApis.ModifyOptionalToListField.V2
-      ExampleApis.RealishExample.Api
       ExampleApis.RemoveConstructor.V1
       ExampleApis.RemoveConstructor.V2
       ExampleTypes.Bool

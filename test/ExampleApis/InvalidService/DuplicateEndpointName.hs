@@ -1,19 +1,19 @@
 module ExampleApis.InvalidService.DuplicateEndpointName (endpoints) where
 
-import qualified ExampleApis.RealishExample.Api
+import qualified ExampleApis.EchoTypes.Api
 import qualified Interop
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
   [Interop.endpoint "get_all_people" (\() -> pure ())]
-    <> ExampleApis.RealishExample.Api.endpoints
+    <> ExampleApis.EchoTypes.Api.endpoints
 
 -- Interop.service fails with:
 --
 -- This service contains two endpoints with the same name:
 --
 --   get_all_people   test/ExampleApis/InvalidService/DuplicateEndpointName.hs:8
---   get_all_people   test/ExampleApis/RealishExample/Api.hs:19
+--   get_all_people   test/ExampleApis/EchoTypes/Api.hs:19
 --
 -- Try renaming one of the endpoints.
 --

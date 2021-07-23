@@ -4,7 +4,7 @@ require "uri"
 require "sorbet-runtime"
 
 module Apis
-  module RealishExample
+  module EchoTypes
     class Api
       
       extend T::Sig
