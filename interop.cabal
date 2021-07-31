@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 024292836415cdc926627500e20b271735de54cd7c29d778c577ede13aa8c26f
+-- hash: f121860c651ce915c90381166ad25d0afb4f563f0e81c7b137bb58cb5f76443f
 
 name:           interop
 version:        0.1.0.0
@@ -21,13 +21,14 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     test/ExampleApis/AddConstructor/v2.rb
-    test/ExampleApis/AddDictField/v2.rb
     test/ExampleApis/AddEndpoint/v2.rb
     test/ExampleApis/AddFirstField/v2.rb
     test/ExampleApis/AddFirstFieldToSecondConstructor/v2.rb
     test/ExampleApis/AddListField/v2.rb
     test/ExampleApis/AddNonOptionalField/v2.rb
     test/ExampleApis/AddOptionalField/v2.rb
+    test/ExampleApis/AddSeqField/v2.rb
+    test/ExampleApis/AddSetField/v2.rb
     test/ExampleApis/DropAllFields/v2.rb
     test/ExampleApis/DropListField/v2.rb
     test/ExampleApis/DropNonOptionalField/v2.rb
@@ -53,6 +54,7 @@ extra-source-files:
     test/example-compile-errors/RecordWithNonWireLastField.hs
     test/example-compile-errors/RecordWithNonWireSingleField.hs
     test/example-compile-errors/RecordWithTuple.hs
+    test/example-compile-errors/TwoConstructorsNonWireParameter.hs
     test/example-compile-errors/TwoConstructorsWithoutRecordOneParam.hs
 extra-doc-files:
     README.md
@@ -76,7 +78,7 @@ library
   hs-source-dirs:
       src
   default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson >=1.2.4.0 && <1.6
     , base >=4.10.1.0 && <5
@@ -84,6 +86,7 @@ library
     , containers >=0.6.0.1 && <0.7
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
+    , unordered-containers >=0.2.10.0 && <0.3
     , wai >=3.2.0 && <3.3
   default-language: Haskell2010
 
@@ -94,7 +97,7 @@ executable interop-compatible
   hs-source-dirs:
       interop-compatible
   default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson >=1.2.4.0 && <1.6
     , base >=4.10.1.0 && <5
@@ -103,6 +106,7 @@ executable interop-compatible
     , interop
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
+    , unordered-containers >=0.2.10.0 && <0.3
     , wai >=3.2.0 && <3.3
   default-language: Haskell2010
 
@@ -119,8 +123,6 @@ test-suite tests
       Interop.Wire.Flat
       ExampleApis.AddConstructor.V1
       ExampleApis.AddConstructor.V2
-      ExampleApis.AddDictField.V1
-      ExampleApis.AddDictField.V2
       ExampleApis.AddEndpoint.V1
       ExampleApis.AddEndpoint.V2
       ExampleApis.AddFirstField.V1
@@ -129,10 +131,16 @@ test-suite tests
       ExampleApis.AddFirstFieldToSecondConstructor.V2
       ExampleApis.AddListField.V1
       ExampleApis.AddListField.V2
+      ExampleApis.AddMapField.V1
+      ExampleApis.AddMapField.V2
       ExampleApis.AddNonOptionalField.V1
       ExampleApis.AddNonOptionalField.V2
       ExampleApis.AddOptionalField.V1
       ExampleApis.AddOptionalField.V2
+      ExampleApis.AddSeqField.V1
+      ExampleApis.AddSeqField.V2
+      ExampleApis.AddSetField.V1
+      ExampleApis.AddSetField.V2
       ExampleApis.DropAllFields.V1
       ExampleApis.DropAllFields.V2
       ExampleApis.DropListField.V1
@@ -155,23 +163,36 @@ test-suite tests
       ExampleApis.RemoveConstructor.V1
       ExampleApis.RemoveConstructor.V2
       ExampleTypes.Bool
-      ExampleTypes.Dict
+      ExampleTypes.Double
       ExampleTypes.EnumType
       ExampleTypes.Float
       ExampleTypes.Int
+      ExampleTypes.Int16
+      ExampleTypes.Int32
+      ExampleTypes.Int64
+      ExampleTypes.Int8
       ExampleTypes.List
+      ExampleTypes.Map
+      ExampleTypes.Maybe
       ExampleTypes.NestedRecord
       ExampleTypes.NestedType
       ExampleTypes.Record
       ExampleTypes.RecursiveType
+      ExampleTypes.Seq
+      ExampleTypes.Set
       ExampleTypes.Text
       ExampleTypes.Unit
+      ExampleTypes.Word
+      ExampleTypes.Word16
+      ExampleTypes.Word32
+      ExampleTypes.Word64
+      ExampleTypes.Word8
       Paths_interop
   hs-source-dirs:
       src
       test
   default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wincomplete-uni-patterns -threaded -rtsopts "-with-rtsopts=-N -T"
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts "-with-rtsopts=-N -T"
   build-depends:
       aeson >=1.2.4.0 && <1.6
     , aeson-pretty >=0.8.0 && <0.9
@@ -186,6 +207,7 @@ test-suite tests
     , process >=1.6.0.0 && <1.7
     , scientific >=0.3 && <0.4
     , text >=1.2.3.0 && <1.3
+    , unordered-containers >=0.2.10.0 && <0.3
     , wai >=3.2.0 && <3.3
     , warp >=3.3.0 && <3.4
   default-language: Haskell2010
