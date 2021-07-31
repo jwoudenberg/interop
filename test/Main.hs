@@ -70,6 +70,7 @@ import qualified ExampleTypes.Int32
 import qualified ExampleTypes.Int64
 import qualified ExampleTypes.Int8
 import qualified ExampleTypes.List
+import qualified ExampleTypes.Maybe
 import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
 import qualified ExampleTypes.Record
@@ -275,6 +276,7 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Int32.hs" (ExampleTypes.Int32.example) (ExampleTypes.Int32.gen),
     ExampleType "test/ExampleTypes/Int64.hs" (ExampleTypes.Int64.example) (ExampleTypes.Int64.gen),
     ExampleType "test/ExampleTypes/List.hs" (ExampleTypes.List.example) (ExampleTypes.List.gen),
+    ExampleType "test/ExampleTypes/Maybe.hs" (ExampleTypes.Maybe.example) (ExampleTypes.Maybe.gen),
     ExampleType "test/ExampleTypes/NestedType.hs" (ExampleTypes.NestedType.example) (ExampleTypes.NestedType.gen),
     ExampleType "test/ExampleTypes/NestedRecord.hs" (ExampleTypes.NestedRecord.example) (ExampleTypes.NestedRecord.gen),
     ExampleType "test/ExampleTypes/Record.hs" (ExampleTypes.Record.example) (ExampleTypes.Record.gen),
