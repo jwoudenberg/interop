@@ -36,8 +36,9 @@ module Apis
         end
       end
       
-      def initialize(origin, timeout = nil)
+      def initialize(origin, headers: {}, timeout: nil)
         @origin = URI(origin)
+        @headers = headers
         @http = Net::HTTP.new(@origin.host, @origin.port)
         
         unless timeout.nil?
@@ -47,9 +48,9 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: AddListFieldType).returns(AddListFieldType) }
-      def add_list_field(arg)
-        req = Net::HTTP::Post.new(@origin)
+      sig { params(arg: AddListFieldType, headers: T::Hash[String, String]).returns(AddListFieldType) }
+      def add_list_field(arg, headers: {})
+        req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
         
         body = ["AddListField", arg.to_h]

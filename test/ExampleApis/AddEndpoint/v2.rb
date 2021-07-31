@@ -12,8 +12,9 @@ module Apis
       
       
       
-      def initialize(origin, timeout = nil)
+      def initialize(origin, headers: {}, timeout: nil)
         @origin = URI(origin)
+        @headers = headers
         @http = Net::HTTP.new(@origin.host, @origin.port)
         
         unless timeout.nil?
@@ -23,9 +24,9 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: Integer).returns(Integer) }
-      def second_endpoint(arg)
-        req = Net::HTTP::Post.new(@origin)
+      sig { params(arg: Integer, headers: T::Hash[String, String]).returns(Integer) }
+      def second_endpoint(arg, headers: {})
+        req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
         
         body = ["SecondEndpoint", arg]
@@ -34,9 +35,9 @@ module Apis
         json
       end
       
-      sig { params(arg: Integer).returns(Integer) }
-      def first_endpoint(arg)
-        req = Net::HTTP::Post.new(@origin)
+      sig { params(arg: Integer, headers: T::Hash[String, String]).returns(Integer) }
+      def first_endpoint(arg, headers: {})
+        req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
         
         body = ["FirstEndpoint", arg]

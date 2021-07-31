@@ -72,8 +72,9 @@ module Apis
         end
       end
       
-      def initialize(origin, timeout = nil)
+      def initialize(origin, headers: {}, timeout: nil)
         @origin = URI(origin)
+        @headers = headers
         @http = Net::HTTP.new(@origin.host, @origin.port)
         
         unless timeout.nil?
@@ -83,9 +84,9 @@ module Apis
         @http.use_ssl = @origin.scheme == 'https'
       end
       
-      sig { params(arg: DropAllFieldsType).returns(DropAllFieldsType) }
-      def drop_all_fields(arg)
-        req = Net::HTTP::Post.new(@origin)
+      sig { params(arg: DropAllFieldsType, headers: T::Hash[String, String]).returns(DropAllFieldsType) }
+      def drop_all_fields(arg, headers: {})
+        req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
         
         body = ["DropAllFields", arg.to_h]

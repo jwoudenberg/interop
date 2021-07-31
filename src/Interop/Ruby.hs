@@ -67,8 +67,9 @@ apiClass apiName service types' = do
     forRuby types' (customTypeHead apiName)
     forRuby types' customType
     ""
-    "def initialize(origin, timeout = nil)" >| do
+    "def initialize(origin, headers: {}, timeout: nil)" >| do
       "@origin = URI(origin)"
+      "@headers = headers"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
       ""
       "unless timeout.nil?" >| do
@@ -219,11 +220,12 @@ endpointMethod name (Service.Endpoint _ _ (_ :: req -> m res)) = do
   ""
   "sig { params(arg: "
     >< type_ requestType
+    >< ", headers: T::Hash[String, String]"
     >< ").returns("
     >< type_ responseType
     >< ") }"
-  "def " >< toSnakeCase name >< "(arg)" >| do
-    "req = Net::HTTP::Post.new(@origin)"
+  "def " >< toSnakeCase name >< "(arg, headers: {})" >| do
+    "req = Net::HTTP::Post.new(@origin, @headers.merge(headers))"
     "req[\"Content-Type\"] = \"application/json\""
     ""
     "body = [\"" >< fromText name >< "\", " >< encodeJson "arg" requestType >< "]"
