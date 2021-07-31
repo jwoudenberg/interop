@@ -36,6 +36,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe
 import Data.Proxy (Proxy (Proxy))
 import Data.Scientific (toBoundedInteger, toRealFloat)
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -354,6 +355,15 @@ instance (Ord a, Wire a) => Wire (Set.Set a) where
         decodeRec = fmap Set.fromList . decode
       }
 
+instance (Wire a) => Wire (Seq.Seq a) where
+  type HasKindOfType (Seq.Seq a) = CustomType
+  rec _ =
+    WireRec
+      { typeRec = List (type_ (Proxy :: Proxy a)),
+        encodeRec = encode . Foldable.toList,
+        decodeRec = fmap Seq.fromList . decode
+      }
+
 instance Wire () where
   type HasKindOfType () = CustomType
   rec _ =
@@ -580,6 +590,8 @@ instance Ord k => ParseField 'True (Map.Map k v)
 
 instance Ord a => ParseField 'True (Set.Set a)
 
+instance Ord a => ParseField 'True (Seq.Seq a)
+
 instance ParseField 'False a where
   type Unwrapped 'False a = a
   parseField _ = Aeson.explicitParseField
@@ -589,6 +601,7 @@ type family IsOptional a :: Bool where
   IsOptional [a] = 'True
   IsOptional (Map.Map k v) = 'True
   IsOptional (Set.Set a) = 'True
+  IsOptional (Seq.Seq a) = 'True
   IsOptional a = 'False
 
 -- | Depending on the kind of type we're dealing with (record, multiple

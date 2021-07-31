@@ -37,6 +37,8 @@ import qualified ExampleApis.AddNonOptionalField.V1
 import qualified ExampleApis.AddNonOptionalField.V2
 import qualified ExampleApis.AddOptionalField.V1
 import qualified ExampleApis.AddOptionalField.V2
+import qualified ExampleApis.AddSeqField.V1
+import qualified ExampleApis.AddSeqField.V2
 import qualified ExampleApis.AddSetField.V1
 import qualified ExampleApis.AddSetField.V2
 import qualified ExampleApis.DropAllFields.V1
@@ -75,6 +77,7 @@ import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
 import qualified ExampleTypes.Record
 import qualified ExampleTypes.RecursiveType
+import qualified ExampleTypes.Seq
 import qualified ExampleTypes.Set
 import qualified ExampleTypes.Text
 import qualified ExampleTypes.Unit
@@ -282,6 +285,7 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Record.hs" (ExampleTypes.Record.example) (ExampleTypes.Record.gen),
     ExampleType "test/ExampleTypes/RecursiveType.hs" (ExampleTypes.RecursiveType.example) (ExampleTypes.RecursiveType.gen),
     ExampleType "test/ExampleTypes/Set.hs" (ExampleTypes.Set.example) (ExampleTypes.Set.gen),
+    ExampleType "test/ExampleTypes/Seq.hs" (ExampleTypes.Seq.example) (ExampleTypes.Seq.gen),
     ExampleType "test/ExampleTypes/Text.hs" (ExampleTypes.Text.example) (ExampleTypes.Text.gen),
     ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen),
     ExampleType "test/ExampleTypes/Word.hs" (ExampleTypes.Word.example) (ExampleTypes.Word.gen),
@@ -347,6 +351,11 @@ changeApiExamples =
       ExampleApis.AddSetField.V1.endpoints
       ExampleApis.AddSetField.V1.service
       ExampleApis.AddSetField.V2.service,
+    ChangeApiExample
+      "AddSeqField"
+      ExampleApis.AddSeqField.V1.endpoints
+      ExampleApis.AddSeqField.V1.service
+      ExampleApis.AddSeqField.V2.service,
     ChangeApiExample
       "DropNonOptionalField"
       ExampleApis.DropNonOptionalField.V1.endpoints
@@ -423,6 +432,10 @@ changeTypeExamples =
       "AddSetField"
       ExampleApis.AddSetField.V1.gen
       (Proxy :: Proxy ExampleApis.AddSetField.V2.AddSetFieldType),
+    ChangeTypeExample
+      "AddSeqField"
+      ExampleApis.AddSeqField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddSeqField.V2.AddSeqFieldType),
     ChangeTypeExample
       "DropNonOptionalField"
       ExampleApis.DropNonOptionalField.V1.gen
