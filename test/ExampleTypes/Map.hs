@@ -1,4 +1,4 @@
-module ExampleTypes.Dict (example, gen) where
+module ExampleTypes.Map (example, gen) where
 
 import qualified Data.Map.Strict as Map
 import qualified Hedgehog

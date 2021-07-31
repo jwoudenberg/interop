@@ -1,4 +1,4 @@
-module ExampleApis.AddDictField.V2 where
+module ExampleApis.AddMapField.V2 where
 
 import Data.Function ((&))
 import qualified Data.Map.Strict as Map
@@ -13,16 +13,16 @@ service =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.endpoint "AddDictField" (\(req :: AddDictFieldType) -> pure req)
+  [ Interop.endpoint "AddMapField" (\(req :: AddMapFieldType) -> pure req)
   ]
 
-data AddDictFieldType = AddDictFieldType
+data AddMapFieldType = AddMapFieldType
   { field :: Int,
-    otherDictField :: Map.Map Int Float
+    otherMapField :: Map.Map Int Float
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddDictFieldType
+instance Wire.Wire AddMapFieldType
 
 -- Warnings for this change from Base type:
 --

@@ -23,8 +23,6 @@ import qualified Data.Text.Encoding
 import qualified Data.Text.IO
 import qualified ExampleApis.AddConstructor.V1
 import qualified ExampleApis.AddConstructor.V2
-import qualified ExampleApis.AddDictField.V1
-import qualified ExampleApis.AddDictField.V2
 import qualified ExampleApis.AddEndpoint.V1
 import qualified ExampleApis.AddEndpoint.V2
 import qualified ExampleApis.AddFirstField.V1
@@ -33,6 +31,8 @@ import qualified ExampleApis.AddFirstFieldToSecondConstructor.V1
 import qualified ExampleApis.AddFirstFieldToSecondConstructor.V2
 import qualified ExampleApis.AddListField.V1
 import qualified ExampleApis.AddListField.V2
+import qualified ExampleApis.AddMapField.V1
+import qualified ExampleApis.AddMapField.V2
 import qualified ExampleApis.AddNonOptionalField.V1
 import qualified ExampleApis.AddNonOptionalField.V2
 import qualified ExampleApis.AddOptionalField.V1
@@ -62,7 +62,6 @@ import qualified ExampleApis.ModifyOptionalToListField.V2
 import qualified ExampleApis.RemoveConstructor.V1
 import qualified ExampleApis.RemoveConstructor.V2
 import qualified ExampleTypes.Bool
-import qualified ExampleTypes.Dict
 import qualified ExampleTypes.Double
 import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
@@ -72,6 +71,7 @@ import qualified ExampleTypes.Int32
 import qualified ExampleTypes.Int64
 import qualified ExampleTypes.Int8
 import qualified ExampleTypes.List
+import qualified ExampleTypes.Map
 import qualified ExampleTypes.Maybe
 import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
@@ -269,7 +269,7 @@ data ExampleType where
 exampleTypes :: [ExampleType]
 exampleTypes =
   [ ExampleType "test/ExampleTypes/Bool.hs" (ExampleTypes.Bool.example) (ExampleTypes.Bool.gen),
-    ExampleType "test/ExampleTypes/Dict.hs" (ExampleTypes.Dict.example) (ExampleTypes.Dict.gen),
+    ExampleType "test/ExampleTypes/Map.hs" (ExampleTypes.Map.example) (ExampleTypes.Map.gen),
     ExampleType "test/ExampleTypes/Double.hs" (ExampleTypes.Double.example) (ExampleTypes.Double.gen),
     ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
     ExampleType "test/ExampleTypes/Float.hs" (ExampleTypes.Float.example) (ExampleTypes.Float.gen),
@@ -342,10 +342,10 @@ changeApiExamples =
       ExampleApis.AddListField.V1.service
       ExampleApis.AddListField.V2.service,
     ChangeApiExample
-      "AddDictField"
-      ExampleApis.AddDictField.V1.endpoints
-      ExampleApis.AddDictField.V1.service
-      ExampleApis.AddDictField.V2.service,
+      "AddMapField"
+      ExampleApis.AddMapField.V1.endpoints
+      ExampleApis.AddMapField.V1.service
+      ExampleApis.AddMapField.V2.service,
     ChangeApiExample
       "AddSetField"
       ExampleApis.AddSetField.V1.endpoints
@@ -425,9 +425,9 @@ changeTypeExamples =
       ExampleApis.AddListField.V1.gen
       (Proxy :: Proxy ExampleApis.AddListField.V2.AddListFieldType),
     ChangeTypeExample
-      "AddDictField"
-      ExampleApis.AddDictField.V1.gen
-      (Proxy :: Proxy ExampleApis.AddDictField.V2.AddDictFieldType),
+      "AddMapField"
+      ExampleApis.AddMapField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddMapField.V2.AddMapFieldType),
     ChangeTypeExample
       "AddSetField"
       ExampleApis.AddSetField.V1.gen

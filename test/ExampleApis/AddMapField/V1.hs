@@ -1,4 +1,4 @@
-module ExampleApis.AddDictField.V1 where
+module ExampleApis.AddMapField.V1 where
 
 import Data.Function ((&))
 import GHC.Generics (Generic)
@@ -8,12 +8,12 @@ import qualified Hedgehog.Range as Range
 import qualified Interop
 import qualified Interop.Wire as Wire
 
-data AddDictFieldType = AddDictFieldType
+data AddMapFieldType = AddMapFieldType
   { field :: Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddDictFieldType
+instance Wire.Wire AddMapFieldType
 
 service :: Interop.Service IO
 service =
@@ -22,10 +22,10 @@ service =
 
 endpoints :: [Interop.Endpoint IO]
 endpoints =
-  [ Interop.endpoint "AddDictField" (\(req :: AddDictFieldType) -> pure req)
+  [ Interop.endpoint "AddMapField" (\(req :: AddMapFieldType) -> pure req)
   ]
 
-gen :: Hedgehog.Gen AddDictFieldType
+gen :: Hedgehog.Gen AddMapFieldType
 gen = do
   int <- Gen.int Range.exponentialBounded
-  pure $ AddDictFieldType int
+  pure $ AddMapFieldType int

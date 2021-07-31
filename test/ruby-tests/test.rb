@@ -8,7 +8,7 @@ load '../ExampleApis/AddOptionalField/v2.rb'
 load '../ExampleApis/DropListField/v2.rb'
 load '../ExampleApis/DropOptionalField/v2.rb'
 load '../ExampleApis/RemoveConstructor/v2.rb'
-load '../ExampleApis/AddDictField/v2.rb'
+load '../ExampleApis/AddMapField/v2.rb'
 
 class TestApi < MiniTest::Unit::TestCase
   def test_echo_record
@@ -115,18 +115,18 @@ class TestApi < MiniTest::Unit::TestCase
     assert_equal response.to_h, expected.to_h
   end
 
-  def test_add_dict_field
-    api = Apis::AddDictField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+  def test_add_map_field
+    api = Apis::AddMapField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
-      Apis::AddDictField::V2::AddDictFieldType.new(
+      Apis::AddMapField::V2::AddMapFieldType.new(
         field: 1,
-        other_dict_field: { 1 => 0.5, 5 => 0.33 },
+        other_map_field: { 1 => 0.5, 5 => 0.33 },
       )
-    response = api.add_dict_field(request)
+    response = api.add_map_field(request)
     expected =
-      Apis::AddDictField::V2::AddDictFieldType.new(
+      Apis::AddMapField::V2::AddMapFieldType.new(
         field: 1,
-        other_dict_field: {},
+        other_map_field: {},
       )
     assert_equal response.to_h, expected.to_h
   end
