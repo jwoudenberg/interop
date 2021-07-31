@@ -45,6 +45,7 @@ import qualified ExampleApis.DropNonOptionalField.V1
 import qualified ExampleApis.DropNonOptionalField.V2
 import qualified ExampleApis.DropOptionalField.V1
 import qualified ExampleApis.DropOptionalField.V2
+import qualified ExampleApis.EchoTypes.Api
 import qualified ExampleApis.InvalidService.DuplicateConstructorName
 import qualified ExampleApis.InvalidService.DuplicateEndpointName
 import qualified ExampleApis.InvalidService.DuplicateTypeName
@@ -54,7 +55,6 @@ import qualified ExampleApis.ModifyListToOptionalField.V1
 import qualified ExampleApis.ModifyListToOptionalField.V2
 import qualified ExampleApis.ModifyOptionalToListField.V1
 import qualified ExampleApis.ModifyOptionalToListField.V2
-import qualified ExampleApis.EchoTypes.Api
 import qualified ExampleApis.RemoveConstructor.V1
 import qualified ExampleApis.RemoveConstructor.V2
 import qualified ExampleTypes.Bool
