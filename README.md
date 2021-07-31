@@ -4,6 +4,12 @@ This library is a work in progress.
 
 An RPC implementation for Haskell servers with clients in other languages. Supports Ruby code generation with Sorbet type annotations, with plans to add support for Elm code generation.
 
+Running code and test watcher:
+
+```sh
+ghcid --command 'cabal repl test:tests' --test Main.main
+```
+
 ## Example
 
 ```hs
