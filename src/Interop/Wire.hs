@@ -141,6 +141,7 @@ instance Wire Data.Int.Int8 where
       }
 
 instance Wire Data.Int.Int16 where
+  type HasKindOfType Data.Int.Int16 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -172,6 +173,7 @@ instance Wire Data.Int.Int32 where
       }
 
 instance Wire Data.Int.Int64 where
+  type HasKindOfType Data.Int.Int64 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -203,6 +205,7 @@ instance Wire Word where
       }
 
 instance Wire Data.Word.Word8 where
+  type HasKindOfType Data.Word.Word8 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -234,6 +237,7 @@ instance Wire Data.Word.Word16 where
       }
 
 instance Wire Data.Word.Word32 where
+  type HasKindOfType Data.Word.Word32 = CustomType
   rec _ =
     WireRec
       { typeRec = Int,
@@ -265,6 +269,7 @@ instance Wire Data.Word.Word64 where
       }
 
 instance Wire Float where
+  type HasKindOfType Float = CustomType
   rec _ =
     WireRec
       { typeRec = Float,

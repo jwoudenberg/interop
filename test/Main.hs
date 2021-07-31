@@ -61,9 +61,14 @@ import qualified ExampleApis.RemoveConstructor.V1
 import qualified ExampleApis.RemoveConstructor.V2
 import qualified ExampleTypes.Bool
 import qualified ExampleTypes.Dict
+import qualified ExampleTypes.Double
 import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
 import qualified ExampleTypes.Int
+import qualified ExampleTypes.Int16
+import qualified ExampleTypes.Int32
+import qualified ExampleTypes.Int64
+import qualified ExampleTypes.Int8
 import qualified ExampleTypes.List
 import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
@@ -72,6 +77,11 @@ import qualified ExampleTypes.RecursiveType
 import qualified ExampleTypes.Set
 import qualified ExampleTypes.Text
 import qualified ExampleTypes.Unit
+import qualified ExampleTypes.Word
+import qualified ExampleTypes.Word16
+import qualified ExampleTypes.Word32
+import qualified ExampleTypes.Word64
+import qualified ExampleTypes.Word8
 import qualified GHC
 import qualified GHC.Paths
 import Hedgehog hiding (test)
@@ -256,9 +266,14 @@ exampleTypes :: [ExampleType]
 exampleTypes =
   [ ExampleType "test/ExampleTypes/Bool.hs" (ExampleTypes.Bool.example) (ExampleTypes.Bool.gen),
     ExampleType "test/ExampleTypes/Dict.hs" (ExampleTypes.Dict.example) (ExampleTypes.Dict.gen),
+    ExampleType "test/ExampleTypes/Double.hs" (ExampleTypes.Double.example) (ExampleTypes.Double.gen),
     ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
     ExampleType "test/ExampleTypes/Float.hs" (ExampleTypes.Float.example) (ExampleTypes.Float.gen),
     ExampleType "test/ExampleTypes/Int.hs" (ExampleTypes.Int.example) (ExampleTypes.Int.gen),
+    ExampleType "test/ExampleTypes/Int8.hs" (ExampleTypes.Int8.example) (ExampleTypes.Int8.gen),
+    ExampleType "test/ExampleTypes/Int16.hs" (ExampleTypes.Int16.example) (ExampleTypes.Int16.gen),
+    ExampleType "test/ExampleTypes/Int32.hs" (ExampleTypes.Int32.example) (ExampleTypes.Int32.gen),
+    ExampleType "test/ExampleTypes/Int64.hs" (ExampleTypes.Int64.example) (ExampleTypes.Int64.gen),
     ExampleType "test/ExampleTypes/List.hs" (ExampleTypes.List.example) (ExampleTypes.List.gen),
     ExampleType "test/ExampleTypes/NestedType.hs" (ExampleTypes.NestedType.example) (ExampleTypes.NestedType.gen),
     ExampleType "test/ExampleTypes/NestedRecord.hs" (ExampleTypes.NestedRecord.example) (ExampleTypes.NestedRecord.gen),
@@ -266,7 +281,12 @@ exampleTypes =
     ExampleType "test/ExampleTypes/RecursiveType.hs" (ExampleTypes.RecursiveType.example) (ExampleTypes.RecursiveType.gen),
     ExampleType "test/ExampleTypes/Set.hs" (ExampleTypes.Set.example) (ExampleTypes.Set.gen),
     ExampleType "test/ExampleTypes/Text.hs" (ExampleTypes.Text.example) (ExampleTypes.Text.gen),
-    ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen)
+    ExampleType "test/ExampleTypes/Unit.hs" (ExampleTypes.Unit.example) (ExampleTypes.Unit.gen),
+    ExampleType "test/ExampleTypes/Word.hs" (ExampleTypes.Word.example) (ExampleTypes.Word.gen),
+    ExampleType "test/ExampleTypes/Word8.hs" (ExampleTypes.Word8.example) (ExampleTypes.Word8.gen),
+    ExampleType "test/ExampleTypes/Word16.hs" (ExampleTypes.Word16.example) (ExampleTypes.Word16.gen),
+    ExampleType "test/ExampleTypes/Word32.hs" (ExampleTypes.Word32.example) (ExampleTypes.Word32.gen),
+    ExampleType "test/ExampleTypes/Word64.hs" (ExampleTypes.Word64.example) (ExampleTypes.Word64.gen)
   ]
 
 data ChangeApiExample where
