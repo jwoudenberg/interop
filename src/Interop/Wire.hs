@@ -653,7 +653,20 @@ type family
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'True) params) after =
     TypeError (UseSeparateRecordType typename before after constructorname (FieldTypes params '[]))
   ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (S1 ms (Rec0 a))) after =
-    EnsureRecordType typename before after constructorname (S1 ms (Rec0 a)) (HasKindOfType a)
+    Seq
+      ( WhenStuck
+          ( TypeError
+              ( MustUseRecordTypeInsteadOfParams
+                  typename
+                  before
+                  after
+                  constructorname
+                  (ParamTypes (S1 ms (Rec0 a)) '[])
+              )
+          )
+          (HasKindOfType a)
+      )
+      (EnsureRecordType typename before after constructorname (S1 ms (Rec0 a)) (HasKindOfType a))
 
 type family Constructors (t :: Type -> Type) :: [Type -> Type] where
   Constructors (a :+: b) = Append (Constructors a) (Constructors b)
