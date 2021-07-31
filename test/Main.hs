@@ -29,6 +29,10 @@ import qualified ExampleApis.AddFirstField.V1
 import qualified ExampleApis.AddFirstField.V2
 import qualified ExampleApis.AddFirstFieldToSecondConstructor.V1
 import qualified ExampleApis.AddFirstFieldToSecondConstructor.V2
+import qualified ExampleApis.AddHashMapField.V1
+import qualified ExampleApis.AddHashMapField.V2
+import qualified ExampleApis.AddHashSetField.V1
+import qualified ExampleApis.AddHashSetField.V2
 import qualified ExampleApis.AddListField.V1
 import qualified ExampleApis.AddListField.V2
 import qualified ExampleApis.AddMapField.V1
@@ -65,6 +69,8 @@ import qualified ExampleTypes.Bool
 import qualified ExampleTypes.Double
 import qualified ExampleTypes.EnumType
 import qualified ExampleTypes.Float
+import qualified ExampleTypes.HashMap
+import qualified ExampleTypes.HashSet
 import qualified ExampleTypes.Int
 import qualified ExampleTypes.Int16
 import qualified ExampleTypes.Int32
@@ -273,6 +279,8 @@ exampleTypes =
     ExampleType "test/ExampleTypes/Double.hs" (ExampleTypes.Double.example) (ExampleTypes.Double.gen),
     ExampleType "test/ExampleTypes/EnumType.hs" (ExampleTypes.EnumType.example) (ExampleTypes.EnumType.gen),
     ExampleType "test/ExampleTypes/Float.hs" (ExampleTypes.Float.example) (ExampleTypes.Float.gen),
+    ExampleType "test/ExampleTypes/HashMap.hs" (ExampleTypes.HashMap.example) (ExampleTypes.HashMap.gen),
+    ExampleType "test/ExampleTypes/HashSet.hs" (ExampleTypes.HashSet.example) (ExampleTypes.HashSet.gen),
     ExampleType "test/ExampleTypes/Int.hs" (ExampleTypes.Int.example) (ExampleTypes.Int.gen),
     ExampleType "test/ExampleTypes/Int8.hs" (ExampleTypes.Int8.example) (ExampleTypes.Int8.gen),
     ExampleType "test/ExampleTypes/Int16.hs" (ExampleTypes.Int16.example) (ExampleTypes.Int16.gen),
@@ -347,10 +355,20 @@ changeApiExamples =
       ExampleApis.AddMapField.V1.service
       ExampleApis.AddMapField.V2.service,
     ChangeApiExample
+      "AddHashMapField"
+      ExampleApis.AddHashMapField.V1.endpoints
+      ExampleApis.AddHashMapField.V1.service
+      ExampleApis.AddHashMapField.V2.service,
+    ChangeApiExample
       "AddSetField"
       ExampleApis.AddSetField.V1.endpoints
       ExampleApis.AddSetField.V1.service
       ExampleApis.AddSetField.V2.service,
+    ChangeApiExample
+      "AddHashSetField"
+      ExampleApis.AddHashSetField.V1.endpoints
+      ExampleApis.AddHashSetField.V1.service
+      ExampleApis.AddHashSetField.V2.service,
     ChangeApiExample
       "AddSeqField"
       ExampleApis.AddSeqField.V1.endpoints
@@ -429,9 +447,17 @@ changeTypeExamples =
       ExampleApis.AddMapField.V1.gen
       (Proxy :: Proxy ExampleApis.AddMapField.V2.AddMapFieldType),
     ChangeTypeExample
+      "AddHashMapField"
+      ExampleApis.AddHashMapField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddHashMapField.V2.AddHashMapFieldType),
+    ChangeTypeExample
       "AddSetField"
       ExampleApis.AddSetField.V1.gen
       (Proxy :: Proxy ExampleApis.AddSetField.V2.AddSetFieldType),
+    ChangeTypeExample
+      "AddHashSetField"
+      ExampleApis.AddHashSetField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddHashSetField.V2.AddHashSetFieldType),
     ChangeTypeExample
       "AddSeqField"
       ExampleApis.AddSeqField.V1.gen

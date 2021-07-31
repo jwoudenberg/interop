@@ -30,6 +30,9 @@ import qualified Data.Aeson.Encoding as Encoding
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Foldable as Foldable
 import Data.Function ((&))
+import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet as HashSet
+import Data.Hashable (Hashable)
 import qualified Data.Int
 import Data.Kind (Constraint, Type)
 import qualified Data.Map.Strict as Map
@@ -346,6 +349,29 @@ instance (Ord k, Wire k, Wire v) => Wire (Map.Map k v) where
             )
       }
 
+instance (Eq k, Hashable k, Wire k, Wire v) => Wire (HashMap.HashMap k v) where
+  type HasKindOfType (HashMap.HashMap k v) = CustomType
+  rec _ =
+    WireRec
+      { typeRec = Dict (type_ (Proxy :: Proxy k)) (type_ (Proxy :: Proxy v)),
+        encodeRec = Encoding.list (\(k, v) -> Encoding.list id [encode k, encode v]) . HashMap.toList,
+        decodeRec =
+          Aeson.withArray
+            "[]"
+            ( fmap HashMap.fromList
+                . traverse
+                  ( Aeson.withArray
+                      "(k,v)"
+                      ( \tuple ->
+                          case Foldable.toList tuple of
+                            [k, v] -> (,) <$> decode k <*> decode v
+                            _ -> fail "Expected array to have exactly two elements."
+                      )
+                  )
+                . Foldable.toList
+            )
+      }
+
 instance (Ord a, Wire a) => Wire (Set.Set a) where
   type HasKindOfType (Set.Set a) = CustomType
   rec _ =
@@ -353,6 +379,15 @@ instance (Ord a, Wire a) => Wire (Set.Set a) where
       { typeRec = List (type_ (Proxy :: Proxy a)),
         encodeRec = encode . Set.toList,
         decodeRec = fmap Set.fromList . decode
+      }
+
+instance (Eq a, Hashable a, Wire a) => Wire (HashSet.HashSet a) where
+  type HasKindOfType (HashSet.HashSet a) = CustomType
+  rec _ =
+    WireRec
+      { typeRec = List (type_ (Proxy :: Proxy a)),
+        encodeRec = encode . HashSet.toList,
+        decodeRec = fmap HashSet.fromList . decode
       }
 
 instance (Wire a) => Wire (Seq.Seq a) where
@@ -586,6 +621,10 @@ instance ParseField 'True (Maybe a) where
 
 instance ParseField 'True [a]
 
+instance (Eq k, Hashable k) => ParseField 'True (HashMap.HashMap k v)
+
+instance (Eq a, Hashable a) => ParseField 'True (HashSet.HashSet a)
+
 instance Ord k => ParseField 'True (Map.Map k v)
 
 instance Ord a => ParseField 'True (Set.Set a)
@@ -599,6 +638,8 @@ instance ParseField 'False a where
 type family IsOptional a :: Bool where
   IsOptional (Maybe a) = 'True
   IsOptional [a] = 'True
+  IsOptional (HashMap.HashMap k v) = 'True
+  IsOptional (HashSet.HashSet a) = 'True
   IsOptional (Map.Map k v) = 'True
   IsOptional (Set.Set a) = 'True
   IsOptional (Seq.Seq a) = 'True
