@@ -990,7 +990,7 @@ type FieldMustBeWireTypeError
   (a :: Type) =
   "I'm trying to make a Wire instance of this type:"
     % ""
-    % Indent (RenderRecordField context (ToErrorMessage a))
+    % Indent (PrintRecordField context (ToErrorMessage a))
     % ""
     % NoWireInstanceForType a
     % ""
@@ -1023,12 +1023,12 @@ type RecordFieldContext =
   )
 
 type family
-  RenderRecordField
+  PrintRecordField
     (context :: RecordFieldContext)
     (a :: ErrorMessage) ::
     ErrorMessage
   where
-  RenderRecordField
+  PrintRecordField
     '( 'TypeName typename,
        'ConstructorName constructorname,
        'FieldName fieldname,
