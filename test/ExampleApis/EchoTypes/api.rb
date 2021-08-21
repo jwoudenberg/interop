@@ -6,20 +6,20 @@ require "sorbet-runtime"
 module Apis
   module EchoTypes
     class Api
-
+      
       extend T::Sig
       extend T::Helpers
-
+      
       class Record < T::Struct; end
-
+      
       module CustomType
         extend T::Sig
         extend T::Helpers
         sealed!
-
+        
         class OtherConstructor < T::Struct; include Api::CustomType; end
         class Constructor < T::Struct; include Api::CustomType; end
-
+        
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           ctor_name, ctor_json = json.first
@@ -31,14 +31,14 @@ module Apis
           end
         end
       end
-
+      
       class Record
         extend T::Sig
         extend T::Helpers
-
+        
         prop :int, Integer
         prop :text, String
-
+        
         sig { returns(Hash) }
         def to_h
           {
@@ -46,7 +46,7 @@ module Apis
             "text": text,
           }
         end
-
+        
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
@@ -55,165 +55,165 @@ module Apis
           )
         end
       end
-
+      
       class CustomType::OtherConstructor
         extend T::Sig
         extend T::Helpers
-
-
-
+        
+        
+        
         sig { returns(Hash) }
         def to_h
           Hash["OtherConstructor", {
-
+            
           }]
         end
-
+        
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-
+            
           )
         end
       end
-
+      
       class CustomType::Constructor
         extend T::Sig
         extend T::Helpers
-
-
-
+        
+        
+        
         sig { returns(Hash) }
         def to_h
           Hash["Constructor", {
-
+            
           }]
         end
-
+        
         sig { params(json: Hash).returns(T.self_type) }
         def self.from_h(json)
           new(
-
+            
           )
         end
       end
-
+      
       def initialize(origin, headers: {}, timeout: nil)
         @origin = URI(origin)
         @headers = headers
         @http = Net::HTTP.new(@origin.host, @origin.port)
-
+        
         unless timeout.nil?
           @http.open_timeout = timeout
           @http.read_timeout = timeout
         end
         @http.use_ssl = @origin.scheme == 'https'
       end
-
+      
       sig { params(arg: CustomType, headers: T::Hash[String, String]).returns(CustomType) }
       def echo_custom_type(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_custom_type", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         CustomType.from_h(json)
       end
-
+      
       sig { params(arg: T::Hash[Integer, String], headers: T::Hash[String, String]).returns(T::Hash[Integer, String]) }
       def echo_dict(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_dict", arg.map { |key, val| [key, val] }]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         (json || []).map { |key, val| [key, val] }.to_h
       end
-
+      
       sig { params(arg: Float, headers: T::Hash[String, String]).returns(Float) }
       def echo_float(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_float", arg]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         json
       end
-
+      
       sig { params(arg: Integer, headers: T::Hash[String, String]).returns(Integer) }
       def echo_int(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_int", arg]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         json
       end
-
+      
       sig { params(arg: T::Array[Integer], headers: T::Hash[String, String]).returns(T::Array[Integer]) }
       def echo_list(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_list", arg.map { |elem| elem }]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         (json || []).map { |elem| elem }
       end
-
+      
       sig { params(arg: T.nilable(Integer), headers: T::Hash[String, String]).returns(T.nilable(Integer)) }
       def echo_maybe(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_maybe", if arg.nil? then {} else arg end]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         json && json
       end
-
+      
       sig { params(arg: Record, headers: T::Hash[String, String]).returns(Record) }
       def echo_record(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_record", arg.to_h]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         Record.from_h(json)
       end
-
+      
       sig { params(arg: String, headers: T::Hash[String, String]).returns(String) }
       def echo_text(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_text", arg]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         json
       end
-
+      
       sig { params(arg: NilClass, headers: T::Hash[String, String]).returns(NilClass) }
       def echo_unit(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_unit", []]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         nil
       end
-
+      
       sig { params(arg: T::Boolean, headers: T::Hash[String, String]).returns(T::Boolean) }
       def echo_boolean(arg, headers: {})
         req = Net::HTTP::Post.new(@origin, @headers.merge(headers))
         req["Content-Type"] = "application/json"
-
+        
         body = ["echo_boolean", arg]
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
