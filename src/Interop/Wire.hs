@@ -991,9 +991,19 @@ type FieldMustBeWireTypeError
             % Indent (FrameFields before after (fieldname <> " :: " <> a))
         )
     % ""
-    % "I need all the field types to have a Wire instance themselves,"
-    % "but miss an instance for the type: " <> a
+    % NoWireInstanceForType a
     % ""
+
+type family NoWireInstanceForType (a :: Type) :: ErrorMessage where
+  NoWireInstanceForType (a, b) =
+    "I don't support tuples in field types, because it's hard to change them"
+      % "in the future in a backwards-compatible fashion."
+  NoWireInstanceForType (a -> b) =
+    "I don't support functions in field types, because I don't know how to"
+      % "encode them to JSON."
+  NoWireInstanceForType a =
+    "I need all the field types to have a Wire instance themselves,"
+      % "but miss an instance for the type: " <> a
 
 type family
   FrameFields

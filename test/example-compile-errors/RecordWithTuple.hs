@@ -20,8 +20,8 @@ instance Wire.Wire RecordWithTuple
 --       { fn :: (Int, ())
 --       }
 --
---   I need all the field types to have a Wire instance themselves,
---   but miss an instance for the type: (Int, ())
+--   I don't support tuples in field types, because it's hard to change them
+--   in the future in a backwards-compatible fashion.
 --
 -- • In the expression: $dmrec @(RecordWithTuple)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithTuple)

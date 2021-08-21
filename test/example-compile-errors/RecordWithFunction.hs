@@ -20,8 +20,8 @@ instance Wire.Wire RecordWithFunction
 --       { fn :: Int -> ()
 --       }
 --
---   I need all the field types to have a Wire instance themselves,
---   but miss an instance for the type: Int -> ()
+--   I don't support functions in field types, because I don't know how to
+--   encode them to JSON.
 --
 -- • In the expression: $dmrec @(RecordWithFunction)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithFunction)
