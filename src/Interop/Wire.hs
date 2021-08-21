@@ -663,21 +663,33 @@ type family KindOfType t where
       (ValidateConstructors typename 'False (Constructors (a :+: b)))
       CustomType
   KindOfType (D1 ('MetaData typename m p f) a) =
-    KindOfConstructor typename a
+    KindOfConstructor ('TypeName typename) 'OnlyElem a
 
-type family KindOfConstructor (typename :: Symbol) (constructor :: Type -> Type) :: Type where
-  KindOfConstructor typename (C1 ('MetaCons n f b) U1) =
+type family
+  KindOfConstructor
+    (typename :: TypeName)
+    (position :: PositionInList)
+    (constructor :: Type -> Type) ::
+    Type
+  where
+  KindOfConstructor typename position (C1 ('MetaCons n f b) U1) =
     RecordType
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'True) a) =
-    Seq (FieldsHaveWireTypes typename constructorname 'OnlyElem a) RecordType
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
+  KindOfConstructor typename position (C1 ('MetaCons constructorname f 'True) a) =
+    Seq
+      ( FieldsHaveWireTypes
+          '(typename, 'ConstructorName constructorname, position)
+          'OnlyElem
+          a
+      )
+      RecordType
+  KindOfConstructor typename position (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
     TypeError
       ( MustUseRecordNotationError
           typename
           constructorname
           (ParamTypes (a :*: b) '[])
       )
-  KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (S1 ms (Rec0 a))) =
+  KindOfConstructor typename position (C1 ('MetaCons constructorname f 'False) (S1 ms (Rec0 a))) =
     Seq
       ( EnsureRecord
           typename
@@ -767,23 +779,21 @@ type family EnsureRecordType typename before after constructorname params t wher
 
 type family
   FieldsHaveWireTypes
-    (typename :: Symbol)
-    (constructorname :: Symbol)
+    (constructorContext :: ConstructorContext)
     (position :: PositionInList)
     (t :: Type -> Type) ::
     Type
   where
-  FieldsHaveWireTypes typename constructorname position (a :*: b) =
+  FieldsHaveWireTypes constructorContext position (a :*: b) =
     Seq
-      (FieldsHaveWireTypes typename constructorname (AddElemAfter position) a)
-      (FieldsHaveWireTypes typename constructorname (AddElemBefore position) b)
-  FieldsHaveWireTypes typename constructorname position (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 a)) =
+      (FieldsHaveWireTypes constructorContext (AddElemAfter position) a)
+      (FieldsHaveWireTypes constructorContext (AddElemBefore position) b)
+  FieldsHaveWireTypes constructorContext position (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 a)) =
     Seq
       ( WhenStuck
           ( TypeError
               ( FieldMustBeWireTypeError
-                  '( 'TypeName typename,
-                     'ConstructorName constructorname,
+                  '( constructorContext,
                      'FieldName fieldname,
                      position
                    )
@@ -846,7 +856,7 @@ type AtLeastOneConstructorError f =
     % "I need a type to have at least one constructor."
     % ""
 
-type MustUseRecordNotationError (typename :: Symbol) (constructorname :: Symbol) (params :: [Type]) =
+type MustUseRecordNotationError (typename :: TypeName) (constructorname :: Symbol) (params :: [Type]) =
   "I can't create a Wire instance for this type:"
     % ""
     % Indent
@@ -1015,9 +1025,14 @@ type family AddElemAfter (position :: PositionInList) :: PositionInList where
   AddElemAfter 'MiddleElem = 'MiddleElem
   AddElemAfter 'LastElem = 'MiddleElem
 
-type RecordFieldContext =
+type ConstructorContext =
   ( TypeName,
     ConstructorName,
+    PositionInList
+  )
+
+type RecordFieldContext =
+  ( ConstructorContext,
     FieldName,
     PositionInList
   )
@@ -1029,9 +1044,11 @@ type family
     ErrorMessage
   where
   PrintRecordField
-    '( 'TypeName typename,
-       'ConstructorName constructorname,
-       'FieldName fieldname,
+    '( '( typename,
+          constructorname,
+          constructorPosition
+        ),
+       fieldname,
        position
      )
     fieldType =
@@ -1072,7 +1089,7 @@ type family
       % ", ..."
       % "}"
 
-type ParameterMustBeWireTypeError (typename :: Symbol) (param :: Type) =
+type ParameterMustBeWireTypeError (typename :: TypeName) (param :: Type) =
   "Before I can make a Wire instance for this type:"
     % ""
     % Indent (ToErrorMessage typename)
@@ -1119,6 +1136,9 @@ infixl 6 <>
 type family ToErrorMessage (a :: k) :: GHC.TypeLits.ErrorMessage where
   ToErrorMessage (s :: Symbol) = 'GHC.TypeLits.Text s
   ToErrorMessage (e :: GHC.TypeLits.ErrorMessage) = e
+  ToErrorMessage ('TypeName s) = 'GHC.TypeLits.Text s
+  ToErrorMessage ('ConstructorName s) = 'GHC.TypeLits.Text s
+  ToErrorMessage ('FieldName s) = 'GHC.TypeLits.Text s
   ToErrorMessage t = 'GHC.TypeLits.ShowType t
 
 type family Indent (a :: GHC.TypeLits.ErrorMessage) :: GHC.TypeLits.ErrorMessage where
