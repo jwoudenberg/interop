@@ -660,7 +660,9 @@ type family KindOfType t where
     TypeError (AtLeastOneConstructorError typename)
   KindOfType (D1 ('MetaData typename m p f) (a :+: b)) =
     Seq
-      (ValidateConstructors typename 'False (Constructors (a :+: b)))
+      ( ValidateConstructors
+          (Constructors ('TypeName typename) 'OnlyElem (a :+: b))
+      )
       CustomType
   KindOfType (D1 ('MetaData typename m p f) a) =
     KindOfConstructor ('TypeName typename) 'OnlyElem a
@@ -701,60 +703,65 @@ type family
 
 type family
   ValidateConstructors
-    (typename :: Symbol)
-    (before :: Bool)
-    (xs :: [Type -> Type]) ::
+    (xs :: [(ConstructorContext, Bool, Type -> Type)]) ::
     Type
   where
-  ValidateConstructors typename before '[] =
+  ValidateConstructors '[] =
     ()
-  ValidateConstructors typename before '[x] =
-    ValidateSingleConstructor typename before x 'False
-  ValidateConstructors typename before (x ': rest) =
+  ValidateConstructors '[ '(context, record, x)] =
+    ValidateSingleConstructor context record x
+  ValidateConstructors ('(context, record, x) ': rest) =
     Seq
-      (ValidateSingleConstructor typename before x 'True)
-      (ValidateConstructors typename 'True rest)
+      (ValidateSingleConstructor context record x)
+      (ValidateConstructors rest)
 
 type family
   ValidateSingleConstructor
-    (typename :: Symbol)
-    (before :: Bool)
-    (x :: Type -> Type)
-    (after :: Bool) ::
+    (context :: ConstructorContext)
+    (record :: Bool)
+    (x :: Type -> Type) ::
     Type
   where
-  ValidateSingleConstructor typename before (C1 mc U1) after =
+  ValidateSingleConstructor context record U1 =
     ()
-  ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (a :*: b)) after =
+  ValidateSingleConstructor context 'False (a :*: b) =
     TypeError
       ( MustUseRecordTypeInsteadOfParams
-          typename
-          before
-          after
-          constructorname
+          context
           (ParamTypes (a :*: b) '[])
       )
-  ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'True) params) after =
-    TypeError (UseSeparateRecordType typename before after constructorname (FieldTypes params '[]))
-  ValidateSingleConstructor typename before (C1 ('MetaCons constructorname f 'False) (S1 ms (Rec0 a))) after =
+  ValidateSingleConstructor context 'True params =
+    TypeError (UseSeparateRecordType context (FieldTypes params '[]))
+  ValidateSingleConstructor context 'False (S1 ms (Rec0 a)) =
     Seq
       ( WhenStuck
           ( TypeError
               ( MustUseRecordTypeInsteadOfParams
-                  typename
-                  before
-                  after
-                  constructorname
+                  context
                   (ParamTypes (S1 ms (Rec0 a)) '[])
               )
           )
           (HasKindOfType a)
       )
-      (EnsureRecordType typename before after constructorname (S1 ms (Rec0 a)) (HasKindOfType a))
+      (EnsureRecordType context (S1 ms (Rec0 a)) (HasKindOfType a))
 
-type family Constructors (t :: Type -> Type) :: [Type -> Type] where
-  Constructors (a :+: b) = Append (Constructors a) (Constructors b)
-  Constructors a = '[a]
+type family
+  Constructors
+    (typename :: TypeName)
+    (position :: PositionInList)
+    (t :: Type -> Type) ::
+    [(ConstructorContext, Bool, Type -> Type)]
+  where
+  Constructors typename position (a :+: b) =
+    Append
+      (Constructors typename (AddElemAfter position) a)
+      (Constructors typename (AddElemBefore position) b)
+  Constructors typename position (C1 ('MetaCons ctorname fix rec) a) =
+    '[ '( '(typename, 'ConstructorName ctorname, position),
+          rec,
+          a
+        )
+     ]
 
 type family Append (xs :: [k]) (ys :: [k]) :: [k] where
   Append '[] ys = ys
@@ -765,15 +772,12 @@ type family EnsureRecord typename constructorname params t where
   EnsureRecord typename constructorname params t =
     TypeError (MustUseRecordNotationError typename constructorname params)
 
-type family EnsureRecordType typename before after constructorname params t where
-  EnsureRecordType typename before after constructorname params RecordType = ()
-  EnsureRecordType typename before after constructorname params t =
+type family EnsureRecordType context params t where
+  EnsureRecordType context params RecordType = ()
+  EnsureRecordType context params t =
     TypeError
       ( MustUseRecordTypeInsteadOfParams
-          typename
-          before
-          after
-          constructorname
+          context
           (ParamTypes params '[])
       )
 
@@ -873,103 +877,103 @@ type MustUseRecordNotationError (typename :: TypeName) (constructorname :: Symbo
     % "But come up with some better field names than x or y!"
     % ""
 
-type MustUseRecordTypeInsteadOfParams
-  (typename :: Symbol)
-  (before :: Bool)
-  (after :: Bool)
-  (constructorname :: Symbol)
-  (params :: [Type]) =
-  "I can't create a Wire instance for this type:"
-    % ""
-    % Indent
-        ( "data " <> typename
-            % Indent
-                ( FrameRelevantConstructor
-                    before
-                    after
-                    (constructorname <> " " <> PrintParams params)
-                )
-        )
-    % ""
-    % "I only support constructors with no parameters, or with a"
-    % "a single parameter that must also be a record."
-    % "This is to make it easier for you to make changes to your"
-    % "types in the future, in a backwards-compatible way."
-    % "Try creating a custom record type:"
-    % ""
-    % Indent
-        ( "data " <> typename
-            % Indent
-                ( FrameRelevantConstructor
-                    before
-                    after
-                    ( constructorname <> " " <> constructorname <> "Record"
-                    )
-                )
-            % ""
-            % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
-            % Indent (PrintParamsAsFields params)
-        )
-    % ""
+type family
+  MustUseRecordTypeInsteadOfParams
+    (context :: ConstructorContext)
+    (params :: [Type]) ::
+    ErrorMessage
+  where
+  MustUseRecordTypeInsteadOfParams
+    '(typename, constructorname, position)
+    params =
+    "I can't create a Wire instance for this type:"
+      % ""
+      % Indent
+          ( "data " <> typename
+              % Indent
+                  ( FrameRelevantConstructor
+                      position
+                      (constructorname <> " " <> PrintParams params)
+                  )
+          )
+      % ""
+      % "I only support constructors with no parameters, or with a"
+      % "a single parameter that must also be a record."
+      % "This is to make it easier for you to make changes to your"
+      % "types in the future, in a backwards-compatible way."
+      % "Try creating a custom record type:"
+      % ""
+      % Indent
+          ( "data " <> typename
+              % Indent
+                  ( FrameRelevantConstructor
+                      position
+                      (constructorname <> " " <> constructorname <> "Record")
+                  )
+              % ""
+              % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
+              % Indent (PrintParamsAsFields params)
+          )
+      % ""
 
 type family
   FrameRelevantConstructor
-    (before :: Bool)
-    (after :: Bool)
+    (position :: PositionInList)
     (constructor :: ErrorMessage) ::
     ErrorMessage
   where
-  FrameRelevantConstructor 'False 'False current =
+  FrameRelevantConstructor 'OnlyElem current =
     "= " <> current
-  FrameRelevantConstructor 'True 'False current =
+  FrameRelevantConstructor 'LastElem current =
     "= ..."
       % "| " <> current
-  FrameRelevantConstructor 'False 'True current =
+  FrameRelevantConstructor 'FirstElem current =
     "= " <> current
       % "| ..."
-  FrameRelevantConstructor 'True 'True current =
+  FrameRelevantConstructor 'MiddleElem current =
     "= ..."
       % "| " <> current
       % "| ..."
 
-type UseSeparateRecordType
-  (typename :: Symbol)
-  (before :: Bool)
-  (after :: Bool)
-  (constructorname :: Symbol)
-  (fields :: [Type]) =
-  "I can't create a Wire instance for this type:"
-    % ""
-    % Indent
-        ( "data " <> typename
-            % Indent
-                ( FrameRelevantConstructor
-                    before
-                    after
-                    (constructorname % Indent (PrintFields fields))
-                )
-        )
-    % ""
-    % "I only support constructors with no parameters, or with a"
-    % "a single parameter that must a separate record type."
-    % "This is to make it easier for you to make changes to your"
-    % "types in the future, in a backwards-compatible way."
-    % "Try creating a custom record type:"
-    % ""
-    % Indent
-        ( "data " <> typename
-            % Indent
-                ( FrameRelevantConstructor
-                    before
-                    after
-                    ( constructorname <> " " <> constructorname <> "Record"
-                    )
-                )
-            % ""
-            % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
-            % Indent (PrintFields fields)
-        )
-    % ""
+type family
+  UseSeparateRecordType
+    (context :: ConstructorContext)
+    (fields :: [Type]) ::
+    ErrorMessage
+  where
+  UseSeparateRecordType
+    '(typename, constructorname, position)
+    fields =
+    "I can't create a Wire instance for this type:"
+      % ""
+      % Indent
+          ( "data " <> typename
+              % Indent
+                  ( FrameRelevantConstructor
+                      position
+                      (constructorname % Indent (PrintFields fields))
+                  )
+          )
+      % ""
+      % "I only support constructors with no parameters, or with a"
+      % "a single parameter that must a separate record type."
+      % "This is to make it easier for you to make changes to your"
+      % "types in the future, in a backwards-compatible way."
+      % "Try creating a custom record type:"
+      % ""
+      % Indent
+          ( "data " <> typename
+              % Indent
+                  ( FrameRelevantConstructor
+                      position
+                      ( constructorname <> " " <> constructorname <> "Record"
+                      )
+                  )
+              % ""
+              % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
+              % Indent (PrintFields fields)
+          )
+      % ""
 
 type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
   PrintParams '[a] = ToErrorMessage a
