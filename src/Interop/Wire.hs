@@ -669,7 +669,7 @@ type family KindOfConstructor (typename :: Symbol) (constructor :: Type -> Type)
   KindOfConstructor typename (C1 ('MetaCons n f b) U1) =
     RecordType
   KindOfConstructor typename (C1 ('MetaCons constructorname f 'True) a) =
-    Seq (FieldsHaveWireTypes typename constructorname 'False 'False a) RecordType
+    Seq (FieldsHaveWireTypes typename constructorname 'OnlyElem a) RecordType
   KindOfConstructor typename (C1 ('MetaCons constructorname f 'False) (a :*: b)) =
     TypeError
       ( MustUseRecordNotationError
@@ -769,19 +769,27 @@ type family
   FieldsHaveWireTypes
     (typename :: Symbol)
     (constructorname :: Symbol)
-    (before :: Bool)
-    (after :: Bool)
+    (position :: PositionInList)
     (t :: Type -> Type) ::
     Type
   where
-  FieldsHaveWireTypes typename constructorname before after (a :*: b) =
+  FieldsHaveWireTypes typename constructorname position (a :*: b) =
     Seq
-      (FieldsHaveWireTypes typename constructorname before 'True a)
-      (FieldsHaveWireTypes typename constructorname 'True after b)
-  FieldsHaveWireTypes typename constructorname before after (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 a)) =
+      (FieldsHaveWireTypes typename constructorname (AddElemAfter position) a)
+      (FieldsHaveWireTypes typename constructorname (AddElemBefore position) b)
+  FieldsHaveWireTypes typename constructorname position (S1 ('MetaSel ('Just fieldname) u s l) (Rec0 a)) =
     Seq
       ( WhenStuck
-          (TypeError (FieldMustBeWireTypeError typename constructorname fieldname before after a))
+          ( TypeError
+              ( FieldMustBeWireTypeError
+                  '( 'TypeName typename,
+                     'ConstructorName constructorname,
+                     'FieldName fieldname,
+                     position
+                   )
+                  a
+              )
+          )
           (HasKindOfType a)
       )
       ()
@@ -978,21 +986,57 @@ type family PrintFields (fields :: [Type]) :: GHC.TypeLits.ErrorMessage where
       % "}"
 
 type FieldMustBeWireTypeError
-  (typename :: Symbol)
-  (constructorname :: Symbol)
-  (fieldname :: Symbol)
-  (before :: Bool)
-  (after :: Bool)
+  (context :: RecordFieldContext)
   (a :: Type) =
   "I'm trying to make a Wire instance of this type:"
     % ""
-    % Indent
-        ( "data " <> typename <> " = " <> constructorname
-            % Indent (FrameFields before after (fieldname <> " :: " <> a))
-        )
+    % Indent (RenderRecordField context (ToErrorMessage a))
     % ""
     % NoWireInstanceForType a
     % ""
+
+data TypeName = TypeName Symbol
+
+data ConstructorName = ConstructorName Symbol
+
+data FieldName = FieldName Symbol
+
+data PositionInList = OnlyElem | FirstElem | MiddleElem | LastElem
+
+type family AddElemBefore (position :: PositionInList) :: PositionInList where
+  AddElemBefore 'OnlyElem = 'LastElem
+  AddElemBefore 'FirstElem = 'MiddleElem
+  AddElemBefore 'MiddleElem = 'MiddleElem
+  AddElemBefore 'LastElem = 'LastElem
+
+type family AddElemAfter (position :: PositionInList) :: PositionInList where
+  AddElemAfter 'OnlyElem = 'FirstElem
+  AddElemAfter 'FirstElem = 'FirstElem
+  AddElemAfter 'MiddleElem = 'MiddleElem
+  AddElemAfter 'LastElem = 'MiddleElem
+
+type RecordFieldContext =
+  ( TypeName,
+    ConstructorName,
+    FieldName,
+    PositionInList
+  )
+
+type family
+  RenderRecordField
+    (context :: RecordFieldContext)
+    (a :: ErrorMessage) ::
+    ErrorMessage
+  where
+  RenderRecordField
+    '( 'TypeName typename,
+       'ConstructorName constructorname,
+       'FieldName fieldname,
+       position
+     )
+    fieldType =
+    "data " <> typename <> " = " <> constructorname
+      % Indent (FrameFields position (fieldname <> " :: " <> fieldType))
 
 type family NoWireInstanceForType (a :: Type) :: ErrorMessage where
   NoWireInstanceForType (a, b) =
@@ -1007,24 +1051,23 @@ type family NoWireInstanceForType (a :: Type) :: ErrorMessage where
 
 type family
   FrameFields
-    (before :: Bool)
-    (after :: Bool)
+    (position :: PositionInList)
     (a :: ErrorMessage) ::
     ErrorMessage
   where
-  FrameFields 'False 'False field =
+  FrameFields 'OnlyElem field =
     "{ " <> field
       % "}"
-  FrameFields 'True 'False field =
+  FrameFields 'LastElem field =
     "{ ..."
       % ", " <> field
       % "}"
-  FrameFields 'True 'True field =
+  FrameFields 'MiddleElem field =
     "{ ..."
       % ", " <> field
       % ", ..."
       % "}"
-  FrameFields 'False 'True field =
+  FrameFields 'FirstElem field =
     "{ " <> field
       % ", ..."
       % "}"
