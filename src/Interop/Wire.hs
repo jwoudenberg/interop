@@ -1068,25 +1068,76 @@ type family
     (a :: Type) ::
     ErrorMessage
   where
-  NoWireInstanceForType context (a, b) =
-    "I prefer records over tuples, because those will allow you to make"
-      % "backwards-compatible changes in the future."
-      % "Try using record syntax:"
-      % ""
-      % Indent
-          ( PrintRecordField context (ToErrorMessage "MyRecord")
-              % ""
-              % "data MyRecord = MyRecord"
-              % Indent (PrintParamsAsFields '[a, b])
-          )
-      % ""
-      % "But come up with some better field names than MyRecord, x, and y!"
   NoWireInstanceForType context (a -> b) =
     "I don't support functions in field types, because I don't know how to"
       % "encode them to JSON."
+  NoWireInstanceForType context (a, b) =
+    PrintTupleInFieldError context '[a, b]
+  NoWireInstanceForType context (a, b, c) =
+    PrintTupleInFieldError context '[a, b, c]
+  NoWireInstanceForType context (a, b, c, d) =
+    PrintTupleInFieldError context '[a, b, c, d]
+  NoWireInstanceForType context (a, b, c, d, e) =
+    PrintTupleInFieldError context '[a, b, c, d, e]
+  NoWireInstanceForType context (a, b, c, d, e, f) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f]
+  NoWireInstanceForType context (a, b, c, d, e, f, g) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y]
+  NoWireInstanceForType context (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) =
+    PrintTupleInFieldError context '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]
   NoWireInstanceForType context a =
     "I need all the field types to have a Wire instance themselves,"
       % "but miss an instance for the type: " <> a
+
+type PrintTupleInFieldError (context :: RecordFieldContext) params =
+  "I prefer records over tuples, because those will allow you to make"
+    % "backwards-compatible changes in the future."
+    % "Try using record syntax:"
+    % ""
+    % Indent
+        ( PrintRecordField context (ToErrorMessage "MyRecord")
+            % ""
+            % "data MyRecord = MyRecord"
+            % Indent (PrintParamsAsFields params)
+        )
+    % ""
+    % "But come up with some better field names than MyRecord, x, and y!"
 
 type family
   FrameFields
