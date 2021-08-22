@@ -413,79 +413,79 @@ instance Wire () where
 instance TypeError (PrintFunctionNotAWireTypeError (a -> b)) => Wire (a -> b) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b]) => Wire (a, b) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b) '[a, b]) => Wire (a, b) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c]) => Wire (a, b, c) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c) '[a, b, c]) => Wire (a, b, c) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d]) => Wire (a, b, c, d) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d) '[a, b, c, d]) => Wire (a, b, c, d) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e]) => Wire (a, b, c, d, e) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e) '[a, b, c, d, e]) => Wire (a, b, c, d, e) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f]) => Wire (a, b, c, d, e, f) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f) '[a, b, c, d, e, f]) => Wire (a, b, c, d, e, f) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g]) => Wire (a, b, c, d, e, f, g) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g) '[a, b, c, d, e, f, g]) => Wire (a, b, c, d, e, f, g) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h]) => Wire (a, b, c, d, e, f, g, h) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h) '[a, b, c, d, e, f, g, h]) => Wire (a, b, c, d, e, f, g, h) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i]) => Wire (a, b, c, d, e, f, g, h, i) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i) '[a, b, c, d, e, f, g, h, i]) => Wire (a, b, c, d, e, f, g, h, i) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j]) => Wire (a, b, c, d, e, f, g, h, i, j) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j) '[a, b, c, d, e, f, g, h, i, j]) => Wire (a, b, c, d, e, f, g, h, i, j) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k]) => Wire (a, b, c, d, e, f, g, h, i, j, k) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k) '[a, b, c, d, e, f, g, h, i, j, k]) => Wire (a, b, c, d, e, f, g, h, i, j, k) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l) '[a, b, c, d, e, f, g, h, i, j, k, l]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m) '[a, b, c, d, e, f, g, h, i, j, k, l, m]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) where
   rec _ = error "unreachable"
 
-instance TypeError (PrintTupleAsWireTypeError '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) where
+instance TypeError (PrintTupleNotAWireTypeError (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) '[a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]) => Wire (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) where
   rec _ = error "unreachable"
 
 -- * Generics-derived wire instances for user-defined types.
@@ -1224,8 +1224,12 @@ type PrintFunctionNotAWireTypeError (fn :: Type) =
     % "to encode functions to JSON."
     % ""
 
-type PrintTupleAsWireTypeError params =
-  "I don't support tuples as request or response types."
+type PrintTupleNotAWireTypeError (tuple :: Type) (params :: [Type]) =
+  "You're using a tuple type in your endpoint: "
+    % ""
+    % Indent (ToErrorMessage tuple)
+    % ""
+    % "I don't support tuples as request or response types."
     % ""
     % "I prefer records over tuples, because those will allow you to make"
     % "backwards-compatible changes in the future."

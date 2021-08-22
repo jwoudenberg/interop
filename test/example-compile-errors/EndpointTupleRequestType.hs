@@ -11,7 +11,11 @@ endpoint = Interop.endpoint "hi" (\(_ :: (Int, Bool)) -> pure ())
 
 -- Compilation error:
 --
--- • I don't support tuples as request or response types.
+-- • You're using a tuple type in your endpoint:
+--
+--     (Int, Bool)
+--
+--   I don't support tuples as request or response types.
 --
 --   I prefer records over tuples, because those will allow you to make
 --   backwards-compatible changes in the future.
