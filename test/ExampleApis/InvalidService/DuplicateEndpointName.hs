@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module ExampleApis.InvalidService.DuplicateEndpointName (endpoints) where
 
 import qualified Interop
@@ -12,8 +15,8 @@ endpoints =
 --
 -- This service contains two endpoints with the same name:
 --
---   your_answer   test/ExampleApis/InvalidService/DuplicateEndpointName.hs:7
---   your_answer   test/ExampleApis/InvalidService/DuplicateEndpointName.hs:8
+--   your_answer   test/ExampleApis/InvalidService/DuplicateEndpointName.hs:10
+--   your_answer   test/ExampleApis/InvalidService/DuplicateEndpointName.hs:11
 --
 -- Try renaming one of the endpoints.
 --

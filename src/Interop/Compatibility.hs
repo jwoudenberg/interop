@@ -1,4 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+-- - DeriveGeneric
+-- - GeneralizedNewtypeDeriving
+-- - NamedFieldPuns
+-- - OverloadedStrings
+-- - ScopedTypeVariables
 
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.

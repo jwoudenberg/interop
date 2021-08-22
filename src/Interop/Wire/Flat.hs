@@ -1,3 +1,7 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | A flat, non-recursive version of the type defined in the Wire module.
 -- This is easier to work with for code generation.
 module Interop.Wire.Flat

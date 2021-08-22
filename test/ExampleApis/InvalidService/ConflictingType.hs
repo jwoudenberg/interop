@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module ExampleApis.InvalidService.ConflictingType where
 
 import GHC.Generics (Generic)

@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module ExampleApis.InvalidService.DuplicateTypeName (endpoints) where
 
 import qualified ExampleApis.InvalidService.ConflictingType as ConflictingType

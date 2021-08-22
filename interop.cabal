@@ -4,7 +4,7 @@ cabal-version: 1.18
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: badfefb47ce76f13e301caeed6c941c83727719529eb8dc1c594bbc0b9a266bb
+-- hash: f5ed01bc126895c5f593a9599b547c92e874265151456f7cff731175c53ac213
 
 name:           interop
 version:        0.1.0.0
@@ -24,6 +24,8 @@ extra-source-files:
     test/ExampleApis/AddEndpoint/v2.rb
     test/ExampleApis/AddFirstField/v2.rb
     test/ExampleApis/AddFirstFieldToSecondConstructor/v2.rb
+    test/ExampleApis/AddHashMapField/v2.rb
+    test/ExampleApis/AddHashSetField/v2.rb
     test/ExampleApis/AddListField/v2.rb
     test/ExampleApis/AddMapField/v2.rb
     test/ExampleApis/AddNonOptionalField/v2.rb
@@ -49,6 +51,7 @@ extra-source-files:
     test/example-compile-errors/OneConstructorWithoutRecordThreeParams.hs
     test/example-compile-errors/OneConstructorWithoutRecordTwoParams.hs
     test/example-compile-errors/RecordNotationInMultiConstructorType.hs
+    test/example-compile-errors/RecordWithBigTuple.hs
     test/example-compile-errors/RecordWithFunction.hs
     test/example-compile-errors/RecordWithNonWireCenterField.hs
     test/example-compile-errors/RecordWithNonWireFirstField.hs
@@ -78,7 +81,6 @@ library
       Paths_interop
   hs-source-dirs:
       src
-  default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson >=1.2.4.0 && <1.6
@@ -98,7 +100,6 @@ executable interop-compatible
       Paths_interop
   hs-source-dirs:
       interop-compatible
-  default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson >=1.2.4.0 && <1.6
@@ -132,6 +133,10 @@ test-suite tests
       ExampleApis.AddFirstField.V2
       ExampleApis.AddFirstFieldToSecondConstructor.V1
       ExampleApis.AddFirstFieldToSecondConstructor.V2
+      ExampleApis.AddHashMapField.V1
+      ExampleApis.AddHashMapField.V2
+      ExampleApis.AddHashSetField.V1
+      ExampleApis.AddHashSetField.V2
       ExampleApis.AddListField.V1
       ExampleApis.AddListField.V2
       ExampleApis.AddMapField.V1
@@ -169,6 +174,8 @@ test-suite tests
       ExampleTypes.Double
       ExampleTypes.EnumType
       ExampleTypes.Float
+      ExampleTypes.HashMap
+      ExampleTypes.HashSet
       ExampleTypes.Int
       ExampleTypes.Int16
       ExampleTypes.Int32
@@ -194,7 +201,6 @@ test-suite tests
   hs-source-dirs:
       src
       test
-  default-extensions: DeriveGeneric GeneralizedNewtypeDeriving NamedFieldPuns OverloadedStrings ScopedTypeVariables StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts "-with-rtsopts=-N -T"
   build-depends:
       aeson >=1.2.4.0 && <1.6

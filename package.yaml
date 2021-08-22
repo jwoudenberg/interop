@@ -62,9 +62,4 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 default-extensions:
-- DeriveGeneric
-- GeneralizedNewtypeDeriving
-- NamedFieldPuns
-- OverloadedStrings
-- ScopedTypeVariables
 - StrictData

@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Generation of ruby client code for talking to Haskell backends defined
 -- using this library.
