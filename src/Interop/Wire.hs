@@ -112,6 +112,8 @@ encode = encodeRec (rec (Proxy :: Proxy a))
 decode :: Wire a => Aeson.Value -> Aeson.Parser a
 decode = decodeRec (rec (Proxy :: Proxy a))
 
+-- * Wire instances for existing types.
+
 instance Wire Int where
   type HasKindOfType Int = CustomType
   rec _ =
@@ -408,10 +410,22 @@ instance Wire () where
         decodeRec = \_ -> pure ()
       }
 
+-- * Generics-derived wire instances for user-defined types.
+
 class WireG kindOfType f where
   typeG :: Proxy kindOfType -> Proxy f -> WireType
   encodeG :: Proxy kindOfType -> f a -> Aeson.Encoding
   decodeG :: Proxy kindOfType -> Aeson.Value -> Aeson.Parser (f a)
+
+class CtorsG f where
+  typeCtorsG :: Proxy f -> [Constructor]
+  encodeCtorsG :: f a -> Aeson.Series
+  decodeCtorsG :: Aeson.Object -> Aeson.Parser (f a)
+
+class FieldsG f where
+  typeFieldsG :: Proxy f -> [Field]
+  encodeFieldsG :: f a -> Aeson.Series
+  decodeFieldsG :: Aeson.Object -> Aeson.Parser (f a)
 
 instance
   ( KnownSymbol typename,
@@ -431,11 +445,6 @@ instance
       (Right (typeCtorsG (Proxy :: Proxy ctors)))
   encodeG _ = Aeson.pairs . encodeCtorsG . unM1
   decodeG _ = fmap M1 . Aeson.withObject (symbolVal (Proxy :: Proxy typename)) decodeCtorsG
-
-class CtorsG f where
-  typeCtorsG :: Proxy f -> [Constructor]
-  encodeCtorsG :: f a -> Aeson.Series
-  decodeCtorsG :: Aeson.Object -> Aeson.Parser (f a)
 
 -- Instance for a constructor without any parameters:
 --
@@ -531,11 +540,6 @@ instance
   encodeCtorsG (R1 right) = encodeCtorsG right
   decodeCtorsG obj = fmap L1 (decodeCtorsG obj) <|> fmap R1 (decodeCtorsG obj)
 
-class FieldsG f where
-  typeFieldsG :: Proxy f -> [Field]
-  encodeFieldsG :: f a -> Aeson.Series
-  decodeFieldsG :: Aeson.Object -> Aeson.Parser (f a)
-
 instance
   (FieldsG fields) =>
   FieldsG (D1 metadata (C1 metacons fields))
@@ -580,6 +584,8 @@ instance FieldsG U1 where
   typeFieldsG _ = []
   encodeFieldsG _ = mempty
   decodeFieldsG _ = pure U1
+
+-- ** ParseField
 
 -- Aeson provides two functions for using a custom parser to decode the field
 -- of an object: 'explicitParseField' and 'explicitParseFieldMaybe'. When the
@@ -644,6 +650,8 @@ type family IsOptional a :: Bool where
   IsOptional (Set.Set a) = 'True
   IsOptional (Seq.Seq a) = 'True
   IsOptional a = 'False
+
+-- ** Generics-supporting type-level functions
 
 -- | Depending on the kind of type we're dealing with (record, multiple
 -- constructors, ...) we want a different set of Generics instances deriving the
@@ -819,6 +827,8 @@ type family FieldTypes (t :: Type -> Type) (acc :: [k]) :: [k] where
 
 data FieldType (key :: Symbol) (t :: Type)
 
+-- * Type-level helper functions
+
 -- | Force evaluation of the first parameter, then return the second.
 --
 -- Learn more here: https://blog.csongor.co.uk/report-stuck-families/
@@ -852,6 +862,20 @@ data DoNotUse
 data DoNotUseF a
 
 type family Any :: k
+
+-- * Custom type errors
+
+data ConstructorContext
+  = ConstructorContext
+      TypeName
+      ConstructorName
+      PositionInList
+
+data RecordFieldContext
+  = RecordFieldContext
+      ConstructorContext
+      FieldName
+      PositionInList
 
 type AtLeastOneConstructorError f =
   "I can't create a Wire instance for this type:"
@@ -1030,18 +1054,6 @@ type family AddElemAfter (position :: PositionInList) :: PositionInList where
   AddElemAfter 'MiddleElem = 'MiddleElem
   AddElemAfter 'LastElem = 'MiddleElem
 
-data ConstructorContext
-  = ConstructorContext
-      TypeName
-      ConstructorName
-      PositionInList
-
-data RecordFieldContext
-  = RecordFieldContext
-      ConstructorContext
-      FieldName
-      PositionInList
-
 type family
   PrintRecordField
     (context :: RecordFieldContext)
@@ -1191,11 +1203,14 @@ data RecordType
 
 data CustomType
 
--- | Some helpers for constructing nice type errors. API inspired by the
+-- * Custom type error helper functions
+
+-- Some helpers for constructing nice type errors. API inspired by the
 -- pretty-type-errors package, which seemed so easy to replicate that I prefered
 -- doing that over taking a dependency.
 --
 -- https://hackage.haskell.org/package/type-errors-pretty
+
 type family (a :: k) <> (b :: l) :: GHC.TypeLits.ErrorMessage where
   a <> b = ToErrorMessage a ':<>: ToErrorMessage b
 
