@@ -410,6 +410,9 @@ instance Wire () where
         decodeRec = \_ -> pure ()
       }
 
+instance TypeError (PrintFunctionNotAWireTypeError (a -> b)) => Wire (a -> b) where
+  rec _ = error "unreachable"
+
 instance TypeError (PrintTupleAsWireTypeError '[a, b]) => Wire (a, b) where
   rec _ = error "unreachable"
 
@@ -1211,6 +1214,15 @@ type family
   NoWireInstanceForType context a =
     "I need all the field types to have a Wire instance themselves,"
       % "but miss an instance for the type: " <> a
+
+type PrintFunctionNotAWireTypeError (fn :: Type) =
+  "You're using a function type in your endpoint:"
+    % ""
+    % Indent (ToErrorMessage fn)
+    % ""
+    % "I don't support functions in endpoints types, because I don't know how"
+    % "to encode functions to JSON."
+    % ""
 
 type PrintTupleAsWireTypeError params =
   "I don't support tuples as request or response types."

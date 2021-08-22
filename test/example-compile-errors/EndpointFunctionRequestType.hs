@@ -11,9 +11,13 @@ endpoint = Interop.endpoint "hi" (\(_ :: Int -> Bool) -> pure ())
 
 -- Compilation error:
 --
--- • No instance for (Wire (Int -> Bool))
---     arising from a use of ‘endpoint’
---     (maybe you haven't applied a function to enough arguments?)
+-- • You're using a function type in your endpoint:
+--
+--     Int -> Bool
+--
+--   I don't support functions in endpoints types, because I don't know how
+--   to encode functions to JSON.
+--
 -- • In the expression:
 --     endpoint "hi" (\ (_ :: Int -> Bool) -> pure ())
 --   In an equation for ‘endpoint’:
