@@ -679,7 +679,7 @@ type family
   KindOfConstructor typename position (C1 ('MetaCons constructorname f 'True) a) =
     Seq
       ( FieldsHaveWireTypes
-          '(typename, 'ConstructorName constructorname, position)
+          ('ConstructorContext typename ('ConstructorName constructorname) position)
           'OnlyElem
           a
       )
@@ -757,7 +757,7 @@ type family
       (Constructors typename (AddElemAfter position) a)
       (Constructors typename (AddElemBefore position) b)
   Constructors typename position (C1 ('MetaCons ctorname fix rec) a) =
-    '[ '( '(typename, 'ConstructorName ctorname, position),
+    '[ '( 'ConstructorContext typename ('ConstructorName ctorname) position,
           rec,
           a
         )
@@ -797,10 +797,11 @@ type family
       ( WhenStuck
           ( TypeError
               ( FieldMustBeWireTypeError
-                  '( constructorContext,
-                     'FieldName fieldname,
-                     position
-                   )
+                  ( 'RecordFieldContext
+                      constructorContext
+                      ('FieldName fieldname)
+                      position
+                  )
                   a
               )
           )
@@ -884,7 +885,7 @@ type family
     ErrorMessage
   where
   MustUseRecordTypeInsteadOfParams
-    '(typename, constructorname, position)
+    ('ConstructorContext typename constructorname position)
     params =
     "I can't create a Wire instance for this type:"
       % ""
@@ -942,7 +943,7 @@ type family
     ErrorMessage
   where
   UseSeparateRecordType
-    '(typename, constructorname, position)
+    ('ConstructorContext typename constructorname position)
     fields =
     "I can't create a Wire instance for this type:"
       % ""
@@ -1029,17 +1030,17 @@ type family AddElemAfter (position :: PositionInList) :: PositionInList where
   AddElemAfter 'MiddleElem = 'MiddleElem
   AddElemAfter 'LastElem = 'MiddleElem
 
-type ConstructorContext =
-  ( TypeName,
-    ConstructorName,
-    PositionInList
-  )
+data ConstructorContext
+  = ConstructorContext
+      TypeName
+      ConstructorName
+      PositionInList
 
-type RecordFieldContext =
-  ( ConstructorContext,
-    FieldName,
-    PositionInList
-  )
+data RecordFieldContext
+  = RecordFieldContext
+      ConstructorContext
+      FieldName
+      PositionInList
 
 type family
   PrintRecordField
@@ -1048,13 +1049,15 @@ type family
     ErrorMessage
   where
   PrintRecordField
-    '( '( typename,
-          constructorname,
-          constructorPosition
-        ),
-       fieldname,
-       position
-     )
+    ( 'RecordFieldContext
+        ( 'ConstructorContext
+            typename
+            constructorname
+            constructorPosition
+        )
+        fieldname
+        position
+    )
     fieldType =
     "data " <> typename <> " = " <> constructorname
       % Indent (FrameFields position (fieldname <> " :: " <> fieldType))
