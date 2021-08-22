@@ -20,8 +20,20 @@ instance Wire.Wire RecordWithTuple
 --       { fn :: (Int, ())
 --       }
 --
---   I don't support tuples in field types, because it's hard to change them
---   in the future in a backwards-compatible fashion.
+--   I prefer records over tuples, because those will allow you to make
+--   backwards-compatible changes in the future.
+--   Try using record syntax:
+--
+--     data RecordWithTuple = RecordWithTuple
+--       { fn :: MyRecord
+--       }
+--
+--     data MyRecord = MyRecord
+--       { x :: Int
+--       , y :: ()
+--       }
+--
+--   But come up with some better field names than MyRecord, x, and y!
 --
 -- • In the expression: $dmrec @(RecordWithTuple)
 --   In an equation for ‘rec’: rec = $dmrec @(RecordWithTuple)

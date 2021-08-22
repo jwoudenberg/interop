@@ -1007,7 +1007,7 @@ type FieldMustBeWireTypeError
     % ""
     % Indent (PrintRecordField context (ToErrorMessage a))
     % ""
-    % NoWireInstanceForType a
+    % NoWireInstanceForType context a
     % ""
 
 data TypeName = TypeName Symbol
@@ -1062,14 +1062,29 @@ type family
     "data " <> typename <> " = " <> constructorname
       % Indent (FrameFields position (fieldname <> " :: " <> fieldType))
 
-type family NoWireInstanceForType (a :: Type) :: ErrorMessage where
-  NoWireInstanceForType (a, b) =
-    "I don't support tuples in field types, because it's hard to change them"
-      % "in the future in a backwards-compatible fashion."
-  NoWireInstanceForType (a -> b) =
+type family
+  NoWireInstanceForType
+    (context :: RecordFieldContext)
+    (a :: Type) ::
+    ErrorMessage
+  where
+  NoWireInstanceForType context (a, b) =
+    "I prefer records over tuples, because those will allow you to make"
+      % "backwards-compatible changes in the future."
+      % "Try using record syntax:"
+      % ""
+      % Indent
+          ( PrintRecordField context (ToErrorMessage "MyRecord")
+              % ""
+              % "data MyRecord = MyRecord"
+              % Indent (PrintParamsAsFields '[a, b])
+          )
+      % ""
+      % "But come up with some better field names than MyRecord, x, and y!"
+  NoWireInstanceForType context (a -> b) =
     "I don't support functions in field types, because I don't know how to"
       % "encode them to JSON."
-  NoWireInstanceForType a =
+  NoWireInstanceForType context a =
     "I need all the field types to have a Wire instance themselves,"
       % "but miss an instance for the type: " <> a
 
