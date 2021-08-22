@@ -3,12 +3,12 @@
 module ExampleTypes.Either () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data MyEither a b = MyLeft a | MyRight b
   deriving (Generic)
 
-instance Wire.Wire (MyEither a b)
+instance Interop.Wire (MyEither a b)
 
 -- Compilation error:
 --

@@ -3,14 +3,14 @@
 module RecordWithBigTuple () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecordWithTuple = RecordWithTuple
   { fn :: (Int, Float, (), Int, Float, ())
   }
   deriving (Generic)
 
-instance Wire.Wire RecordWithTuple
+instance Interop.Wire RecordWithTuple
 
 -- Compilation error:
 --

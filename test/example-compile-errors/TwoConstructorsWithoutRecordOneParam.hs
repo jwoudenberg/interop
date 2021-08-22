@@ -3,14 +3,14 @@
 module TwoConstructorsWithoutRecordOneParam () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data TwoConstructorsWithoutRecordOneParam
   = OneConstructor
   | TwoConstructor Int
   deriving (Generic)
 
-instance Wire.Wire TwoConstructorsWithoutRecordOneParam
+instance Interop.Wire TwoConstructorsWithoutRecordOneParam
 
 -- Compilation error:
 --

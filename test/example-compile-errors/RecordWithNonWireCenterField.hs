@@ -3,7 +3,7 @@
 module RecordWithNonWireCenterField () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecordWithNonWireCenterField = RecordWithNonWireCenterField
   { int :: Int,
@@ -14,7 +14,7 @@ data RecordWithNonWireCenterField = RecordWithNonWireCenterField
 
 data NonWireType = NonWireType
 
-instance Wire.Wire RecordWithNonWireCenterField
+instance Interop.Wire RecordWithNonWireCenterField
 
 -- Compilation error:
 --

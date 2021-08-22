@@ -3,11 +3,11 @@
 module NotDerivingGeneric () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data NotDerivingGeneric = Constructor
 
-instance Wire.Wire NotDerivingGeneric
+instance Interop.Wire NotDerivingGeneric
 
 -- Compilation error:
 --

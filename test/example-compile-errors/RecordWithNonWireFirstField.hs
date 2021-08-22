@@ -3,7 +3,7 @@
 module RecordWithNonWireFirstField () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecordWithNonWireFirstField = RecordWithNonWireFirstField
   { fn :: NonWireType,
@@ -13,7 +13,7 @@ data RecordWithNonWireFirstField = RecordWithNonWireFirstField
 
 data NonWireType = NonWireType
 
-instance Wire.Wire RecordWithNonWireFirstField
+instance Interop.Wire RecordWithNonWireFirstField
 
 -- Compilation error:
 --

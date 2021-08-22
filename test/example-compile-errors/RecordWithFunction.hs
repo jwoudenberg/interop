@@ -3,14 +3,14 @@
 module RecordWithFunction () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecordWithFunction = RecordWithFunction
   { fn :: Int -> ()
   }
   deriving (Generic)
 
-instance Wire.Wire RecordWithFunction
+instance Interop.Wire RecordWithFunction
 
 -- Compilation error:
 --

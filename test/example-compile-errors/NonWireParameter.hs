@@ -3,12 +3,12 @@
 module NonWireParameter () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data TypeWithNonWireParameter = Constructor NonWireType
   deriving (Generic)
 
-instance Wire.Wire TypeWithNonWireParameter
+instance Interop.Wire TypeWithNonWireParameter
 
 data NonWireType
 

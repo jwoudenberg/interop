@@ -3,12 +3,12 @@
 module NoConstructors () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data TypeWithoutConstructors
   deriving (Generic)
 
-instance Wire.Wire TypeWithoutConstructors
+instance Interop.Wire TypeWithoutConstructors
 
 -- Compilation error:
 --

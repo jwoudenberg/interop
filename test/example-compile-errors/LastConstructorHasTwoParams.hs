@@ -3,14 +3,14 @@
 module LastConstructorHasTwoParams () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data LastConstructorHasTwoParams
   = OneConstructor
   | Constructor Int ()
   deriving (Generic)
 
-instance Wire.Wire LastConstructorHasTwoParams
+instance Interop.Wire LastConstructorHasTwoParams
 
 -- Compilation error:
 --

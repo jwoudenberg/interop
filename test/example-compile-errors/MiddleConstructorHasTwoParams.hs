@@ -3,7 +3,7 @@
 module MiddleConstructorHasTwoParams () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data MiddleConstructorHasTwoParams
   = OneConstructor
@@ -11,7 +11,7 @@ data MiddleConstructorHasTwoParams
   | ThreeConstructor
   deriving (Generic)
 
-instance Wire.Wire MiddleConstructorHasTwoParams
+instance Interop.Wire MiddleConstructorHasTwoParams
 
 -- Compilation error:
 --

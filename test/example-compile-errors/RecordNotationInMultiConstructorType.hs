@@ -3,7 +3,7 @@
 module RecordNotationInMultiConstructorType () where
 
 import GHC.Generics (Generic)
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecordNotationInMultiConstructorType
   = OneConstructor
@@ -11,7 +11,7 @@ data RecordNotationInMultiConstructorType
   | ThreeConstructor
   deriving (Generic)
 
-instance Wire.Wire RecordNotationInMultiConstructorType
+instance Interop.Wire RecordNotationInMultiConstructorType
 
 -- Compilation error:
 --
