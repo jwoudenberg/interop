@@ -96,16 +96,26 @@ module Apis
         end
       end
       
-      def initialize(origin, headers: {}, timeout: nil)
+      def initialize(origin, headers: {}, timeout: nil, keep_alive_timeout: nil)
         @origin = URI(origin)
         @headers = headers
         @http = Net::HTTP.new(@origin.host, @origin.port)
+        @http.use_ssl = @origin.scheme == 'https'
         
         unless timeout.nil?
           @http.open_timeout = timeout
           @http.read_timeout = timeout
         end
-        @http.use_ssl = @origin.scheme == 'https'
+        
+        unless keep_alive_timeout.nil?
+          @http.keep_alive_timeout = keep_alive_timeout
+        end
+      end
+      
+      # Call before making requests, to ensure the first request starts an http
+      # connection that subsequent requests can reuse.
+      def ensure_connection_started
+        @http.start unless @http.started?
       end
       
       sig { params(arg: AddConstructorType, headers: T::Hash[String, String]).returns(AddConstructorType) }
@@ -114,6 +124,7 @@ module Apis
         req["Content-Type"] = "application/json"
         
         body = ["AddConstructor", arg.to_h]
+        ensure_connection_started
         res = @http.request(req, body.to_json)
         json = JSON.parse(res.body)
         AddConstructorType.from_h(json)

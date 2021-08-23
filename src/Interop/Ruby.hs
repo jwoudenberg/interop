@@ -69,16 +69,26 @@ apiClass apiName service types' = do
     forRuby types' (customTypeHead apiName)
     forRuby types' customType
     ""
-    "def initialize(origin, headers: {}, timeout: nil)" >| do
+    "def initialize(origin, headers: {}, timeout: nil, keep_alive_timeout: nil)" >| do
       "@origin = URI(origin)"
       "@headers = headers"
       "@http = Net::HTTP.new(@origin.host, @origin.port)"
+      "@http.use_ssl = @origin.scheme == 'https'"
       ""
       "unless timeout.nil?" >| do
         "@http.open_timeout = timeout"
         "@http.read_timeout = timeout"
       "end"
-      "@http.use_ssl = @origin.scheme == 'https'"
+      ""
+      "unless keep_alive_timeout.nil?" >| do
+        "@http.keep_alive_timeout = keep_alive_timeout"
+      "end"
+    "end"
+    ""
+    "# Call before making requests, to ensure the first request starts an http"
+    "# connection that subsequent requests can reuse."
+    "def ensure_connection_started" >| do
+      "@http.start unless @http.started?"
     "end"
     forRuby (Map.toList (Service.endpoints service)) (uncurry endpointMethod)
   "end"
@@ -231,6 +241,7 @@ endpointMethod name (Service.Endpoint _ _ (_ :: req -> m res)) = do
     "req[\"Content-Type\"] = \"application/json\""
     ""
     "body = [\"" >< fromText name >< "\", " >< encodeJson "arg" requestType >< "]"
+    "ensure_connection_started"
     "res = @http.request(req, body.to_json)"
     "json = JSON.parse(res.body)"
     parseJson "json" responseType
