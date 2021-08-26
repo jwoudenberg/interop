@@ -4,9 +4,11 @@ load '../ExampleApis/AddConstructor/v2.rb'
 load '../ExampleApis/AddFirstField/v2.rb'
 load '../ExampleApis/AddFirstFieldToSecondConstructor/v2.rb'
 load '../ExampleApis/AddListField/v2.rb'
+load '../ExampleApis/AddUnitField/v2.rb'
 load '../ExampleApis/AddOptionalField/v2.rb'
 load '../ExampleApis/DropListField/v2.rb'
 load '../ExampleApis/DropOptionalField/v2.rb'
+load '../ExampleApis/DropUnitField/v2.rb'
 load '../ExampleApis/RemoveConstructor/v2.rb'
 load '../ExampleApis/AddMapField/v2.rb'
 
@@ -131,6 +133,21 @@ class TestApi < MiniTest::Unit::TestCase
     assert_equal response.to_h, expected.to_h
   end
 
+  def test_add_unit_field
+    api = Apis::AddUnitField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+    request =
+      Apis::AddUnitField::V2::AddUnitFieldType.new(
+        field: 1,
+      )
+    response = api.add_unit_field(request)
+    expected =
+      Apis::AddUnitField::V2::AddUnitFieldType.new(
+        field: 1,
+        new_unit_field: nil,
+      )
+    assert_equal response.to_h, expected.to_h
+  end
+
   def test_add_optional_field
     api = Apis::AddOptionalField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
     request =
@@ -183,6 +200,20 @@ class TestApi < MiniTest::Unit::TestCase
     response = api.drop_list_field(request)
     expected =
       Apis::DropListField::V2::DropListFieldType.new(
+        field: 1,
+      )
+    assert_equal response.to_h, expected.to_h
+  end
+
+  def test_drop_unit_field
+    api = Apis::DropUnitField::V2.new("http://localhost:#{ENV['PORT'].to_i}")
+    request =
+      Apis::DropUnitField::V2::DropUnitFieldType.new(
+        field: 1,
+      )
+    response = api.drop_unit_field(request)
+    expected =
+      Apis::DropUnitField::V2::DropUnitFieldType.new(
         field: 1,
       )
     assert_equal response.to_h, expected.to_h

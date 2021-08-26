@@ -48,6 +48,8 @@ import qualified ExampleApis.AddSeqField.V1
 import qualified ExampleApis.AddSeqField.V2
 import qualified ExampleApis.AddSetField.V1
 import qualified ExampleApis.AddSetField.V2
+import qualified ExampleApis.AddUnitField.V1
+import qualified ExampleApis.AddUnitField.V2
 import qualified ExampleApis.DropAllFields.V1
 import qualified ExampleApis.DropAllFields.V2
 import qualified ExampleApis.DropListField.V1
@@ -56,6 +58,8 @@ import qualified ExampleApis.DropNonOptionalField.V1
 import qualified ExampleApis.DropNonOptionalField.V2
 import qualified ExampleApis.DropOptionalField.V1
 import qualified ExampleApis.DropOptionalField.V2
+import qualified ExampleApis.DropUnitField.V1
+import qualified ExampleApis.DropUnitField.V2
 import qualified ExampleApis.EchoTypes.Api
 import qualified ExampleApis.InvalidService.DuplicateConstructorName
 import qualified ExampleApis.InvalidService.DuplicateEndpointName
@@ -343,6 +347,11 @@ changeApiExamples =
       ExampleApis.AddNonOptionalField.V1.service
       ExampleApis.AddNonOptionalField.V2.service,
     ChangeApiExample
+      "AddUnitField"
+      ExampleApis.AddUnitField.V1.endpoints
+      ExampleApis.AddUnitField.V1.service
+      ExampleApis.AddUnitField.V2.service,
+    ChangeApiExample
       "AddOptionalField"
       ExampleApis.AddOptionalField.V1.endpoints
       ExampleApis.AddOptionalField.V1.service
@@ -382,6 +391,11 @@ changeApiExamples =
       ExampleApis.DropNonOptionalField.V1.endpoints
       ExampleApis.DropNonOptionalField.V1.service
       ExampleApis.DropNonOptionalField.V2.service,
+    ChangeApiExample
+      "DropUnitField"
+      ExampleApis.DropUnitField.V1.endpoints
+      ExampleApis.DropUnitField.V1.service
+      ExampleApis.DropUnitField.V2.service,
     ChangeApiExample
       "DropOptionalField"
       ExampleApis.DropOptionalField.V1.endpoints
@@ -442,6 +456,10 @@ changeTypeExamples =
       ExampleApis.AddOptionalField.V1.gen
       (Proxy :: Proxy ExampleApis.AddOptionalField.V2.AddOptionalFieldType),
     ChangeTypeExample
+      "AddUnitField"
+      ExampleApis.AddUnitField.V1.gen
+      (Proxy :: Proxy ExampleApis.AddUnitField.V2.AddUnitFieldType),
+    ChangeTypeExample
       "AddListField"
       ExampleApis.AddListField.V1.gen
       (Proxy :: Proxy ExampleApis.AddListField.V2.AddListFieldType),
@@ -473,6 +491,10 @@ changeTypeExamples =
       "DropOptionalField"
       ExampleApis.DropOptionalField.V1.gen
       (Proxy :: Proxy ExampleApis.DropOptionalField.V2.DropOptionalFieldType),
+    ChangeTypeExample
+      "DropUnitField"
+      ExampleApis.DropUnitField.V1.gen
+      (Proxy :: Proxy ExampleApis.DropUnitField.V2.DropUnitFieldType),
     ChangeTypeExample
       "DropListField"
       ExampleApis.DropListField.V1.gen

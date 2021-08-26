@@ -699,6 +699,8 @@ class ParseField (isMaybe :: Bool) a where
     Aeson.explicitParseFieldMaybe parse object key
       & fmap (Data.Maybe.fromMaybe mempty)
 
+instance ParseField 'True ()
+
 instance ParseField 'True (Maybe a) where
   type Unwrapped 'True (Maybe a) = a
   parseField _ = Aeson.explicitParseFieldMaybe
@@ -720,6 +722,7 @@ instance ParseField 'False a where
   parseField _ = Aeson.explicitParseField
 
 type family IsOptional a :: Bool where
+  IsOptional () = 'True
   IsOptional (Maybe a) = 'True
   IsOptional [a] = 'True
   IsOptional (HashMap.HashMap k v) = 'True

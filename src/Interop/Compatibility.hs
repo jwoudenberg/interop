@@ -299,6 +299,7 @@ diffFields path (serverTypes, server) (clientTypes, client) =
   merge
     ( \name field diffs ->
         case fieldType field of
+          Unit -> []
           Optional _ -> []
           List _ -> []
           Dict _ _ -> []
@@ -314,6 +315,7 @@ diffFields path (serverTypes, server) (clientTypes, client) =
     )
     ( \name field diffs ->
         case fieldType field of
+          Unit -> []
           Optional _ -> []
           List _ -> []
           Dict _ _ -> []
