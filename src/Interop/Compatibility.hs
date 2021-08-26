@@ -1,6 +1,10 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Find differences between types and explain whether they're backwards
 -- compatible or not.
@@ -14,8 +18,6 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as ByteString
 import Data.Function ((&))
 import Data.List (foldl', sortOn)
-import Data.List.NonEmpty (NonEmpty, nonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -58,19 +60,18 @@ check server client =
     ( \endpointName serverEndpoint clientEndpoint acc ->
         let requestTypeWarnings =
               diffType
+                (InEndpointRequest endpointName)
                 (Spec.customTypes server, Spec.requestType serverEndpoint)
                 (Spec.customTypes client, Spec.requestType clientEndpoint)
-                & requestWarnings (InEndpoint endpointName)
             responseTypeWarnings =
               diffType
+                (InEndpointResponse endpointName)
                 (Spec.customTypes server, Spec.responseType serverEndpoint)
                 (Spec.customTypes client, Spec.responseType clientEndpoint)
-                & responseWarnings (InEndpoint endpointName)
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
-    ( \_ _ acc ->
-        "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error." :
-        acc
+    ( \endpointName _ acc ->
+        endpointRemovedFromServer (InEndpoint endpointName) : acc
     )
     (Map.toList (Spec.endpoints server))
     (Map.toList (Spec.endpoints client))
@@ -78,232 +79,210 @@ check server client =
     & ( \case
           [] -> Right ()
           first : rest ->
-            foldl' (\acc entry -> acc <> "\n\n" <> entry) first rest
+            foldl' (\acc entry -> acc <> "\n\n" <> warningToText entry) (warningToText first) rest
               & Builder.toLazyText
               & Data.Text.Lazy.toStrict
               & Left
       )
 
-data TypeDiff
-  = CustomTypeChanged CustomType (NonEmpty ConstructorDiff)
-  | FieldsChanged CustomType (NonEmpty FieldDiff)
-  | TypeMadeOptional Type
-  | TypeMadeNonOptional Type
-  | TypeChanged Type Type
+data Path (context :: PathContext) where
+  InEndpoint :: Text -> Path 'Endpoint
+  InEndpointRequest :: Text -> Path 'Request
+  InEndpointResponse :: Text -> Path 'Response
+  InType :: Text -> Path context -> Path context
+  InConstructor :: Text -> Path context -> Path context
+  InField :: Text -> Path context -> Path context
 
-data ConstructorDiff
-  = ConstructorAdded Constructor
-  | ConstructorRemoved Constructor
-  | ConstructorChanged Constructor (NonEmpty FieldDiff)
+data PathContext
+  = Request
+  | Response
+  | Endpoint
 
-data FieldDiff
-  = FieldAdded Field
-  | FieldRemoved Field
-  | FieldChanged Field (NonEmpty TypeDiff)
+data Warning where
+  Warning ::
+    { short :: Builder.Builder,
+      detailed :: Builder.Builder,
+      context :: Path context
+    } ->
+    Warning
 
-data Path
-  = InEndpoint Text
-  | InType Text Path
-  | InConstructor Text Path
-  | InField Text Path
+ifUsedInRequest :: (Path 'Request -> a) -> Path context -> [a]
+ifUsedInRequest fn path = go path
+  where
+    go path' =
+      case path' of
+        InEndpoint _ -> []
+        InEndpointRequest _ -> [fn path]
+        InEndpointResponse _ -> []
+        InType _ subPath -> go subPath
+        InConstructor _ subPath -> go subPath
+        InField _ subPath -> go subPath
 
-warningToText :: Builder.Builder -> Path -> Builder.Builder -> Builder.Builder
-warningToText problem path explanation =
-  problem <> "\n" <> renderContext path <> "\n\n" <> explanation
+ifUsedInResponse :: (Path 'Response -> a) -> Path context -> [a]
+ifUsedInResponse fn path = go path
+  where
+    go path' =
+      case path' of
+        InEndpoint _ -> []
+        InEndpointRequest _ -> []
+        InEndpointResponse _ -> [fn path]
+        InType _ subPath -> go subPath
+        InConstructor _ subPath -> go subPath
+        InField _ subPath -> go subPath
 
-renderContext :: Path -> Builder.Builder
+warningToText :: Warning -> Builder.Builder
+warningToText Warning {short, detailed, context} =
+  short <> "\n" <> renderContext context <> "\n\n" <> detailed
+
+renderContext :: Path context -> Builder.Builder
 renderContext (InField fieldName rest) = renderContext rest <> " { " <> Builder.fromText fieldName <> " }"
 renderContext (InConstructor constructorName rest) = renderContext rest <> " = " <> Builder.fromText constructorName
 renderContext (InType typeName _) = "data " <> Builder.fromText typeName
 renderContext (InEndpoint _) = ""
+renderContext (InEndpointRequest _) = ""
+renderContext (InEndpointResponse _) = ""
 
-requestWarnings :: Path -> [TypeDiff] -> [Builder.Builder]
-requestWarnings path =
-  concatMap $ \case
-    TypeMadeOptional _ ->
-      []
-    TypeMadeNonOptional type_ ->
-      [ warningToText
-          "A type used in requests is no longer optional."
-          (InType (typeAsText type_) path)
-          "If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
-      ]
-    TypeChanged type_ _ ->
-      [ warningToText
-          "A type used in requests has changed."
-          (InType (typeAsText type_) path)
-          "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-      ]
-    CustomTypeChanged type_ constructorDiffs ->
-      constructorRequestWarnings (InType (typeName type_) path) constructorDiffs
-    FieldsChanged type_ fieldDiffs ->
-      fieldRequestWarnings (InType (typeName type_) path) fieldDiffs
+requestTypeMadeNonOptional :: Path 'Request -> Warning
+requestTypeMadeNonOptional path =
+  Warning
+    { short = "A type used in requests is no longer optional.",
+      context = path,
+      detailed = "If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
+    }
 
-responseWarnings :: Path -> [TypeDiff] -> [Builder.Builder]
-responseWarnings path =
-  concatMap $ \case
-    TypeMadeOptional type_ ->
-      [ warningToText
-          "A type used responses has been made optional."
-          (InType (typeAsText type_) path)
-          "Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
-      ]
-    TypeMadeNonOptional _ ->
-      []
-    TypeChanged type_ _ ->
-      [ warningToText
-          "A type used in responses has changed."
-          (InType (typeAsText type_) path)
-          "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-      ]
-    CustomTypeChanged type_ constructorDiffs ->
-      constructorResponseWarnings (InType (typeName type_) path) constructorDiffs
-    FieldsChanged type_ fieldDiffs ->
-      fieldResponseWarnings (InType (typeName type_) path) fieldDiffs
+requestTypeChanged :: Path 'Request -> Warning
+requestTypeChanged path =
+  Warning
+    { short = "A type used in requests has changed.",
+      context = path,
+      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+    }
 
-constructorRequestWarnings :: Path -> NonEmpty ConstructorDiff -> [Builder.Builder]
-constructorRequestWarnings path =
-  concatMap $ \case
-    ConstructorAdded _ ->
-      []
-    ConstructorRemoved constructor ->
-      [ warningToText
-          "A constructor was removed from a type used in requests."
-          (InConstructor (constructorName constructor) path)
-          "Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
-      ]
-    ConstructorChanged constructor fieldDiffs ->
-      fieldRequestWarnings
-        (InConstructor (constructorName constructor) path)
-        fieldDiffs
+responseTypeMadeOptional :: Path 'Response -> Warning
+responseTypeMadeOptional path =
+  Warning
+    { short = "A type used responses has been made optional.",
+      context = path,
+      detailed = "Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
+    }
 
-constructorResponseWarnings :: Path -> NonEmpty ConstructorDiff -> [Builder.Builder]
-constructorResponseWarnings path =
-  concatMap $ \case
-    ConstructorAdded constructor ->
-      [ warningToText
-          "A constructor was added to a type used in responses."
-          (InConstructor (constructorName constructor) path)
-          "Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
-      ]
-    ConstructorRemoved _ ->
-      []
-    ConstructorChanged constructor fieldDiffs ->
-      fieldResponseWarnings
-        (InConstructor (constructorName constructor) path)
-        fieldDiffs
+responseTypeChanged :: Path 'Response -> Warning
+responseTypeChanged path =
+  Warning
+    { short = "A type used in responses has changed.",
+      context = path,
+      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
+    }
 
-fieldRequestWarnings :: Path -> NonEmpty FieldDiff -> [Builder.Builder]
-fieldRequestWarnings path =
-  concatMap $ \case
-    FieldAdded field ->
-      case fieldType field of
-        List _ ->
-          []
-        Optional _ ->
-          []
-        Dict _ _ ->
-          []
-        _ ->
-          [ warningToText
-              "A type used in requests has a mandatory field."
-              (InField (fieldName field) path)
-              "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
-          ]
-    FieldRemoved _ ->
-      []
-    FieldChanged field typeDiffs ->
-      requestWarnings
-        (InField (fieldName field) path)
-        (NonEmpty.toList typeDiffs)
+requestConstructorRemoved :: Path 'Request -> Warning
+requestConstructorRemoved path =
+  Warning
+    { short = "A constructor was removed from a type used in requests.",
+      context = path,
+      detailed = "Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
+    }
 
-fieldResponseWarnings :: Path -> NonEmpty FieldDiff -> [Builder.Builder]
-fieldResponseWarnings path =
-  concatMap $ \case
-    FieldAdded _ ->
-      []
-    FieldRemoved field ->
-      case fieldType field of
-        List _ ->
-          []
-        Optional _ ->
-          []
-        Dict _ _ ->
-          []
-        _ ->
-          [ warningToText
-              "A type used in responses has lost a mandatory field."
-              (InField (fieldName field) path)
-              "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
-          ]
-    FieldChanged field typeDiffs ->
-      responseWarnings
-        (InField (fieldName field) path)
-        (NonEmpty.toList typeDiffs)
+responseConstructorAdded :: Path 'Response -> Warning
+responseConstructorAdded path =
+  Warning
+    { short = "A constructor was added to a type used in responses.",
+      context = path,
+      detailed = "Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
+    }
+
+mandatoryFieldAddedToRequest :: Path 'Request -> Warning
+mandatoryFieldAddedToRequest path =
+  Warning
+    { short = "A type used in requests has a mandatory field.",
+      context = path,
+      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
+    }
+
+mandatoryFieldRemovedFromResponse :: Path 'Response -> Warning
+mandatoryFieldRemovedFromResponse path =
+  Warning
+    { short = "A type used in responses has lost a mandatory field.",
+      context = path,
+      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
+    }
+
+endpointRemovedFromServer :: Path 'Endpoint -> Warning
+endpointRemovedFromServer path =
+  Warning
+    { short = "client uses endpoint unsupported by server",
+      context = path,
+      detailed = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
+    }
 
 diffType ::
+  Path context ->
   (Map.Map Text CustomType, Type) ->
   (Map.Map Text CustomType, Type) ->
-  [TypeDiff]
-diffType (beforeTypes, before) (afterTypes, after) =
-  case (before, after) of
-    (NestedCustomType beforeName, NestedCustomType afterName) -> do
-      beforeType <- maybe [] pure (Map.lookup beforeName beforeTypes)
-      afterType <- maybe [] pure (Map.lookup afterName afterTypes)
-      case (subTypes beforeType, subTypes afterType) of
-        (Right beforeConstructors, Right afterConstructors) ->
+  [Warning]
+diffType path (serverTypes, server) (clientTypes, client) =
+  case (server, client) of
+    (NestedCustomType serverName, NestedCustomType clientName) -> do
+      serverType <- maybe [] pure (Map.lookup serverName serverTypes)
+      clientType <- maybe [] pure (Map.lookup clientName clientTypes)
+      case (subTypes serverType, subTypes clientType) of
+        (Right serverConstructors, Right clientConstructors) ->
           diffCustomType
-            (beforeTypes, beforeConstructors)
-            (afterTypes, afterConstructors)
-            & nonEmpty
-            & maybe [] (pure . CustomTypeChanged beforeType)
-        (Left beforeFields, Left afterFields) ->
+            (InType (typeAsText server) path)
+            (serverTypes, serverConstructors)
+            (clientTypes, clientConstructors)
+        (Left serverFields, Left clientFields) ->
           diffFields
-            (beforeTypes, beforeFields)
-            (afterTypes, afterFields)
-            & nonEmpty
-            & maybe [] (pure . FieldsChanged beforeType)
+            (InType (typeAsText server) path)
+            (serverTypes, serverFields)
+            (clientTypes, clientFields)
         (_, _) ->
-          [TypeChanged before after]
+          ifUsedInResponse responseTypeChanged (InType (typeAsText server) path)
     (List subBefore, List subAfter) ->
-      diffType (beforeTypes, subBefore) (afterTypes, subAfter)
+      diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter)
     (Dict keyBefore valBefore, Dict keyAfter valAfter) ->
-      diffType (beforeTypes, keyBefore) (afterTypes, keyAfter)
-        <> diffType (beforeTypes, valBefore) (afterTypes, valAfter)
+      diffType (InType (typeAsText server) path) (serverTypes, keyBefore) (clientTypes, keyAfter)
+        <> diffType (InType (typeAsText server) path) (serverTypes, valBefore) (clientTypes, valAfter)
     (Optional subBefore, Optional subAfter) ->
-      diffType (beforeTypes, subBefore) (afterTypes, subAfter)
+      diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter)
     (Optional subBefore, subAfter) ->
-      case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
-        [] -> [TypeMadeNonOptional after]
+      case diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter) of
+        [] -> ifUsedInRequest requestTypeMadeNonOptional (InType (typeAsText server) path)
         changes -> changes
     (subBefore, Optional subAfter) ->
-      case diffType (beforeTypes, subBefore) (afterTypes, subAfter) of
-        [] -> [TypeMadeOptional before]
+      case diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter) of
+        [] -> ifUsedInResponse responseTypeMadeOptional (InType (typeAsText server) path)
         changes -> changes
     (Unit, Unit) -> []
     (Text, Text) -> []
     (Int, Int) -> []
     (Float, Float) -> []
     (Bool, Bool) -> []
-    _ -> [TypeChanged before after]
+    _ ->
+      ifUsedInRequest requestTypeChanged (InType (typeAsText server) path)
+        <> ifUsedInResponse responseTypeChanged (InType (typeAsText server) path)
 
 diffCustomType ::
+  Path context ->
   (Map.Map Text CustomType, [Constructor]) ->
   (Map.Map Text CustomType, [Constructor]) ->
-  [ConstructorDiff]
-diffCustomType (beforeTypes, before) (afterTypes, after) =
+  [Warning]
+diffCustomType path (serverTypes, server) (clientTypes, client) =
   merge
-    (\_ constructor diffs -> ConstructorRemoved constructor : diffs)
-    ( \_ beforeConstructor afterConstructor diffs ->
-        diffFields
-          (beforeTypes, fields beforeConstructor)
-          (afterTypes, fields afterConstructor)
-          & nonEmpty
-          & maybe diffs ((: diffs) . ConstructorChanged beforeConstructor)
+    ( \name _ diffs ->
+        ifUsedInRequest requestConstructorRemoved (InConstructor name path) <> diffs
     )
-    (\_ constructor diffs -> ConstructorAdded constructor : diffs)
-    (constructorTuples before)
-    (constructorTuples after)
+    ( \name serverConstructor clientConstructor diffs ->
+        diffFields
+          (InConstructor name path)
+          (serverTypes, fields serverConstructor)
+          (clientTypes, fields clientConstructor)
+          <> diffs
+    )
+    ( \name _ diffs ->
+        ifUsedInResponse responseConstructorAdded (InConstructor name path) <> diffs
+    )
+    (constructorTuples server)
+    (constructorTuples client)
     []
   where
     constructorTuples constructors =
@@ -312,22 +291,37 @@ diffCustomType (beforeTypes, before) (afterTypes, after) =
         constructors
 
 diffFields ::
+  Path context ->
   (Map.Map Text CustomType, [Field]) ->
   (Map.Map Text CustomType, [Field]) ->
-  [FieldDiff]
-diffFields (beforeTypes, before) (afterTypes, after) =
+  [Warning]
+diffFields path (serverTypes, server) (clientTypes, client) =
   merge
-    (\_ field diffs -> FieldRemoved field : diffs)
-    ( \_ beforeField afterField diffs ->
-        diffType
-          (beforeTypes, fieldType beforeField)
-          (afterTypes, fieldType afterField)
-          & nonEmpty
-          & maybe diffs ((: diffs) . FieldChanged beforeField)
+    ( \name field diffs ->
+        case fieldType field of
+          Optional _ -> []
+          List _ -> []
+          Dict _ _ -> []
+          _ ->
+            ifUsedInResponse mandatoryFieldRemovedFromResponse (InField name path) <> diffs
     )
-    (\_ field diffs -> FieldAdded field : diffs)
-    (fieldTuples before)
-    (fieldTuples after)
+    ( \name serverField clientField diffs ->
+        diffType
+          (InField name path)
+          (serverTypes, fieldType serverField)
+          (clientTypes, fieldType clientField)
+          <> diffs
+    )
+    ( \name field diffs ->
+        case fieldType field of
+          Optional _ -> []
+          List _ -> []
+          Dict _ _ -> []
+          _ ->
+            ifUsedInRequest mandatoryFieldAddedToRequest (InField name path) <> diffs
+    )
+    (fieldTuples server)
+    (fieldTuples client)
     []
   where
     fieldTuples fields =
