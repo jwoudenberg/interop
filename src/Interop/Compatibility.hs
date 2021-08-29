@@ -209,10 +209,27 @@ mandatoryFieldRemovedFromResponse path =
 endpointRemovedFromServer :: Path 'Endpoint -> Warning
 endpointRemovedFromServer path =
   Warning
-    { short = "client uses endpoint unsupported by server",
+    { short = "The generated client code supports an endpoint '" <> Builder.fromText (endpoint path) <> "', but the server doesn't have such an endpoint.",
       context = path,
-      detailed = "The client supports an endpoint that the server doesn't. Maybe the endpoint was recently removed from the server. If client code calls the endpoint the server will return an error."
+      detailed =
+        "Maybe you're trying to remove an endpoint? If so, make sure to follow these steps:\n"
+          <> "\n"
+          <> "1. Stop using the endpoint in your client code.\n"
+          <> "2. Make sure the clients from step 1 are deployed.\n"
+          <> "3. Remove the endpoint from the server code.\n"
+          <> "\n"
+          <> "If you're currently at step 3 this warning is expected."
     }
+
+endpoint :: Path a -> Text
+endpoint path =
+  case path of
+    InEndpoint name -> name
+    InEndpointRequest name -> name
+    InEndpointResponse name -> name
+    InType _ subPath -> endpoint subPath
+    InConstructor _ subPath -> endpoint subPath
+    InField _ subPath -> endpoint subPath
 
 diffType ::
   Path context ->
