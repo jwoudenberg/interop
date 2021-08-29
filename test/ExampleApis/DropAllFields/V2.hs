@@ -28,7 +28,14 @@ instance Wire.Wire DropAllFieldsType
 
 -- Warnings when V1 is used by a server and V2 by a client:
 --
--- A type used in responses has lost a mandatory field.
+-- The server expects record 'DropAllFieldsType' to have a field 'field', but client requests don't include such a field.
 -- data DropAllFieldsType = DropAllFieldsFirstConstructor { field }
 --
--- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field.
+-- Maybe you're trying to add a new field to a record? If so, make sure to follow these steps:
+--
+-- 1. Add the field to the server, but wrap it in a 'Maybe' to keep it optional for now.
+-- 2. Change the client to always send the new field.
+-- 3. Make sure the changes from step 1 and 2 are deployed.
+-- 4. Make the field mandatory in the server by removing the 'Maybe'.
+--
+-- It looks like you missed step 1, because 'field' isn't an optional field.

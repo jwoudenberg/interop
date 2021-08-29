@@ -71,7 +71,7 @@ check server client =
          in requestTypeWarnings <> responseTypeWarnings <> acc
     )
     ( \endpointName _ acc ->
-        endpointRemovedFromServer (InEndpoint endpointName) : acc
+        clientEndpointDoesntExist (InEndpoint endpointName) : acc
     )
     (Map.toList (Spec.endpoints server))
     (Map.toList (Spec.endpoints client))
@@ -190,46 +190,91 @@ responseConstructorAdded path =
       detailed = "Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
     }
 
-mandatoryFieldAddedToRequest :: Path 'Request -> Warning
-mandatoryFieldAddedToRequest path =
-  Warning
-    { short = "A type used in requests has a mandatory field.",
-      context = path,
-      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First add an optional field. Then update clients to always set the optional field. Finally make the new field non-optional."
-    }
+serverWontReturnExpectedField :: Path 'Response -> Warning
+serverWontReturnExpectedField path =
+  let type_ = Builder.fromText (pathType path)
+      field = Builder.fromText (pathField path)
+   in Warning
+        { short = "The generated client code expects record '" <> type_ <> "' to have a field '" <> field <> "', but server responses don't include such a field.",
+          context = path,
+          detailed =
+            "Maybe you're trying to remove a field from a record? If so, make sure to follow these steps:\n"
+              <> "\n"
+              <> "1. Make the field optional by wrapping it in a 'Maybe', but don't return 'Nothing' values from the server yet.\n"
+              <> "2. Change the client to make it support responses that omit the field.\n"
+              <> "3. Make sure the changes from step 1 and 2 are deployed.\n"
+              <> "4. Remove the field from the server code.\n"
+              <> "\n"
+              <> "It looks like you missed step 1, because '"
+              <> field
+              <> "' isn't an optional field."
+        }
 
-mandatoryFieldRemovedFromResponse :: Path 'Response -> Warning
-mandatoryFieldRemovedFromResponse path =
-  Warning
-    { short = "A type used in responses has lost a mandatory field.",
-      context = path,
-      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First make this field optional but keep setting it on all responses. Then update clients to support the absence of the field. Finally remove the field."
-    }
+clientDoesntSendMandatoryField :: Path 'Request -> Warning
+clientDoesntSendMandatoryField path =
+  let type_ = Builder.fromText (pathType path)
+      field = Builder.fromText (pathField path)
+   in Warning
+        { short = "The server expects record '" <> type_ <> "' to have a field '" <> field <> "', but client requests don't include such a field.",
+          context = path,
+          detailed =
+            "Maybe you're trying to add a new field to a record? If so, make sure to follow these steps:\n"
+              <> "\n"
+              <> "1. Add the field to the server, but wrap it in a 'Maybe' to keep it optional for now.\n"
+              <> "2. Change the client to always send the new field.\n"
+              <> "3. Make sure the changes from step 1 and 2 are deployed.\n"
+              <> "4. Make the field mandatory in the server by removing the 'Maybe'.\n"
+              <> "\n"
+              <> "It looks like you missed step 1, because '"
+              <> field
+              <> "' isn't an optional field."
+        }
 
-endpointRemovedFromServer :: Path 'Endpoint -> Warning
-endpointRemovedFromServer path =
-  Warning
-    { short = "The generated client code supports an endpoint '" <> Builder.fromText (endpoint path) <> "', but the server doesn't have such an endpoint.",
-      context = path,
-      detailed =
-        "Maybe you're trying to remove an endpoint? If so, make sure to follow these steps:\n"
-          <> "\n"
-          <> "1. Stop using the endpoint in your client code.\n"
-          <> "2. Make sure the clients from step 1 are deployed.\n"
-          <> "3. Remove the endpoint from the server code.\n"
-          <> "\n"
-          <> "If you're currently at step 3 this warning is expected."
-    }
+clientEndpointDoesntExist :: Path 'Endpoint -> Warning
+clientEndpointDoesntExist path =
+  let endpoint = Builder.fromText (pathEndpoint path)
+   in Warning
+        { short = "The generated client code supports an endpoint '" <> endpoint <> "', but the server doesn't have such an endpoint.",
+          context = path,
+          detailed =
+            "Maybe you're trying to remove an endpoint? If so, make sure to follow these steps:\n"
+              <> "\n"
+              <> "1. Stop using the endpoint in your client code.\n"
+              <> "2. Make sure the clients from step 1 are deployed.\n"
+              <> "3. Remove the endpoint from the server code.\n"
+              <> "\n"
+              <> "If you're currently at step 3 this warning is expected."
+        }
 
-endpoint :: Path a -> Text
-endpoint path =
+pathEndpoint :: Path a -> Text
+pathEndpoint path =
   case path of
     InEndpoint name -> name
     InEndpointRequest name -> name
     InEndpointResponse name -> name
-    InType _ subPath -> endpoint subPath
-    InConstructor _ subPath -> endpoint subPath
-    InField _ subPath -> endpoint subPath
+    InType _ subPath -> pathEndpoint subPath
+    InConstructor _ subPath -> pathEndpoint subPath
+    InField _ subPath -> pathEndpoint subPath
+
+pathType :: Path a -> Text
+pathType path =
+  case path of
+    InEndpoint _ -> ""
+    InEndpointRequest _ -> ""
+    InEndpointResponse _ -> ""
+    InType name _ -> name
+    InConstructor _ subPath -> pathType subPath
+    InField _ subPath -> pathType subPath
+
+pathField :: Path a -> Text
+pathField path =
+  case path of
+    InEndpoint _ -> ""
+    InEndpointRequest _ -> ""
+    InEndpointResponse _ -> ""
+    InType _ _ -> ""
+    InConstructor _ _ -> ""
+    InField name _ -> name
 
 diffType ::
   Path context ->
@@ -321,7 +366,7 @@ diffFields path (serverTypes, server) (clientTypes, client) =
           List _ -> []
           Dict _ _ -> []
           _ ->
-            ifUsedInResponse mandatoryFieldRemovedFromResponse (InField name path) <> diffs
+            ifUsedInRequest clientDoesntSendMandatoryField (InField name path) <> diffs
     )
     ( \name serverField clientField diffs ->
         diffType
@@ -337,7 +382,7 @@ diffFields path (serverTypes, server) (clientTypes, client) =
           List _ -> []
           Dict _ _ -> []
           _ ->
-            ifUsedInRequest mandatoryFieldAddedToRequest (InField name path) <> diffs
+            ifUsedInResponse serverWontReturnExpectedField (InField name path) <> diffs
     )
     (fieldTuples server)
     (fieldTuples client)
