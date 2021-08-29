@@ -86,6 +86,7 @@ import qualified ExampleTypes.Int8
 import qualified ExampleTypes.List
 import qualified ExampleTypes.Map
 import qualified ExampleTypes.Maybe
+import qualified ExampleTypes.MultipleConstructorRecords
 import qualified ExampleTypes.NestedRecord
 import qualified ExampleTypes.NestedType
 import qualified ExampleTypes.Record
@@ -298,6 +299,7 @@ exampleTypes =
     ExampleType "test/ExampleTypes/NestedType.hs" (ExampleTypes.NestedType.example) (ExampleTypes.NestedType.gen),
     ExampleType "test/ExampleTypes/NestedRecord.hs" (ExampleTypes.NestedRecord.example) (ExampleTypes.NestedRecord.gen),
     ExampleType "test/ExampleTypes/Record.hs" (ExampleTypes.Record.example) (ExampleTypes.Record.gen),
+    ExampleType "test/ExampleTypes/MultipleConstructorRecords.hs" (ExampleTypes.MultipleConstructorRecords.example) (ExampleTypes.MultipleConstructorRecords.gen),
     ExampleType "test/ExampleTypes/RecursiveType.hs" (ExampleTypes.RecursiveType.example) (ExampleTypes.RecursiveType.gen),
     ExampleType "test/ExampleTypes/Set.hs" (ExampleTypes.Set.example) (ExampleTypes.Set.gen),
     ExampleType "test/ExampleTypes/Seq.hs" (ExampleTypes.Seq.example) (ExampleTypes.Seq.gen),

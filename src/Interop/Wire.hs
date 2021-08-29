@@ -608,6 +608,29 @@ instance
       & fmap (M1 . M1 . K1 . to)
 
 instance
+  ( FieldsG sub,
+    KnownSymbol ctorname
+  ) =>
+  CtorsG (C1 ('MetaCons ctorname fix 'True) sub)
+  where
+  typeCtorsG _ =
+    [ Constructor
+        (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+        (typeFieldsG (Proxy :: Proxy sub))
+    ]
+  encodeCtorsG (M1 x) =
+    x
+      & encodeFieldsG
+      & Aeson.pairs
+      & Encoding.pair (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+  decodeCtorsG obj =
+    Aeson.explicitParseField
+      (Aeson.withObject (symbolVal (Proxy :: Proxy ctorname)) decodeFieldsG)
+      obj
+      (T.pack (symbolVal (Proxy :: Proxy ctorname)))
+      & fmap M1
+
+instance
   ( CtorsG left,
     CtorsG right
   ) =>
@@ -820,7 +843,7 @@ type family
           (ParamTypes (a :*: b) '[])
       )
   ValidateSingleConstructor context 'True params =
-    TypeError (UseSeparateRecordType context (FieldTypes params '[]))
+    ()
   ValidateSingleConstructor context 'False (S1 ms (Rec0 a)) =
     Seq
       ( WhenStuck
@@ -1040,46 +1063,6 @@ type family
     "= ..."
       % "| " <> current
       % "| ..."
-
-type family
-  UseSeparateRecordType
-    (context :: ConstructorContext)
-    (fields :: [Type]) ::
-    ErrorMessage
-  where
-  UseSeparateRecordType
-    ('ConstructorContext typename constructorname position)
-    fields =
-    "I can't create a Wire instance for this type:"
-      % ""
-      % Indent
-          ( "data " <> typename
-              % Indent
-                  ( FrameRelevantConstructor
-                      position
-                      (constructorname % Indent (PrintFields fields))
-                  )
-          )
-      % ""
-      % "I only support constructors with no parameters, or with a"
-      % "a single parameter that must a separate record type."
-      % "This is to make it easier for you to make changes to your"
-      % "types in the future, in a backwards-compatible way."
-      % "Try creating a custom record type:"
-      % ""
-      % Indent
-          ( "data " <> typename
-              % Indent
-                  ( FrameRelevantConstructor
-                      position
-                      ( constructorname <> " " <> constructorname <> "Record"
-                      )
-                  )
-              % ""
-              % "data " <> constructorname <> "Record = " <> constructorname <> "Record"
-              % Indent (PrintFields fields)
-          )
-      % ""
 
 type family PrintParams (params :: [Type]) :: GHC.TypeLits.ErrorMessage where
   PrintParams '[a] = ToErrorMessage a
