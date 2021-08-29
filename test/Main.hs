@@ -154,7 +154,7 @@ diffTest (ChangeApiExample {apiPath, v1Api, v2Api}) =
                   (Interop.Spec.spec v1Api)
                   (Interop.Spec.spec v2Api)
           either id (\_ -> "No warnings.") warnings
-          & equalToCommentsInFile "Warnings for this change from Base type:" path
+          & equalToCommentsInFile "Warnings when V1 is used by a server and V2 by a client:" path
 
 backwardsCompatibleDecodingTest :: ChangeTypeExample -> (PropertyName, Property)
 backwardsCompatibleDecodingTest (ChangeTypeExample apiPath gen (_ :: proxy type_)) =

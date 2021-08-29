@@ -26,7 +26,7 @@ data RemoveConstructorType
 
 instance Wire.Wire RemoveConstructorType
 
--- Warnings for this change from Base type:
+-- Warnings when V1 is used by a server and V2 by a client:
 --
 -- A constructor was removed from a type used in requests.
 -- data RemoveConstructorType = RemoveThisConstructor

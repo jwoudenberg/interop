@@ -27,6 +27,6 @@ data AddOptionalFieldType = AddOptionalFieldType
 
 instance Wire.Wire AddOptionalFieldType
 
--- Warnings for this change from Base type:
+-- Warnings when V1 is used by a server and V2 by a client:
 --
 -- No warnings.

@@ -27,7 +27,7 @@ data AddNonOptionalFieldType = AddNonOptionalFieldType
 
 instance Wire.Wire AddNonOptionalFieldType
 
--- Warnings for this change from Base type:
+-- Warnings when V1 is used by a server and V2 by a client:
 --
 -- A type used in requests has a mandatory field.
 -- data AddNonOptionalFieldType { newField }

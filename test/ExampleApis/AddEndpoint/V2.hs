@@ -18,7 +18,7 @@ endpoints =
     Interop.endpoint "SecondEndpoint" (\(req :: Int) -> pure req)
   ]
 
--- Warnings for this change from Base type:
+-- Warnings when V1 is used by a server and V2 by a client:
 --
 -- client uses endpoint unsupported by server
 --

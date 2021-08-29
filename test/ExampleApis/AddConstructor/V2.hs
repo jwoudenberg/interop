@@ -27,7 +27,7 @@ data AddConstructorType
 
 instance Wire.Wire AddConstructorType
 
--- Warnings for this change from Base type:
+-- Warnings when V1 is used by a server and V2 by a client:
 --
 -- A constructor was added to a type used in responses.
 -- data AddConstructorType = ThirdConstructor
