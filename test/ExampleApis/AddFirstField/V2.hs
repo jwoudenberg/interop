@@ -24,6 +24,6 @@ data AddFirstFieldType = AddFirstField {newField :: Maybe Int}
 
 instance Wire.Wire AddFirstFieldType
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
 -- No warnings.

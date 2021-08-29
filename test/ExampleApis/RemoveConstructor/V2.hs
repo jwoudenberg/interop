@@ -26,9 +26,9 @@ data RemoveConstructorType
 
 instance Wire.Wire RemoveConstructorType
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
--- A constructor was removed from a type used in requests.
+-- A constructor was added to a type used in responses.
 -- data RemoveConstructorType = RemoveThisConstructor
 --
--- Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!
+-- Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!

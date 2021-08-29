@@ -27,9 +27,9 @@ data AddConstructorType
 
 instance Wire.Wire AddConstructorType
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
--- A constructor was added to a type used in responses.
+-- A constructor was removed from a type used in requests.
 -- data AddConstructorType = ThirdConstructor
 --
--- Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!
+-- Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!

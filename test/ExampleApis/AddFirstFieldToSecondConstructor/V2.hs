@@ -33,6 +33,6 @@ data NewRecord = NewRecord
 
 instance Wire.Wire NewRecord
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
 -- No warnings.

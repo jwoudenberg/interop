@@ -27,16 +27,16 @@ data AddNonOptionalFieldType = AddNonOptionalFieldType
 
 instance Wire.Wire AddNonOptionalFieldType
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
--- The generated client code expects record 'AddNonOptionalFieldType' to have a field 'newField', but server responses don't include such a field.
+-- The server expects record 'AddNonOptionalFieldType' to have a field 'newField', but client requests don't include such a field.
 -- data AddNonOptionalFieldType { newField }
 --
--- Maybe you're trying to remove a field from a record? If so, make sure to follow these steps:
+-- Maybe you're trying to add a new field to a record? If so, make sure to follow these steps:
 --
--- 1. Make the field optional by wrapping it in a 'Maybe', but don't return 'Nothing' values from the server yet.
--- 2. Change the client to make it support responses that omit the field.
+-- 1. Add the field to the server, but wrap it in a 'Maybe' to keep it optional for now.
+-- 2. Change the client to always send the new field.
 -- 3. Make sure the changes from step 1 and 2 are deployed.
--- 4. Remove the field from the server code.
+-- 4. Make the field mandatory in the server by removing the 'Maybe'.
 --
 -- It looks like you missed step 1, because 'newField' isn't an optional field.

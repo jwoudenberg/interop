@@ -151,10 +151,10 @@ diffTest (ChangeApiExample {apiPath, v1Api, v2Api}) =
         do
           let warnings =
                 Interop.Compatibility.check
-                  (Interop.Spec.spec v1Api)
                   (Interop.Spec.spec v2Api)
+                  (Interop.Spec.spec v1Api)
           either id (\_ -> "No warnings.") warnings
-          & equalToCommentsInFile "Warnings when V1 is used by a server and V2 by a client:" path
+          & equalToCommentsInFile "Warnings when V2 is used by a server and V1 by a client:" path
 
 backwardsCompatibleDecodingTest :: ChangeTypeExample -> (PropertyName, Property)
 backwardsCompatibleDecodingTest (ChangeTypeExample apiPath gen (_ :: proxy type_)) =

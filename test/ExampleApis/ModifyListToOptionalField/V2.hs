@@ -26,14 +26,14 @@ data ModifyListToOptionalFieldType = ModifyListToOptionalFieldType
 
 instance Wire.Wire ModifyListToOptionalFieldType
 
--- Warnings when V1 is used by a server and V2 by a client:
+-- Warnings when V2 is used by a server and V1 by a client:
 --
 -- A type used in requests has changed.
--- data List Int
+-- data Int
 --
 -- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used.
 --
 -- A type used in responses has changed.
--- data List Int
+-- data Int
 --
 -- This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used.
