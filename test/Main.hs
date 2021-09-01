@@ -64,6 +64,10 @@ import qualified ExampleApis.EchoTypes.Api
 import qualified ExampleApis.InvalidService.DuplicateConstructorName
 import qualified ExampleApis.InvalidService.DuplicateEndpointName
 import qualified ExampleApis.InvalidService.DuplicateTypeName
+import qualified ExampleApis.MakeRequestNonOptional.V1
+import qualified ExampleApis.MakeRequestNonOptional.V2
+import qualified ExampleApis.MakeResponseOptional.V1
+import qualified ExampleApis.MakeResponseOptional.V2
 import qualified ExampleApis.ModifyFieldType.V1
 import qualified ExampleApis.ModifyFieldType.V2
 import qualified ExampleApis.ModifyListToOptionalField.V1
@@ -413,6 +417,16 @@ changeApiExamples =
       ExampleApis.DropAllFields.V1.endpoints
       ExampleApis.DropAllFields.V1.service
       ExampleApis.DropAllFields.V2.service,
+    ChangeApiExample
+      "MakeRequestNonOptional"
+      ExampleApis.MakeRequestNonOptional.V1.endpoints
+      ExampleApis.MakeRequestNonOptional.V1.service
+      ExampleApis.MakeRequestNonOptional.V2.service,
+    ChangeApiExample
+      "MakeResponseOptional"
+      ExampleApis.MakeResponseOptional.V1.endpoints
+      ExampleApis.MakeResponseOptional.V1.service
+      ExampleApis.MakeResponseOptional.V2.service,
     ChangeApiExample
       "ModifyListToOptionalField"
       ExampleApis.ModifyListToOptionalField.V1.endpoints

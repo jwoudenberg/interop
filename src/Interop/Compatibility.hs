@@ -142,13 +142,38 @@ renderContext (InEndpoint _) = ""
 renderContext (InEndpointRequest _) = ""
 renderContext (InEndpointResponse _) = ""
 
-requestTypeMadeNonOptional :: Path 'Request -> Warning
-requestTypeMadeNonOptional path =
-  Warning
-    { short = "A type used in requests is no longer optional.",
-      context = path,
-      detailed = "If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
-    }
+serverAlwaysExpectsTypeButClientThinksItOptional :: Path 'Request -> Warning
+serverAlwaysExpectsTypeButClientThinksItOptional path =
+  let type_ = Builder.fromText (pathType path)
+   in Warning
+        { short = "The server always expects types '" <> type_ <> "' on requests, but the generated client code considers it optional.",
+          context = path,
+          detailed =
+            "Maybe you're trying to make a type non-optional? If so, the following steps allow you to do so safely:\n"
+              <> "\n"
+              <> "1. Change the client to always send values for the optional type.\n"
+              <> "2. Make sure the changes from step 1 are deployed.\n"
+              <> "3. Make the type non-optional in the server code.\n"
+              <> "\n"
+              <> "If you're currently at step 3 then this warning is expected."
+        }
+
+serverMightNotReturnValueButClientExpectsIt :: Path 'Response -> Warning
+serverMightNotReturnValueButClientExpectsIt path =
+  let type_ = Builder.fromText (pathType path)
+   in Warning
+        { short = "Generated client code always expects types '" <> type_ <> "' on responses, but server considers it optional.",
+          context = path,
+          detailed =
+            "Maybe you're trying to make a type optional? If so, the following steps allow you to do so safely:\n"
+              <> "\n"
+              <> "1. Make the type optional by wrapping it in a 'Maybe', but don't return 'Nothing' values from the server yet.\n"
+              <> "2. Change the client to make it support responses that omit the type.\n"
+              <> "3. Make sure the changes from step 1 and 2 are deployed.\n"
+              <> "4. You can now start returning 'Nothing' values from the server!\n"
+              <> "\n"
+              <> "If you're currently at step 1 then this warning is expected."
+        }
 
 incompatibleRequestTypes :: Path 'Request -> Warning
 incompatibleRequestTypes path =
@@ -165,14 +190,6 @@ incompatibleRequestTypes path =
               <> "3. Make sure changes from step 1 and 2 are deployed.\n"
               <> "4. Delete the old endpoint."
         }
-
-responseTypeMadeOptional :: Path 'Response -> Warning
-responseTypeMadeOptional path =
-  Warning
-    { short = "A type used responses has been made optional.",
-      context = path,
-      detailed = "Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
-    }
 
 incompatibleResponseTypes :: Path 'Response -> Warning
 incompatibleResponseTypes path =
@@ -344,20 +361,20 @@ diffType path (serverTypes, server) (clientTypes, client) =
             (clientTypes, clientFields)
         (_, _) ->
           ifUsedInResponse incompatibleResponseTypes (InType (typeAsText server) path)
-    (List subBefore, List subAfter) ->
-      diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter)
-    (Dict keyBefore valBefore, Dict keyAfter valAfter) ->
-      diffType (InType (typeAsText server) path) (serverTypes, keyBefore) (clientTypes, keyAfter)
-        <> diffType (InType (typeAsText server) path) (serverTypes, valBefore) (clientTypes, valAfter)
-    (Optional subBefore, Optional subAfter) ->
-      diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter)
-    (Optional subBefore, subAfter) ->
-      case diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter) of
-        [] -> ifUsedInRequest requestTypeMadeNonOptional (InType (typeAsText server) path)
+    (List subServer, List subClient) ->
+      diffType (InType (typeAsText server) path) (serverTypes, subServer) (clientTypes, subClient)
+    (Dict keyServer valServer, Dict keyClient valClient) ->
+      diffType (InType (typeAsText server) path) (serverTypes, keyServer) (clientTypes, keyClient)
+        <> diffType (InType (typeAsText server) path) (serverTypes, valServer) (clientTypes, valClient)
+    (Optional subServer, Optional subClient) ->
+      diffType (InType (typeAsText server) path) (serverTypes, subServer) (clientTypes, subClient)
+    (Optional subServer, subClient) ->
+      case diffType (InType (typeAsText server) path) (serverTypes, subServer) (clientTypes, subClient) of
+        [] -> ifUsedInResponse serverMightNotReturnValueButClientExpectsIt (InType (typeAsText server) path)
         changes -> changes
-    (subBefore, Optional subAfter) ->
-      case diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter) of
-        [] -> ifUsedInResponse responseTypeMadeOptional (InType (typeAsText server) path)
+    (subServer, Optional subClient) ->
+      case diffType (InType (typeAsText server) path) (serverTypes, subServer) (clientTypes, subClient) of
+        [] -> ifUsedInRequest serverAlwaysExpectsTypeButClientThinksItOptional (InType (typeAsText server) path)
         changes -> changes
     (Unit, Unit) -> []
     (Text, Text) -> []
