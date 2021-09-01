@@ -150,13 +150,21 @@ requestTypeMadeNonOptional path =
       detailed = "If any clients are still leaving the type out of requests those will start failing. Make sure clients are always setting this field before going forward with this change."
     }
 
-requestTypeChanged :: Path 'Request -> Warning
-requestTypeChanged path =
-  Warning
-    { short = "A type used in requests has changed.",
-      context = path,
-      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-    }
+incompatibleRequestTypes :: Path 'Request -> Warning
+incompatibleRequestTypes path =
+  let endpoint = Builder.fromText (pathEndpoint path)
+      type_ = Builder.fromText (pathType path)
+   in Warning
+        { short = "The server expects an entirely different type '" <> type_ <> "' from the '" <> endpoint <> "' endpoint than the one the generated client code sends.",
+          context = path,
+          detailed =
+            "Maybe you're trying to change the type accepted by and endpoint? If so, the following steps allow you to do so safely:\n"
+              <> "\n"
+              <> "1. Create an entirely new endpoint that's like the old one, except it accepts your new type.\n"
+              <> "2. Change the client to only use the new endpoint.\n"
+              <> "3. Make sure changes from step 1 and 2 are deployed.\n"
+              <> "4. Delete the old endpoint."
+        }
 
 responseTypeMadeOptional :: Path 'Response -> Warning
 responseTypeMadeOptional path =
@@ -166,13 +174,21 @@ responseTypeMadeOptional path =
       detailed = "Previous versions of the client code will expect the type to always be present and fail if this is not the case. To avoid failures make sure updated clients are deployed before returning Nothing values."
     }
 
-responseTypeChanged :: Path 'Response -> Warning
-responseTypeChanged path =
-  Warning
-    { short = "A type used in responses has changed.",
-      context = path,
-      detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
-    }
+incompatibleResponseTypes :: Path 'Response -> Warning
+incompatibleResponseTypes path =
+  let endpoint = Builder.fromText (pathEndpoint path)
+      type_ = Builder.fromText (pathType path)
+   in Warning
+        { short = "The server returns an entirely different type '" <> type_ <> "' from the '" <> endpoint <> "' endpoint than the one the generated client code expects.",
+          context = path,
+          detailed =
+            "Maybe you're trying to change the type returned by and endpoint? If so, the following steps allow you to do so safely:\n"
+              <> "\n"
+              <> "1. Create an entirely new endpoint that's like the old one, except it returns your new type.\n"
+              <> "2. Change the client to only use the new endpoint.\n"
+              <> "3. Make sure changes from step 1 and 2 are deployed.\n"
+              <> "4. Delete the old endpoint."
+        }
 
 serverWontAcceptConstructor :: Path 'Request -> Warning
 serverWontAcceptConstructor path =
@@ -327,7 +343,7 @@ diffType path (serverTypes, server) (clientTypes, client) =
             (serverTypes, serverFields)
             (clientTypes, clientFields)
         (_, _) ->
-          ifUsedInResponse responseTypeChanged (InType (typeAsText server) path)
+          ifUsedInResponse incompatibleResponseTypes (InType (typeAsText server) path)
     (List subBefore, List subAfter) ->
       diffType (InType (typeAsText server) path) (serverTypes, subBefore) (clientTypes, subAfter)
     (Dict keyBefore valBefore, Dict keyAfter valAfter) ->
@@ -349,8 +365,8 @@ diffType path (serverTypes, server) (clientTypes, client) =
     (Float, Float) -> []
     (Bool, Bool) -> []
     _ ->
-      ifUsedInRequest requestTypeChanged (InType (typeAsText server) path)
-        <> ifUsedInResponse responseTypeChanged (InType (typeAsText server) path)
+      ifUsedInRequest incompatibleRequestTypes (InType (typeAsText server) path)
+        <> ifUsedInResponse incompatibleResponseTypes (InType (typeAsText server) path)
 
 diffCustomType ::
   Path context ->
