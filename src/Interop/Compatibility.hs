@@ -174,21 +174,40 @@ responseTypeChanged path =
       detailed = "This will break old versions of clients. Consider making this change in a couple of steps to avoid failures: First, add a new endpoint using the new type. Then migrate clients over to use the new endpoint. Finally remove the old endpoint when it is no longer used."
     }
 
-requestConstructorRemoved :: Path 'Request -> Warning
-requestConstructorRemoved path =
-  Warning
-    { short = "A constructor was removed from a type used in requests.",
-      context = path,
-      detailed = "Clients that send us requests using the removed constructor will receive an error. Before going forward with this change, make sure clients are no longer using the constructor in requests!"
-    }
+serverWontAcceptConstructor :: Path 'Request -> Warning
+serverWontAcceptConstructor path =
+  let type_ = Builder.fromText (pathType path)
+      constructor = Builder.fromText (pathConstructor path)
+   in Warning
+        { short = "The generated client code supports use the '" <> constructor <> "' constructor of the type '" <> type_ <> "' in requests, but the server doesn't know this constructor",
+          context = path,
+          detailed =
+            "Maybe you're trying to remove a constructor from a type? If so, make sure to follow these steps:\n"
+              <> "\n"
+              <> "1. Stop using the constructor in server code.\n"
+              <> "2. Make sure the changes from step 1 are deployed.\n"
+              <> "3. Remove the constructor from the server code.\n"
+              <> "\n"
+              <> "If you're currently at step 1 then this warning is expected."
+        }
 
-responseConstructorAdded :: Path 'Response -> Warning
-responseConstructorAdded path =
-  Warning
-    { short = "A constructor was added to a type used in responses.",
-      context = path,
-      detailed = "Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!"
-    }
+clientWontAcceptConstructor :: Path 'Response -> Warning
+clientWontAcceptConstructor path =
+  let type_ = Builder.fromText (pathType path)
+      constructor = Builder.fromText (pathConstructor path)
+   in Warning
+        { short = "The server might return the '" <> constructor <> "' constructor of the type '" <> type_ <> "', but the generated client code doesn't know that constructor.",
+          context = path,
+          detailed =
+            "Maybe you're trying to add a new constructor to a type? If so, make sure to follow these steps:\n"
+              <> "\n"
+              <> "1. Add the constructor to the type but make sure not to use it in server responses yet.\n"
+              <> "2. Change the client to support the new constructor.\n"
+              <> "3. Make sure the changes from step 1 and 2 are deployed.\n"
+              <> "4. Now you can start using the constructor in server code!\n"
+              <> "\n"
+              <> "If you're currently at step 1 then this warning is expected."
+        }
 
 serverWontReturnExpectedField :: Path 'Response -> Warning
 serverWontReturnExpectedField path =
@@ -266,6 +285,16 @@ pathType path =
     InConstructor _ subPath -> pathType subPath
     InField _ subPath -> pathType subPath
 
+pathConstructor :: Path a -> Text
+pathConstructor path =
+  case path of
+    InEndpoint _ -> ""
+    InEndpointRequest _ -> ""
+    InEndpointResponse _ -> ""
+    InType _ _ -> ""
+    InConstructor name _ -> name
+    InField _ subPath -> pathType subPath
+
 pathField :: Path a -> Text
 pathField path =
   case path of
@@ -331,7 +360,7 @@ diffCustomType ::
 diffCustomType path (serverTypes, server) (clientTypes, client) =
   merge
     ( \name _ diffs ->
-        ifUsedInRequest requestConstructorRemoved (InConstructor name path) <> diffs
+        ifUsedInResponse clientWontAcceptConstructor (InConstructor name path) <> diffs
     )
     ( \name serverConstructor clientConstructor diffs ->
         diffFields
@@ -341,7 +370,7 @@ diffCustomType path (serverTypes, server) (clientTypes, client) =
           <> diffs
     )
     ( \name _ diffs ->
-        ifUsedInResponse responseConstructorAdded (InConstructor name path) <> diffs
+        ifUsedInRequest serverWontAcceptConstructor (InConstructor name path) <> diffs
     )
     (constructorTuples server)
     (constructorTuples client)

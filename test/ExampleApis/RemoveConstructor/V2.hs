@@ -28,7 +28,13 @@ instance Wire.Wire RemoveConstructorType
 
 -- Warnings when V2 is used by a server and V1 by a client:
 --
--- A constructor was added to a type used in responses.
+-- The generated client code supports use the 'RemoveThisConstructor' constructor of the type 'RemoveConstructorType' in requests, but the server doesn't know this constructor
 -- data RemoveConstructorType = RemoveThisConstructor
 --
--- Using this constructor in responses will cause failures in versions of clients that do not support it yet. Make sure to upgrade those clients before using the new constructor!
+-- Maybe you're trying to remove a constructor from a type? If so, make sure to follow these steps:
+--
+-- 1. Stop using the constructor in server code.
+-- 2. Make sure the changes from step 1 are deployed.
+-- 3. Remove the constructor from the server code.
+--
+-- If you're currently at step 1 then this warning is expected.
