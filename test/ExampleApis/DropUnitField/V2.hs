@@ -7,7 +7,6 @@ module ExampleApis.DropUnitField.V2 where
 import Data.Function ((&))
 import GHC.Generics (Generic)
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 service :: Interop.Service IO
 service =
@@ -24,7 +23,7 @@ data DropUnitFieldType = DropUnitFieldType
   }
   deriving (Generic)
 
-instance Wire.Wire DropUnitFieldType
+instance Interop.Wire DropUnitFieldType
 
 -- Warnings when V2 is used by a server and V1 by a client:
 --

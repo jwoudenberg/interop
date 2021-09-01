@@ -9,7 +9,7 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data Footwear
   = Shoe
@@ -22,7 +22,7 @@ data Footwear
       }
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire Footwear
+instance Interop.Wire Footwear
 
 example :: Footwear
 example = Sock True 1

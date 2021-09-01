@@ -8,12 +8,12 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data OuterRecord = OuterRecord {inner :: InnerRecord}
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire OuterRecord
+instance Interop.Wire OuterRecord
 
 data InnerRecord = InnerRecord
   { oneField :: Int,
@@ -21,7 +21,7 @@ data InnerRecord = InnerRecord
   }
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire InnerRecord
+instance Interop.Wire InnerRecord
 
 example :: OuterRecord
 example = OuterRecord (InnerRecord 2 "Hi!")

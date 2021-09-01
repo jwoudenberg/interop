@@ -10,14 +10,13 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data AddHashMapFieldType = AddHashMapFieldType
   { field :: Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddHashMapFieldType
+instance Interop.Wire AddHashMapFieldType
 
 service :: Interop.Service IO
 service =

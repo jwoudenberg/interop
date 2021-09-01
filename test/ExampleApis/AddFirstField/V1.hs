@@ -8,13 +8,12 @@ import Data.Function ((&))
 import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data AddFirstFieldType
   = AddFirstField
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddFirstFieldType
+instance Interop.Wire AddFirstFieldType
 
 service :: Interop.Service IO
 service =

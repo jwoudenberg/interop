@@ -6,14 +6,14 @@ module ExampleTypes.RecursiveType (example, gen) where
 import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data RecursiveType = RecursiveType
   { recursiveField :: Maybe RecursiveType
   }
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire RecursiveType
+instance Interop.Wire RecursiveType
 
 example :: RecursiveType
 example = RecursiveType (Just (RecursiveType Nothing))

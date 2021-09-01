@@ -8,7 +8,6 @@ import Data.Function ((&))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 service :: Interop.Service IO
 service =
@@ -25,7 +24,7 @@ data ModifyFieldTypeType = ModifyFieldTypeType
   }
   deriving (Generic)
 
-instance Wire.Wire ModifyFieldTypeType
+instance Interop.Wire ModifyFieldTypeType
 
 -- Warnings when V2 is used by a server and V1 by a client:
 --

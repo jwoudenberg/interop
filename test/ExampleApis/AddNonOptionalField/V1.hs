@@ -10,14 +10,13 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data AddNonOptionalFieldType = AddNonOptionalFieldType
   { field :: Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddNonOptionalFieldType
+instance Interop.Wire AddNonOptionalFieldType
 
 service :: Interop.Service IO
 service =

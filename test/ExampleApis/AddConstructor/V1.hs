@@ -9,14 +9,13 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data AddConstructorType
   = FirstConstructor
   | SecondConstructor
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddConstructorType
+instance Interop.Wire AddConstructorType
 
 service :: Interop.Service IO
 service =

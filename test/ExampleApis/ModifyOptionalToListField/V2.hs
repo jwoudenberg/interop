@@ -7,7 +7,6 @@ module ExampleApis.ModifyOptionalToListField.V2 where
 import Data.Function ((&))
 import GHC.Generics (Generic)
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 service :: Interop.Service IO
 service =
@@ -24,7 +23,7 @@ data ModifyOptionalToListFieldType = ModifyOptionalToListFieldType
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire ModifyOptionalToListFieldType
+instance Interop.Wire ModifyOptionalToListFieldType
 
 -- Warnings when V2 is used by a server and V1 by a client:
 --

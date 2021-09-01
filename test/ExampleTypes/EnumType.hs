@@ -6,14 +6,14 @@ module ExampleTypes.EnumType (example, gen) where
 import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data EnumType
   = OneConstructor
   | OtherConstructor
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire EnumType
+instance Interop.Wire EnumType
 
 example :: EnumType
 example = OneConstructor

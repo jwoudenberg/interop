@@ -8,12 +8,12 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Interop.Wire as Wire
+import qualified Interop
 
 data NestedType = NestedType Record
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire NestedType
+instance Interop.Wire NestedType
 
 data Record = Record
   { oneField :: Int,
@@ -21,7 +21,7 @@ data Record = Record
   }
   deriving (Eq, Generic, Show)
 
-instance Wire.Wire Record
+instance Interop.Wire Record
 
 example :: NestedType
 example = NestedType (Record 2 "Hi!")

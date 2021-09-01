@@ -10,7 +10,6 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data DropOptionalFieldType = DropOptionalFieldType
   { field :: Int,
@@ -18,7 +17,7 @@ data DropOptionalFieldType = DropOptionalFieldType
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire DropOptionalFieldType
+instance Interop.Wire DropOptionalFieldType
 
 service :: Interop.Service IO
 service =

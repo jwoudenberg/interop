@@ -9,7 +9,6 @@ import GHC.Generics (Generic)
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data RemoveConstructorType
   = KeepThisConstructor
@@ -17,7 +16,7 @@ data RemoveConstructorType
   | RemoveThisConstructor
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire RemoveConstructorType
+instance Interop.Wire RemoveConstructorType
 
 service :: Interop.Service IO
 service =

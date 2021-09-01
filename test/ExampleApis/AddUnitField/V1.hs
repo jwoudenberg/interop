@@ -10,14 +10,13 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data AddUnitFieldType = AddUnitFieldType
   { field :: Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddUnitFieldType
+instance Interop.Wire AddUnitFieldType
 
 service :: Interop.Service IO
 service =

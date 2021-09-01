@@ -10,21 +10,20 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data DropAllFieldsType
   = DropAllFieldsFirstConstructor Record
   | DropAllFieldsSecondConstructor
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire DropAllFieldsType
+instance Interop.Wire DropAllFieldsType
 
 data Record = Record
   { field :: Int
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire Record
+instance Interop.Wire Record
 
 service :: Interop.Service IO
 service =

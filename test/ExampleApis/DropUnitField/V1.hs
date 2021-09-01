@@ -10,7 +10,6 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 data DropUnitFieldType = DropUnitFieldType
   { field :: Int,
@@ -18,7 +17,7 @@ data DropUnitFieldType = DropUnitFieldType
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire DropUnitFieldType
+instance Interop.Wire DropUnitFieldType
 
 service :: Interop.Service IO
 service =

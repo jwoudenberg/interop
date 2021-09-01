@@ -8,7 +8,6 @@ import Data.Function ((&))
 import qualified Data.Map.Strict as Map
 import GHC.Generics (Generic)
 import qualified Interop
-import qualified Interop.Wire as Wire
 
 service :: Interop.Service IO
 service =
@@ -26,7 +25,7 @@ data AddMapFieldType = AddMapFieldType
   }
   deriving (Generic, Eq, Show)
 
-instance Wire.Wire AddMapFieldType
+instance Interop.Wire AddMapFieldType
 
 -- Warnings when V2 is used by a server and V1 by a client:
 --
