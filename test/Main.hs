@@ -127,11 +127,11 @@ main = do
     [ checkParallel (Group "encode-decode roundtrip" (encodeDecodeRoundtripTest <$> exampleTypes)),
       checkParallel (Group "encoding" (encodingTest <$> exampleTypes)),
       checkParallel (Group "diff" (diffTest <$> changeApiExamples)),
-      checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples)),
       checkParallel (Group "backwards-compatible decoding" (backwardsCompatibleDecodingTest <$> changeTypeExamples)),
       checkParallel (Group "ruby client generation" rubyClientGenerationTests),
       checkParallel (Group "generated ruby code" generatedRubyCodeTests),
-      checkParallel (Group "create service error" (createServiceErrorTest <$> exampleInvalidServices))
+      checkParallel (Group "create service error" (createServiceErrorTest <$> exampleInvalidServices)),
+      checkParallel (Group "compile error" (compileErrorTest <$> compileErrorExamples))
     ]
 
 encodeDecodeRoundtripTest :: ExampleType -> (PropertyName, Property)
